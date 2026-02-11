@@ -1,18 +1,19 @@
-// app/login/page.tsx
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { loginAction } from "../../lib/auth";
 
-export default function LoginPage() {
-  // Si déjà connecté, on peut rediriger (optionnel)
-  // (si tu n'as pas de fonction isAuthed côté server, laisse ça comme ça)
-  // try { await requireAuth(); redirect("/dashboard"); } catch {}
+type LoginPageProps = {
+  searchParams?: {
+    error?: string;
+  };
+};
+
+export default function LoginPage({ searchParams }: LoginPageProps) {
+  const hasInvalidCredentials = searchParams?.error === "invalid_credentials";
 
   return (
     <main className="min-h-[calc(100vh-72px)] bg-gradient-to-b from-slate-50 to-white">
       <div className="mx-auto max-w-6xl px-4 py-10">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
-          {/* Colonne gauche (branding) */}
           <section className="space-y-6">
             <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white/70 px-4 py-2 shadow-sm">
               <span className="grid h-8 w-8 place-items-center rounded-xl bg-indigo-600 text-white font-bold">
@@ -27,7 +28,7 @@ export default function LoginPage() {
             <h1 className="text-4xl font-semibold tracking-tight text-slate-900">
               Connexion
             </h1>
-            <p className="max-w-prose text-slate-600 leading-relaxed">
+            <p className="max-w-prose leading-relaxed text-slate-600">
               Connectez-vous pour accéder à votre espace client, suivre vos demandes,
               et consulter vos informations.
             </p>
@@ -44,9 +45,6 @@ export default function LoginPage() {
                   <span className="font-mono">password123</span>
                 </div>
               </div>
-              <p className="mt-3 text-xs text-slate-500">
-                (Tu pourras supprimer ce bloc dès que tu passes en prod.)
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -56,16 +54,9 @@ export default function LoginPage() {
               >
                 Retour à l’accueil
               </Link>
-              <Link
-                href="/dashboard"
-                className="rounded-full bg-indigo-600 px-4 py-2 text-white shadow-sm hover:bg-indigo-700"
-              >
-                Aller au dashboard
-              </Link>
             </div>
           </section>
 
-          {/* Colonne droite (formulaire) */}
           <section className="lg:justify-self-end">
             <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
               <div className="mb-6">
@@ -100,8 +91,11 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* Si ton loginAction renvoie un query param ?error=1, on peut l'afficher */}
-                {/* (optionnel) */}
+                {hasInvalidCredentials ? (
+                  <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    Email ou mot de passe incorrect.
+                  </p>
+                ) : null}
 
                 <button
                   type="submit"
