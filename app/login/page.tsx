@@ -42,7 +42,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               rel="noreferrer"
               className="inline-flex rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-white/10"
             >
-              Retour au site AB DRIDI
+              Retour à l’accueil
             </a>
           </div>
         </div>
