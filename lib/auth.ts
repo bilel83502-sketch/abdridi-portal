@@ -53,11 +53,9 @@ export async function requireAuth() {
   const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   const email = cookieStore.get(SESSION_EMAIL_COOKIE_NAME)?.value;
 
-  if (session !== "1") {
+  if (session !== "1" || !email) {
     redirect("/login");
   }
 
-  return {
-    email: email || VALID_EMAIL,
-  };
+  return { email };
 }
