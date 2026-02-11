@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "AB DRIDI Portal",
-  description: "Espace client sécurisé AB DRIDI",
+  description: "Espace client sécurisé",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className="min-h-screen bg-slate-950 text-slate-100 antialiased">
-        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,#172554_0%,#0f172a_38%,#020617_100%)]" />
+        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top,#172554_0%,#0f172a_40%,#020617_100%)]" />
 
         <header className="sticky top-0 z-20 border-b border-white/10 bg-slate-950/75 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
