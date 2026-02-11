@@ -1,6 +1,6 @@
 // app/login/page.tsx
 import Link from "next/link";
-import { loginAction } from "../lib/auth"; // garde ton action existante (si le chemin diffère, dis-moi)
+import { loginAction } from "../../lib/auth"; // garde ton action existante (si le chemin diffère, dis-moi)
 
 export default function LoginPage({
   searchParams,
