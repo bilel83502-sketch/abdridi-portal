@@ -1,7 +1,7 @@
 // app/login/page.tsx
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { loginAction } from "../lib/auth";
+import { loginAction } from "../../lib/auth";
 
 export default function LoginPage() {
   // Si déjà connecté, on peut rediriger (optionnel)
