@@ -8,6 +8,7 @@ type LoginPageProps = {
 
 export default function LoginPage({ searchParams }: LoginPageProps) {
   const hasInvalidCredentials = searchParams?.error === "invalid_credentials";
+  const authNotConfigured = searchParams?.error === "auth_not_configured";
 
   return (
     <section className="relative min-h-[calc(100vh-170px)] overflow-hidden py-4 sm:py-8">
@@ -77,9 +78,15 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               </p>
             ) : null}
 
+            {authNotConfigured ? (
+              <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+                Connexion indisponible : configuration serveur incomplète.
+              </p>
+            ) : null}
+
             <button
               type="submit"
-              className="w-full rounded-xl bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-700 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-950/50 transition hover:from-blue-400 hover:via-blue-500 hover:to-indigo-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30"
+              className="w-full rounded-xl bg-gradient-to-r from-blue-500 to-indigo-700 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:from-blue-400 hover:to-indigo-600 focus:outline-none focus:ring-4 focus:ring-blue-500/30"
             >
               Se connecter
             </button>
