@@ -8,7 +8,7 @@ const stats = [
 ];
 
 export default async function DashboardPage() {
-  const session = await requireAuth();
+  await requireAuth();
 
   return (
     <section className="min-h-[calc(100vh-170px)] py-2 sm:py-6">
@@ -17,9 +17,7 @@ export default async function DashboardPage() {
           <div>
             <p className="text-xs uppercase tracking-widest text-blue-200">Espace sécurisé</p>
             <h1 className="mt-2 text-3xl font-semibold text-white">Dashboard client</h1>
-            <p className="mt-1 text-sm text-slate-300">
-              Session active: <span className="font-medium text-white">{session.email}</span>
-            </p>
+            <p className="mt-1 text-sm text-slate-300">Session authentifiée.</p>
           </div>
 
           <div className="flex items-center gap-3">
