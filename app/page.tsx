@@ -1,47 +1,33 @@
 export default function Home() {
   return (
-    <div className="grid gap-8">
-      <section className="rounded-2xl border border-slate-200 bg-white/70 p-8 shadow-sm backdrop-blur">
-        <div className="grid gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Portail client Abdridi
-          </h1>
-          <p className="max-w-2xl text-slate-600">
-            Accédez à votre espace client sécurisé : suivi, informations, documents et prochaines étapes.
-          </p>
+    <section className="grid gap-6 py-6 sm:py-10">
+      <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-12">
+        <p className="inline-flex rounded-full border border-blue-400/30 bg-blue-500/10 px-4 py-1 text-xs font-semibold uppercase tracking-wider text-blue-100">
+          Portail sécurisé AB DRIDI
+        </p>
+        <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+          Espace client premium pour le suivi de vos activités.
+        </h1>
+        <p className="mt-4 max-w-2xl text-slate-300">
+          Connectez-vous pour accéder à votre tableau de bord privé, suivre vos indicateurs,
+          consulter l&apos;activité récente et centraliser vos échanges.
+        </p>
 
-          <div className="mt-4 flex flex-wrap gap-3">
-            <a
-              href="/login"
-              className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
-            >
-              Se connecter
-            </a>
-            <a
-              href="/dashboard"
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
-            >
-              Aller au dashboard
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 md:grid-cols-3">
-        {[
-          { title: "Suivi", desc: "Vue claire des éléments importants et de vos actions en cours." },
-          { title: "Documents", desc: "Centralisation des fichiers utiles (à ajouter ensuite)." },
-          { title: "Support", desc: "Points de contact et demande d’assistance rapide." },
-        ].map((c) => (
-          <div
-            key={c.title}
-            className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur"
+        <div className="mt-8 flex flex-wrap gap-3">
+          <a
+            href="/login"
+            className="rounded-xl bg-gradient-to-r from-blue-500 to-indigo-700 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:from-blue-400 hover:to-indigo-600"
           >
-            <div className="text-lg font-semibold">{c.title}</div>
-            <div className="mt-2 text-sm text-slate-600">{c.desc}</div>
-          </div>
-        ))}
-      </section>
-    </div>
+            Se connecter
+          </a>
+          <a
+            href="https://abdridi.com"
+            className="rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:bg-white/10"
+          >
+            Retour au site abdridi.com
+          </a>
+        </div>
+      </div>
+    </section>
   );
 }
