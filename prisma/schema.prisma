@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SourceRegistry {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  baseUrl   String
+  category  String?
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notices   TenderNotice[]
+}
+
+model TenderNotice {
+  id                 String   @id @default(cuid())
+  sourceKey          String
+  sourceNoticeId     String
+  referenceCode      String?
+  title              String
+  descriptionSnippet String?
+  buyerName          String
+  buyerType          String?
+  locationLabel      String?
+  category           String?
+  publishedAt        DateTime?
+  deadlineAt         DateTime?
+  officialUrl        String
+  status             String   @default("OPEN")
+  cpv                String[] @default([])
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  source             SourceRegistry @relation(fields: [sourceKey], references: [key])
+  documents          TenderDocumentLink[]
+
+  @@unique([sourceKey, sourceNoticeId])
+  @@index([deadlineAt])
+  @@index([publishedAt])
+}
+
+model TenderDocumentLink {
+  id       String @id @default(cuid())
+  noticeId String
+  type     String
+  label    String
+  url      String
+
+  notice   TenderNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+
+  @@index([noticeId])
+}
