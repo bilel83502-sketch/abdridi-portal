@@ -15,13 +15,14 @@ export async function getTenderById(id: string): Promise<TenderNotice | null> {
   return (row as unknown as TenderNotice) ?? null;
 }
 
-export async function listDocuments(tenderId: string): Promise<TenderDocument[]> {
+export async function listDocuments(noticeId: string): Promise<TenderDocument[]> {
   const rows = await prisma.tenderDocumentLink.findMany({
-    where: { tenderId }, // si ton SQL montre que c'est noticeId, je te ferai changer ici
+    where: { noticeId },   // ✅ le champ s’appelle noticeId chez toi
     orderBy: [{ createdAt: "desc" }],
   });
   return rows as unknown as TenderDocument[];
 }
+
 
 export async function listSources(): Promise<SourceRegistry[]> {
   const rows = await prisma.sourceRegistry.findMany({
