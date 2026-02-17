@@ -58,4 +58,22 @@ model TenderDocumentLink {
   notice   TenderNotice @relation(fields: [noticeId], references: [id], onDelete: Cascade)
 
   @@index([noticeId])
+}model Booking {
+  id           String   @id @default(cuid())
+  clientName   String
+  clientEmail  String
+  clientPhone  String?
+  companyName  String?
+  companySiret String?
+  startAt      DateTime
+  endAt        DateTime
+  duration     Int      @default(30)
+  notes        String?
+  status       String   @default("confirmed")
+  teamsLink    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([startAt])
+  @@index([clientEmail])
 }
