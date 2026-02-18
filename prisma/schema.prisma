@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  company        String?
+  phone          String?
+  passwordHash   String
+  role           Role      @default(USER)
+  plan           Plan      @default(VEILLE)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  alerts         Alert[]
+  savedSearches  SavedSearch[]
+  favorites      Favorite[]
+  sessions       Session[]
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("sessions")
+}
+
+enum Role { USER ADMIN }
+enum Plan { VEILLE MONTAGE STRATEGIE }
+
+model Marche {
+  id              String       @id @default(cuid())
+  reference       String?      @unique
+  title           String
+  description     String?      @db.Text
+  buyer           String
+  buyerSiret      String?
+  department      String
+  region          String?
+  nature          Nature
+  type            MarcheType   @default(APPEL_OFFRES)
+  cpvCode         String?
+  cpvLabel        String?
+  estimatedValue  Float?
+  currency        String       @default("EUR")
+  deadline        DateTime?
+  publicationDate DateTime
+  source          String
+  sourceUrl       String?      @db.Text
+  status          MarcheStatus @default(OUVERT)
+  lots            Int?
+  duration        String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  favorites       Favorite[]
+  @@index([department])
+  @@index([nature])
+  @@index([publicationDate])
+  @@index([deadline])
+  @@index([cpvCode])
+  @@index([source])
+  @@index([status])
+  @@map("marches")
+}
+
+enum Nature { TRAVAUX FOURNITURES SERVICES }
+enum MarcheType { APPEL_OFFRES PROCEDURE_ADAPTEE MARCHE_NEGOCIE DIALOGUE_COMPETITIF CONCESSION AUTRE }
+enum MarcheStatus { OUVERT FERME ATTRIBUE ANNULE }
+
+model Alert {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  active        Boolean   @default(true)
+  frequency     AlertFreq @default(QUOTIDIEN)
+  keywords      String[]
+  departments   String[]
+  natures       Nature[]
+  cpvCodes      String[]
+  minValue      Float?
+  maxValue      Float?
+  sources       String[]
+  lastSentAt    DateTime?
+  matchCount    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  @@map("alerts")
+}
+
+enum AlertFreq { IMMEDIAT QUOTIDIEN HEBDOMADAIRE }
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   Json
+  createdAt DateTime @default(now())
+  @@map("saved_searches")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marcheId  String
+  marche    Marche   @relation(fields: [marcheId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, marcheId])
+  @@map("favorites")
+}
