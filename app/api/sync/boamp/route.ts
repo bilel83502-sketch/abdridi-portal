@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchBoampRecords } from '@/lib/boamp';
 
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Vercel free plan max
 
 const CRON_SECRET = process.env.CRON_SECRET;
