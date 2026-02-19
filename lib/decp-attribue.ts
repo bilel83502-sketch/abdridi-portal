@@ -1,11 +1,17 @@
 /**
- * Client API DECP pour les marchés ATTRIBUÉS
- * Source : https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp_augmente/records
- * Données Essentielles de la Commande Publique — marchés déjà notifiés/attribués
+ * Client API pour les marchés ATTRIBUÉS — 2 sources :
+ * 1. DECP V3 : https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp-v3-marches-valides/records
+ *    - 700K+ marchés validés, mais titulaire_id_1 est un SIRET (pas de nom)
+ * 2. BOAMP Attribution : nature='ATTRIBUTION' sur l'API BOAMP
+ *    - 447K+ avis d'attribution avec titulaire en nom clair
+ *    - Source principale pour la veille concurrentielle
  */
 
-const DECP_API =
-  'https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp_augmente/records';
+const DECP_V3_API =
+  'https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/decp-v3-marches-valides/records';
+
+const BOAMP_API =
+  'https://boamp-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/boamp/records';
 
 // ── Mapping départements ──────────────────────────────────────────
 const DEPT_MAP: Record<string, { name: string; region: string }> = {
@@ -112,17 +118,8 @@ const DEPT_MAP: Record<string, { name: string; region: string }> = {
   '976': { name: 'Mayotte', region: 'Mayotte' },
 };
 
-// ── Mapping nature ────────────────────────────────────────────────
-function mapNature(raw: string | null): string {
-  if (!raw) return 'SERVICES';
-  const lower = raw.toLowerCase();
-  if (lower.includes('travaux')) return 'TRAVAUX';
-  if (lower.includes('fourniture')) return 'FOURNITURES';
-  return 'SERVICES';
-}
-
 // ── Type de sortie ────────────────────────────────────────────────
-export interface DecpAttribue {
+export interface AttribueRecord {
   objet: string;
   acheteurNom: string;
   acheteurSiret: string | null;
@@ -146,62 +143,99 @@ export interface DecpAttribue {
   formePrix: string | null;
 }
 
-// ── Mapper un record DECP ─────────────────────────────────────────
-function mapRecord(r: any): DecpAttribue | null {
+// ── Mapping nature ────────────────────────────────────────────────
+function mapNatureFromText(raw: string | null | undefined): string {
+  if (!raw) return 'SERVICES';
+  const lower = raw.toLowerCase();
+  if (lower.includes('travaux')) return 'TRAVAUX';
+  if (lower.includes('fourniture')) return 'FOURNITURES';
+  return 'SERVICES';
+}
+
+function mapNatureFromArray(arr: string[] | null | undefined): string {
+  const t = (arr?.[0] || '').toUpperCase();
+  if (t === 'TRAVAUX') return 'TRAVAUX';
+  if (t === 'FOURNITURES') return 'FOURNITURES';
+  if (t === 'SERVICES') return 'SERVICES';
+  return 'SERVICES';
+}
+
+// ── Extract département from lieu/code ────────────────────────────
+function extractDepartement(code: string | null): string | null {
+  if (!code) return null;
+  const s = code.toString().trim();
+  // Code postal → 2 premiers chiffres (ou 3 pour DOM-TOM)
+  if (s.length === 5) {
+    const d = s.startsWith('97') ? s.slice(0, 3) : s.slice(0, 2);
+    return DEPT_MAP[d] ? d : null;
+  }
+  // Code département direct
+  if (DEPT_MAP[s]) return s;
+  // Code région → null (pas assez précis)
+  return null;
+}
+
+// =====================================================================
+//  SOURCE 1 : DECP V3 (decp-v3-marches-valides)
+// =====================================================================
+
+function mapDecpV3Record(r: any): AttribueRecord | null {
   const id = r.id;
-  const sourcePlatform = r.source || 'DECP';
+  if (!id) return null;
+
+  // Titulaire : SIRET numérique seulement dans V3 (pas de nom)
+  const titulaireSiret = r.titulaire_id_1
+    ? String(r.titulaire_id_1).padStart(14, '0')
+    : null;
+  // Nom du titulaire 2 est parfois le nom du titulaire 1 dans la V3
   const titulaireNom =
-    r.denominationsocialeetablissement ||
-    r.denominationunitelegale ||
-    '';
+    r.titulaire_denominationsociale_2 ||
+    (titulaireSiret ? `SIRET ${titulaireSiret}` : null);
 
-  if (!id || !titulaireNom) return null;
+  if (!titulaireNom) return null;
 
-  const dept = r.codedepartementexecution || null;
+  const dept = extractDepartement(r.lieuexecution_code);
   const deptInfo = dept ? DEPT_MAP[dept] : null;
 
-  const sourceRef = `DECP-A-${id}-${sourcePlatform}`.slice(0, 250);
-
   return {
-    objet: r.objetmarche || 'Sans objet',
-    acheteurNom: r.nomacheteur || 'Non renseigné',
-    acheteurSiret: r.idacheteur || null,
+    objet: r.objet || 'Sans objet',
+    acheteurNom: r.acheteur_nom || r.acheteur_id || 'Non renseigné',
+    acheteurSiret: r.acheteur_id || null,
     titulaireNom,
-    titulaireSiret: r.siretetablissement || null,
-    titulaireCommune: r.communeetablissement || null,
+    titulaireSiret: titulaireSiret,
+    titulaireCommune: null,
     montant: r.montant ? parseFloat(String(r.montant)) : null,
     dateNotification: r.datenotification ? new Date(r.datenotification) : null,
     datePublicationDonnees: r.datepublicationdonnees
       ? new Date(r.datepublicationdonnees)
       : null,
-    nature: mapNature(r.natureobjetmarche),
+    nature: mapNatureFromText(r.nature),
     procedure: r.procedure || null,
-    lieuExecution: r.lieuexecutionnom || null,
+    lieuExecution: r.lieuexecution_nom || null,
     departement: dept,
     departementNom: deptInfo?.name || null,
     region: deptInfo?.region || null,
     codeCPV: r.codecpv ? r.codecpv.split('-')[0] : null,
-    labelCPV: r.referencecpv || null,
-    source: sourcePlatform,
-    sourceRef,
+    labelCPV: null,
+    source: `DECP-${r.source || 'V3'}`,
+    sourceRef: `DECP-V3-${id}`.slice(0, 250),
     dureeMois: r.dureemois ? parseInt(String(r.dureemois)) : null,
     formePrix: r.formeprix || null,
   };
 }
 
-// ── Fetcher paginé ────────────────────────────────────────────────
-export async function fetchDecpAttribueRecords(options?: {
+export async function fetchDecpV3Records(options?: {
   limit?: number;
   monthsBack?: number;
-}): Promise<DecpAttribue[]> {
-  const limit = options?.limit ?? 500;
-  const monthsBack = options?.monthsBack ?? 36;
+}): Promise<AttribueRecord[]> {
+  const limit = options?.limit ?? 5000;
+  const monthsBack = options?.monthsBack ?? 12;
 
   const since = new Date();
   since.setMonth(since.getMonth() - monthsBack);
   const sinceStr = since.toISOString().split('T')[0];
 
-  const allRecords: DecpAttribue[] = [];
+  const allRecords: AttribueRecord[] = [];
   const seenRefs = new Set<string>();
   let offset = 0;
   const pageSize = 100;
@@ -217,25 +251,22 @@ export async function fetchDecpAttribueRecords(options?: {
       where: `datenotification>='${sinceStr}'`,
     });
 
-    const url = `${DECP_API}?${params}`;
-    console.log(`[DECP-Attribué] Fetching offset=${offset}, limit=${take}...`);
+    const url = `${DECP_V3_API}?${params}`;
+    console.log(`[DECP-V3] Fetching offset=${offset}, limit=${take}...`);
 
-    const res = await fetch(url, {
-      headers: { Accept: 'application/json' },
-    });
-
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`DECP API error ${res.status}: ${body}`);
+      console.error(`[DECP-V3] API error ${res.status}: ${body.slice(0, 200)}`);
+      break;
     }
 
     const json = await res.json();
     const results = json.results || [];
-
     if (results.length === 0) break;
 
     for (const r of results) {
-      const mapped = mapRecord(r);
+      const mapped = mapDecpV3Record(r);
       if (mapped && !seenRefs.has(mapped.sourceRef)) {
         seenRefs.add(mapped.sourceRef);
         allRecords.push(mapped);
@@ -246,6 +277,159 @@ export async function fetchDecpAttribueRecords(options?: {
     if (results.length < take) break;
   }
 
-  console.log(`[DECP-Attribué] Total records mapped: ${allRecords.length}`);
+  console.log(`[DECP-V3] Total records mapped: ${allRecords.length}`);
+  return allRecords;
+}
+
+// =====================================================================
+//  SOURCE 2 : BOAMP Attribution (nature='ATTRIBUTION')
+// =====================================================================
+
+function mapBoampAttribRecord(r: any): AttribueRecord | null {
+  const idweb = r.idweb;
+  const objet = r.objet;
+  const buyer = r.nomacheteur;
+  const titulaires = r.titulaire; // Array of strings: ["SMAC SAS"]
+
+  if (!idweb || !objet) return null;
+
+  const titulaireNom = Array.isArray(titulaires)
+    ? titulaires[0] || null
+    : titulaires || null;
+  if (!titulaireNom) return null;
+
+  const deptCodes = r.code_departement || [];
+  const dept = r.code_departement_prestation
+    || (Array.isArray(deptCodes) ? deptCodes[0] : deptCodes)
+    || null;
+  const deptStr = dept ? dept.toString() : null;
+  const deptInfo = deptStr ? DEPT_MAP[deptStr] : null;
+
+  return {
+    objet: objet.slice(0, 500),
+    acheteurNom: buyer || 'Non renseigné',
+    acheteurSiret: null,
+    titulaireNom,
+    titulaireSiret: null,
+    titulaireCommune: null,
+    montant: null, // BOAMP attribution doesn't always have amount
+    dateNotification: r.dateparution
+      ? new Date(r.dateparution + 'T00:00:00Z')
+      : null,
+    datePublicationDonnees: r.dateparution
+      ? new Date(r.dateparution + 'T00:00:00Z')
+      : null,
+    nature: mapNatureFromArray(r.type_marche),
+    procedure: r.procedure_libelle || null,
+    lieuExecution: null,
+    departement: deptStr,
+    departementNom: deptInfo?.name || null,
+    region: deptInfo?.region || null,
+    codeCPV: null,
+    labelCPV: r.descripteur_libelle?.join(', ') || null,
+    source: 'BOAMP',
+    sourceRef: `BOAMP-ATT-${idweb}`,
+    dureeMois: null,
+    formePrix: null,
+  };
+}
+
+export async function fetchBoampAttribRecords(options?: {
+  limit?: number;
+  daysBack?: number;
+}): Promise<AttribueRecord[]> {
+  const limit = options?.limit ?? 5000;
+  const daysBack = options?.daysBack ?? 365; // 12 mois
+
+  const since = new Date();
+  since.setDate(since.getDate() - daysBack);
+  const sinceStr = since.toISOString().split('T')[0];
+
+  const allRecords: AttribueRecord[] = [];
+  const seenRefs = new Set<string>();
+  let offset = 0;
+  const pageSize = 100;
+
+  while (allRecords.length < limit) {
+    const remaining = limit - allRecords.length;
+    const take = Math.min(remaining, pageSize);
+
+    const params = new URLSearchParams({
+      limit: take.toString(),
+      offset: offset.toString(),
+      order_by: 'dateparution desc',
+      where: `dateparution>='${sinceStr}' AND nature='ATTRIBUTION'`,
+    });
+
+    const url = `${BOAMP_API}?${params}`;
+    console.log(`[BOAMP-ATT] Fetching offset=${offset}, limit=${take}...`);
+
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[BOAMP-ATT] API error ${res.status}: ${body.slice(0, 200)}`);
+      break;
+    }
+
+    const json = await res.json();
+    const results = json.results || [];
+    if (results.length === 0) break;
+
+    for (const r of results) {
+      const mapped = mapBoampAttribRecord(r);
+      if (mapped && !seenRefs.has(mapped.sourceRef)) {
+        seenRefs.add(mapped.sourceRef);
+        allRecords.push(mapped);
+      }
+    }
+
+    offset += results.length;
+    if (results.length < take) break;
+  }
+
+  console.log(`[BOAMP-ATT] Total records mapped: ${allRecords.length}`);
+  return allRecords;
+}
+
+// =====================================================================
+//  COMBINED : Fetch from both sources with deduplication
+// =====================================================================
+export async function fetchAllAttribueRecords(options?: {
+  limitPerSource?: number;
+  monthsBack?: number;
+}): Promise<AttribueRecord[]> {
+  const limitPerSource = options?.limitPerSource ?? 5000;
+  const monthsBack = options?.monthsBack ?? 12;
+  const daysBack = monthsBack * 30;
+
+  console.log(`\n[SYNC] Starting combined attribution sync (${monthsBack} months, max ${limitPerSource}/source)...\n`);
+
+  // Fetch both in parallel
+  const [decpRecords, boampRecords] = await Promise.all([
+    fetchDecpV3Records({ limit: limitPerSource, monthsBack }),
+    fetchBoampAttribRecords({ limit: limitPerSource, daysBack }),
+  ]);
+
+  // Merge with deduplication by sourceRef
+  const allRecords: AttribueRecord[] = [];
+  const seenRefs = new Set<string>();
+
+  // BOAMP first (better quality: has titulaire name)
+  for (const r of boampRecords) {
+    if (!seenRefs.has(r.sourceRef)) {
+      seenRefs.add(r.sourceRef);
+      allRecords.push(r);
+    }
+  }
+
+  // Then DECP V3
+  for (const r of decpRecords) {
+    if (!seenRefs.has(r.sourceRef)) {
+      seenRefs.add(r.sourceRef);
+      allRecords.push(r);
+    }
+  }
+
+  console.log(`\n[SYNC] Combined: ${allRecords.length} unique records (BOAMP: ${boampRecords.length}, DECP-V3: ${decpRecords.length})\n`);
   return allRecords;
 }

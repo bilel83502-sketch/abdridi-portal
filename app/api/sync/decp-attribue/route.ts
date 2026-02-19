@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { fetchDecpAttribueRecords } from '@/lib/decp-attribue';
+import { fetchAllAttribueRecords } from '@/lib/decp-attribue';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -16,7 +16,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    const records = await fetchDecpAttribueRecords({ limit: 500, monthsBack: 36 });
+    // For cron: fetch 2000/source, 12 months (fits in 60s)
+    const records = await fetchAllAttribueRecords({
+      limitPerSource: 2000,
+      monthsBack: 12,
+    });
 
     let upserted = 0;
     let skipped = 0;
@@ -94,17 +98,19 @@ export async function GET(req: Request) {
       }
     }
 
+    const total = await prisma.marcheAttribue.count();
     const summary = {
-      total: records.length,
+      fetched: records.length,
       upserted,
       skipped,
+      totalInDb: total,
       syncedAt: new Date().toISOString(),
     };
 
-    console.log('[DECP-Attribué] Sync complete:', summary);
+    console.log('[ATTRIBUE] Sync complete:', summary);
     return NextResponse.json(summary);
   } catch (error: any) {
-    console.error('[DECP-Attribué] Sync failed:', error);
+    console.error('[ATTRIBUE] Sync failed:', error);
     return NextResponse.json(
       { error: 'Sync failed', message: error?.message },
       { status: 500 }

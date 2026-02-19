@@ -1,9 +1,9 @@
 /**
- * Script de synchronisation manuelle DECP → MarcheAttribue
- * Usage : npx tsx scripts/sync-decp-attribue.ts [--limit=500] [--months=36]
+ * Script de synchronisation manuelle des marchés attribués (DECP V3 + BOAMP Attribution)
+ * Usage : npx tsx scripts/sync-decp-attribue.ts [--limit=5000] [--months=12]
  */
 import { PrismaClient } from '@prisma/client';
-import { fetchDecpAttribueRecords } from '../lib/decp-attribue';
+import { fetchAllAttribueRecords } from '../lib/decp-attribue';
 
 const prisma = new PrismaClient();
 
@@ -12,17 +12,15 @@ async function main() {
   const limitArg = args.find((a) => a.startsWith('--limit='));
   const monthsArg = args.find((a) => a.startsWith('--months='));
 
-  const limit = limitArg ? parseInt(limitArg.split('=')[1]) : 500;
-  const monthsBack = monthsArg ? parseInt(monthsArg.split('=')[1]) : 36;
+  const limitPerSource = limitArg ? parseInt(limitArg.split('=')[1]) : 5000;
+  const monthsBack = monthsArg ? parseInt(monthsArg.split('=')[1]) : 12;
 
   console.log(
-    `\n🔄 Sync DECP → MarcheAttribue — limit=${limit}, monthsBack=${monthsBack}\n`
+    `\n🔄 Sync Marchés Attribués — limit=${limitPerSource}/source, months=${monthsBack}\n`
   );
 
-  const records = await fetchDecpAttribueRecords({ limit, monthsBack });
-  console.log(
-    `📥 ${records.length} marchés attribués récupérés depuis l'API DECP\n`
-  );
+  const records = await fetchAllAttribueRecords({ limitPerSource, monthsBack });
+  console.log(`📥 ${records.length} marchés attribués récupérés\n`);
 
   let created = 0;
   let updated = 0;
@@ -79,7 +77,7 @@ async function main() {
     }
   }
 
-  console.log(`\n✅ Sync DECP Attribués terminé :`);
+  console.log(`\n✅ Sync terminé :`);
   console.log(`   📝 Créés      : ${created}`);
   console.log(`   🔄 Mis à jour : ${updated}`);
   console.log(`   ⏭  Ignorés   : ${skipped}`);
