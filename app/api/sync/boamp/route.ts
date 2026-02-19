@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const records = await fetchBoampRecords({ limit: 200, daysBack: 30 });
+    const records = await fetchBoampRecords({ limit: 1000, daysBack: 30 });
 
     let created = 0;
     let updated = 0;

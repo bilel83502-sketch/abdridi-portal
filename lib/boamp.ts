@@ -297,7 +297,7 @@ export async function fetchBoampRecords(options?: {
   limit?: number;
   daysBack?: number;
 }): Promise<BoampMarche[]> {
-  const limit = options?.limit ?? 100;
+  const limit = options?.limit ?? 1000;
   const daysBack = options?.daysBack ?? 30;
 
   const since = new Date();

@@ -16,6 +16,8 @@ import {
   ExternalLink,
   Banknote,
   Scale,
+  Bell,
+  Download,
 } from 'lucide-react';
 import {
   formatCurrency,
@@ -135,7 +137,8 @@ export default function MarcheDetailPage() {
             <Detail
               icon={<Banknote size={15} className="text-gray-400" />}
               label="Montant estimé"
-              value={formatCurrency(marche.value)}
+              value={marche.value ? formatCurrency(marche.value) : null}
+              placeholder="Non communiqué — consulter le DCE"
               highlight
             />
             <Detail
@@ -144,8 +147,9 @@ export default function MarcheDetailPage() {
               value={
                 marche.deadline
                   ? `${formatDate(marche.deadline)}${dl !== null ? ` (${dl > 0 ? `dans ${dl} j` : 'Expiré'})` : ''}`
-                  : '—'
+                  : null
               }
+              placeholder="Non communiqué"
               urgent={dl !== null && dl <= 7 && dl > 0}
               expired={dl !== null && dl <= 0}
             />
@@ -157,7 +161,8 @@ export default function MarcheDetailPage() {
             <Detail
               icon={<Scale size={15} className="text-gray-400" />}
               label="Procédure"
-              value={marche.procedureType || '—'}
+              value={marche.procedureType || null}
+              placeholder="Non communiqué"
             />
             <Detail
               icon={<Layers size={15} className="text-gray-400" />}
@@ -167,17 +172,20 @@ export default function MarcheDetailPage() {
             <Detail
               icon={<Timer size={15} className="text-gray-400" />}
               label="Durée du marché"
-              value={marche.duration || '—'}
+              value={marche.duration || null}
+              placeholder="Non communiqué"
             />
             <Detail
               icon={<Tag size={15} className="text-gray-400" />}
               label="Code CPV"
-              value={marche.cpvCode || '—'}
+              value={marche.cpvCode || null}
+              placeholder="Non communiqué"
             />
             <Detail
               icon={<FileText size={15} className="text-gray-400" />}
               label="Descripteurs"
-              value={marche.cpvLabel || '—'}
+              value={marche.cpvLabel || null}
+              placeholder="Non communiqué"
             />
           </div>
         </div>
@@ -198,12 +206,31 @@ export default function MarcheDetailPage() {
                 Voir l'annonce originale
               </a>
             )}
-            <button className="btn-secondary !text-xs !w-full !justify-center !py-2.5 !gap-2 mb-2.5">
-              <FileText size={14} />
-              Télécharger le DCE
-            </button>
-            <button className="btn-secondary !text-xs !w-full !justify-center !py-2.5 !gap-2">
-              <Clock size={14} />
+            {boampUrl ? (
+              <a
+                href={boampUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"
+              >
+                <Download size={14} />
+                Télécharger le DCE
+              </a>
+            ) : (
+              <div className="text-[11px] text-gray-400 italic text-center mb-2.5 py-2">
+                DCE disponible sur la plateforme de l'acheteur
+              </div>
+            )}
+            <button
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (marche.nature) params.set('nature', marche.nature);
+                if (marche.department) params.set('department', marche.department);
+                router.push(`/alertes?${params.toString()}`);
+              }}
+              className="btn-secondary !text-xs !w-full !justify-center !py-2.5 !gap-2"
+            >
+              <Bell size={14} />
               Créer une alerte similaire
             </button>
           </div>
@@ -236,13 +263,15 @@ function Detail({
   icon,
   label,
   value,
+  placeholder,
   highlight,
   urgent,
   expired,
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: string | null;
+  placeholder?: string;
   highlight?: boolean;
   urgent?: boolean;
   expired?: boolean;
@@ -252,19 +281,25 @@ function Detail({
       <div className="mt-0.5">{icon}</div>
       <div>
         <div className="text-[11px] text-gray-400 mb-0.5">{label}</div>
-        <div
-          className={`text-sm font-semibold ${
-            expired
-              ? 'text-red-500'
-              : urgent
-                ? 'text-amber-600'
-                : highlight
-                  ? 'text-gray-900'
-                  : 'text-gray-700'
-          }`}
-        >
-          {value}
-        </div>
+        {value ? (
+          <div
+            className={`text-sm font-semibold ${
+              expired
+                ? 'text-red-500'
+                : urgent
+                  ? 'text-amber-600'
+                  : highlight
+                    ? 'text-gray-900'
+                    : 'text-gray-700'
+            }`}
+          >
+            {value}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-400 italic">
+            {placeholder || 'Non communiqué'}
+          </div>
+        )}
       </div>
     </div>
   );
