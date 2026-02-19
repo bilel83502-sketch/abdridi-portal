@@ -50,6 +50,39 @@ model Marche {
   @@index([publicationDate])
 }
 
+model MarcheAttribue {
+  id                    String   @id @default(cuid())
+  objet                 String
+  acheteurNom           String
+  acheteurSiret         String?
+  titulaireNom          String
+  titulaireSiret        String?
+  titulaireCommune      String?
+  montant               Float?
+  dateNotification      DateTime?
+  datePublicationDonnees DateTime?
+  nature                String
+  procedure             String?
+  lieuExecution         String?
+  departement           String?
+  departementNom        String?
+  region                String?
+  codeCPV               String?
+  labelCPV              String?
+  source                String
+  sourceRef             String   @unique
+  dureeMois             Int?
+  formePrix             String?
+  createdAt             DateTime @default(now())
+
+  @@index([titulaireNom])
+  @@index([acheteurNom])
+  @@index([nature])
+  @@index([departement])
+  @@index([dateNotification])
+  @@index([montant])
+}
+
 model Alert {
   id          String   @id @default(cuid())
   userId      String

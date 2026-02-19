@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
-import { Search, LayoutGrid, Bell, Settings, LogOut, Clock } from 'lucide-react';
+import { Search, LayoutGrid, Bell, Settings, LogOut, Clock, Eye } from 'lucide-react';
 
 const tabs = [
   { href: '/marches', label: 'Consultations', icon: Search },
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutGrid },
   { href: '/alertes', label: 'Alertes', icon: Bell },
+  { href: '/concurrence', label: 'Concurrence', icon: Eye },
   { href: '/parametres', label: 'Paramètres', icon: Settings },
 ];
 
@@ -38,10 +39,11 @@ export default function Header() {
           {tabs.map(t => {
             const active = pathname === t.href || (t.href !== '/dashboard' && pathname.startsWith(t.href));
             const Icon = t.icon;
+            const isConcu = t.href === '/concurrence';
             return (
               <Link key={t.href} href={t.href} className="no-underline">
                 <div className={`flex items-center gap-[7px] px-3.5 py-[7px] rounded-md text-[13px] transition-colors ${active ? 'bg-white/[0.07] text-gray-200 font-semibold' : 'text-gray-500 hover:text-gray-400'}`}>
-                  <Icon size={15} className={active ? 'text-blue-300' : 'text-gray-600'} />
+                  <Icon size={15} className={active ? (isConcu ? 'text-violet-300' : 'text-blue-300') : 'text-gray-600'} />
                   {t.label}
                 </div>
               </Link>

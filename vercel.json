@@ -11,6 +11,10 @@
     {
       "path": "/api/sync/decp",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/sync/decp-attribue",
+      "schedule": "0 9 * * *"
     }
   ]
 }
