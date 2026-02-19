@@ -2,74 +2,104 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-@layer base {
-  * { @apply border-border; }
-  body {
-    @apply bg-bg text-txt-secondary antialiased;
-    font-family: 'Sora', system-ui, sans-serif;
-  }
-  ::selection { background: rgba(0, 194, 255, 0.15); color: #fff; }
+:root {
+  --brand: #2563EB;
+  --brand-light: #EFF6FF;
+  --gradient: linear-gradient(135deg, #2563EB, #7C3AED, #A855F7);
+  --nav: #0B0F1A;
+  --nav-light: #141A2B;
+  --nav-border: #1A2236;
+  --surface: #FFFFFF;
+  --surface-sub: #F5F6F8;
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --text: #111827;
+  --text-sec: #4B5563;
+  --text-muted: #9CA3AF;
+  --green: #059669;
+  --green-bg: #ECFDF5;
+  --amber: #D97706;
+  --amber-bg: #FFFBEB;
+  --indigo: #4F46E5;
+  --indigo-bg: #EEF2FF;
 }
 
-@layer components {
-  .input {
-    @apply w-full bg-bg-elevated border border-white/[0.06] rounded-lg px-4 py-3
-           text-sm text-txt placeholder:text-txt-faint
-           focus:outline-none focus:border-accent-cyan/30 focus:ring-1 focus:ring-accent-cyan/20
-           transition-all duration-200;
-  }
-  .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
-           bg-txt text-bg font-semibold text-sm
-           hover:bg-white hover:shadow-[0_8px_32px_rgba(255,255,255,0.1)]
-           active:scale-[0.98] transition-all duration-200;
-  }
-  .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
-           bg-transparent text-txt-secondary font-medium text-sm
-           border border-white/[0.08]
-           hover:border-accent-cyan/25 hover:text-txt hover:bg-accent-cyan/[0.04]
-           active:scale-[0.98] transition-all duration-200;
-  }
-  .btn-cyan {
-    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg
-           bg-accent-cyan text-bg font-semibold text-sm
-           hover:bg-accent-cyan/90 hover:shadow-[0_8px_32px_rgba(0,194,255,0.2)]
-           active:scale-[0.98] transition-all duration-200;
-  }
-  .card {
-    @apply bg-bg-card border border-white/[0.05] rounded-xl transition-all duration-300;
-  }
-  .card-hover {
-    @apply card hover:border-white/[0.10] hover:-translate-y-0.5
-           hover:shadow-[0_16px_48px_rgba(0,0,0,0.3)];
-  }
-  .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium;
-  }
-  .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-           text-txt-muted transition-all duration-200
-           hover:bg-white/[0.04] hover:text-txt;
-  }
-  .sidebar-link-active {
-    @apply sidebar-link bg-white/[0.04] text-txt border-l-2 border-accent-cyan;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: 'Inter', system-ui, sans-serif; }
+body { background: var(--surface-sub); color: var(--text); -webkit-font-smoothing: antialiased; }
+
+/* Input styles */
+.input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.input:focus { border-color: var(--brand); }
+.input::placeholder { color: var(--text-muted); }
+select.input { cursor: pointer; }
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 20px; border-radius: 6px; border: none;
+  background: var(--brand); color: #fff;
+  font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit;
+  transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.9; }
+.btn-gradient {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 20px; border-radius: 6px; border: none;
+  background: var(--gradient); color: #fff;
+  font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit;
+  transition: opacity 0.15s;
+}
+.btn-gradient:hover { opacity: 0.9; }
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 20px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-secondary:hover { background: var(--surface-sub); }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* Label */
+.label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--text-sec); margin-bottom: 5px; letter-spacing: 0.2px;
+}
+
+/* Nature badges */
+.badge-travaux { padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; background: var(--amber-bg); color: var(--amber); border: 1px solid #FDE68A; }
+.badge-fournitures { padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; background: var(--indigo-bg); color: var(--indigo); border: 1px solid #C7D2FE; }
+.badge-services { padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; background: var(--brand-light); color: var(--brand); border: 1px solid #BFDBFE; }
+
+/* Gradient text */
+.gradient-text {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-in { animation: fadeIn 0.4s ease-out both; }
-.animate-in-d1 { animation: fadeIn 0.4s ease-out 0.05s both; }
-.animate-in-d2 { animation: fadeIn 0.4s ease-out 0.10s both; }
-.animate-in-d3 { animation: fadeIn 0.4s ease-out 0.15s both; }
-.animate-in-d4 { animation: fadeIn 0.4s ease-out 0.20s both; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }

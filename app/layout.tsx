@@ -1,17 +1,19 @@
 import type { Metadata } from 'next';
-import { Providers } from './providers';
+import { Inter } from 'next/font/google';
 import './globals.css';
+import Providers from './providers';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'AB DRIDI — Portail Marchés Publics',
-  description: 'Portail de veille et de gestion des appels d\'offres publics. 93 sources agrégées, mises à jour 3 fois par jour.',
-  icons: { icon: '/favicon.png' },
+  description: 'Plateforme de veille B2B sur les marchés publics. 93 sources agrégées.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className="dark">
-      <body>
+    <html lang="fr">
+      <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
     </html>

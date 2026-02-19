@@ -1,42 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 
-export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q') || '';
-  const nature = searchParams.get('nature');
-  const department = searchParams.get('department');
-  const source = searchParams.get('source');
-  const status = searchParams.get('status') || 'OUVERT';
-  const sort = searchParams.get('sort') || 'publicationDate';
-  const order = searchParams.get('order') || 'desc';
+  const nature = searchParams.get('nature') || '';
+  const department = searchParams.get('department') || '';
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
+  const sort = searchParams.get('sort') || 'publicationDate';
+  const order = searchParams.get('order') || 'desc';
 
-  const where: Prisma.MarcheWhereInput = {};
-  if (q) {
-    where.OR = [
-      { title: { contains: q, mode: 'insensitive' } },
-      { buyer: { contains: q, mode: 'insensitive' } },
-      { description: { contains: q, mode: 'insensitive' } },
-      { cpvLabel: { contains: q, mode: 'insensitive' } },
-    ];
-  }
-  if (nature) where.nature = nature as any;
+  const where: any = { status: 'OUVERT' };
+  if (q) where.OR = [{ title: { contains: q, mode: 'insensitive' } }, { buyer: { contains: q, mode: 'insensitive' } }, { cpvCode: { contains: q } }, { cpvLabel: { contains: q, mode: 'insensitive' } }];
+  if (nature) where.nature = nature;
   if (department) where.department = department;
-  if (source) where.source = source;
-  if (status) where.status = status as any;
 
-  const [total, marches] = await Promise.all([
-    prisma.marche.count({ where }),
+  const [data, total] = await Promise.all([
     prisma.marche.findMany({ where, orderBy: { [sort]: order }, skip: (page - 1) * limit, take: limit }),
+    prisma.marche.count({ where }),
   ]);
 
-  return NextResponse.json({ data: marches, meta: { total, page, limit, pages: Math.ceil(total / limit) } });
+  return NextResponse.json({ data, meta: { total, page, pages: Math.ceil(total / limit) } });
 }

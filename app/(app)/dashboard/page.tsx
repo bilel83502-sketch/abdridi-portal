@@ -1,105 +1,112 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Search, Bell, TrendingUp, Clock, ChevronRight, ArrowUpRight } from 'lucide-react';
-
-const DEPARTMENTS: Record<string, string> = {
-  '06':'Alpes-Maritimes','13':'Bouches-du-Rhône','31':'Haute-Garonne','33':'Gironde',
-  '34':'Hérault','35':'Ille-et-Vilaine','38':'Isère','44':'Loire-Atlantique',
-  '59':'Nord','67':'Bas-Rhin','69':'Rhône','75':'Paris','93':'Seine-Saint-Denis',
-};
-
-function formatCurrency(v: number | null) { if (!v) return '—'; if (v >= 1e6) return `${(v/1e6).toFixed(1)}M€`; if (v >= 1e3) return `${(v/1e3).toFixed(0)}K€`; return `${v}€`; }
-function formatDate(d: string | null) { if (!d) return '—'; return new Intl.DateTimeFormat('fr-FR',{day:'numeric',month:'short',year:'numeric'}).format(new Date(d)); }
-function daysUntil(d: string | null) { if (!d) return null; return Math.ceil((new Date(d).getTime()-Date.now())/(1000*60*60*24)); }
-function getNatureColor(n: string) { const m: any = { TRAVAUX:{bg:'bg-amber-500/10',text:'text-amber-400',dot:'bg-amber-400'}, FOURNITURES:{bg:'bg-indigo-500/10',text:'text-indigo-400',dot:'bg-indigo-400'}, SERVICES:{bg:'bg-cyan-500/10',text:'text-cyan-400',dot:'bg-cyan-400'} }; return m[n]||{bg:'bg-white/5',text:'text-white/60',dot:'bg-white/40'}; }
-function getNatureLabel(n: string) { const m: any = { TRAVAUX:'Travaux',FOURNITURES:'Fournitures',SERVICES:'Services' }; return m[n]||n; }
+import { formatCurrency, formatDate, daysUntil, getNatureLabel, getNatureBadge } from '@/lib/utils';
+import { Clock } from 'lucide-react';
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
   const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('/api/dashboard').then(r=>r.json()).then(d=>{setData(d);setLoading(false);}).catch(()=>setLoading(false));
-  }, []);
+  useEffect(() => { fetch('/api/dashboard').then(r => r.json()).then(setData); }, []);
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-2 border-accent-cyan/30 border-t-accent-cyan rounded-full animate-spin"/></div>;
+  if (!data) return <div className="flex items-center justify-center h-64 text-gray-400">Chargement...</div>;
 
-  const stats = [
-    { label:'Marchés ouverts', value:data?.totalOpen||0, icon:Search, color:'text-accent-cyan', bg:'bg-accent-cyan/10' },
-    { label:'Nouveaux cette semaine', value:data?.newThisWeek||0, icon:TrendingUp, color:'text-accent-green', bg:'bg-accent-green/10' },
-    { label:'Clôturent sous 7j', value:data?.closingSoon||0, icon:Clock, color:'text-accent-amber', bg:'bg-accent-amber/10' },
-    { label:'Alertes actives', value:data?.userAlerts||0, icon:Bell, color:'text-accent-indigo', bg:'bg-accent-indigo/10' },
-  ];
+  const totalNature = data.byNature.reduce((s: number, b: any) => s + b.count, 0) || 1;
 
   return (
-    <div className="space-y-8">
-      <div className="animate-in">
-        <h1 className="text-2xl font-bold text-txt tracking-tight">Bonjour, {session?.user?.name?.split(' ')[0]||'Bienvenue'}</h1>
-        <p className="text-sm text-txt-muted mt-1">Voici un aperçu de vos marchés publics aujourd'hui.</p>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
+        <p className="text-[13px] text-gray-500 mt-0.5">Vue d'ensemble — Données issues de 93 sources, mises à jour 3×/jour</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((s,i)=>(
-          <div key={i} className="card p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center`}><s.icon size={18} className={s.color}/></div>
-              <span className="text-[10px] font-medium text-txt-faint uppercase tracking-wider">{s.label}</span>
+
+      {/* Stats bar */}
+      <div className="card p-4 px-6 mb-5 flex items-center justify-between">
+        {[
+          { label: 'Consultations ouvertes', value: data.totalOpen.toLocaleString('fr-FR') },
+          { label: 'Nouvelles cette semaine', value: data.newThisWeek.toLocaleString('fr-FR'), badge: true },
+          { label: 'Clôture < 7 jours', value: data.closingSoon.toLocaleString('fr-FR') },
+          { label: 'Vos alertes actives', value: data.userAlerts.toString() },
+        ].map((s, i) => (
+          <div key={i} className={`flex items-center gap-3 flex-1 px-4 ${i < 3 ? 'border-r border-gray-100' : ''}`}>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">{s.label}</div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold text-gray-900">{s.value}</span>
+              </div>
             </div>
-            <div className="text-3xl font-extrabold text-txt tracking-tight">{s.value.toLocaleString('fr-FR')}</div>
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 card p-0">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04]">
-            <h2 className="text-sm font-semibold text-txt">Derniers marchés publiés</h2>
-            <Link href="/marches" className="text-xs text-accent-cyan hover:text-white transition-colors flex items-center gap-1">Voir tout <ChevronRight size={12}/></Link>
+
+      <div className="grid grid-cols-[3fr_2fr] gap-3.5">
+        {/* Recent consultations */}
+        <div className="card overflow-hidden">
+          <div className="p-3.5 px-5 border-b border-gray-100 flex justify-between items-center">
+            <span className="text-[13px] font-semibold">Dernières consultations publiées</span>
+            <Link href="/marches" className="text-xs text-blue-600 font-medium no-underline">Tout voir →</Link>
           </div>
-          <div className="divide-y divide-white/[0.04]">
-            {data?.recentMarches?.map((m:any,i:number)=>{
-              const nc=getNatureColor(m.nature); const days=daysUntil(m.deadline);
-              return (
-                <div key={i} className="px-5 py-4 hover:bg-white/[0.02] transition-colors">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-txt truncate">{m.title}</p>
-                      <p className="text-xs text-txt-muted mt-1">{m.buyer} · {DEPARTMENTS[m.department]||m.department} ({m.department})</p>
+          {data.recentMarches.slice(0, 4).map((m: any, i: number) => {
+            const dl = daysUntil(m.deadline);
+            return (
+              <div key={m.id} className={`p-3 px-5 ${i < 3 ? 'border-b border-gray-100' : ''}`}>
+                <div className="flex justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex gap-1.5 mb-0.5 items-center">
+                      <span className={getNatureBadge(m.nature)}>{getNatureLabel(m.nature)}</span>
+                      <span className="text-[10px] text-gray-400 font-mono">{m.sourceRef || m.source}</span>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <span className={`badge ${nc.bg} ${nc.text}`}><span className={`w-1.5 h-1.5 rounded-full ${nc.dot}`}/>{getNatureLabel(m.nature)}</span>
-                      <p className="text-sm font-bold text-txt mt-1">{formatCurrency(m.estimatedValue)}</p>
+                    <p className="text-[13px] font-semibold text-gray-900 truncate mt-0.5">{m.title}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{m.buyer} — {m.departmentName || m.department}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[13px] font-semibold">{formatCurrency(m.value)}</div>
+                    <div className={`text-[10px] mt-0.5 ${dl !== null && dl <= 7 ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>
+                      {dl !== null ? `${dl}j restants` : '—'}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-[11px] text-txt-faint">
-                    <span>Source: {m.source}</span><span>·</span><span>Publié {formatDate(m.publicationDate)}</span>
-                    {days!==null&&<><span>·</span><span className={days<=7?'text-accent-amber font-medium':''}>{days>0?`${days}j restants`:'Expiré'}</span></>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {/* By nature */}
+          <div className="card p-5">
+            <h3 className="text-[13px] font-semibold mb-3.5">Répartition par nature</h3>
+            {data.byNature.map((n: any, i: number) => {
+              const pct = Math.round((n.count / totalNature) * 100);
+              const colors: Record<string, string> = { TRAVAUX: '#D97706', SERVICES: '#2563EB', FOURNITURES: '#4F46E5' };
+              return (
+                <div key={i} className="mb-3">
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="font-medium">{getNatureLabel(n.nature)}</span>
+                    <span className="text-gray-400">{pct}%</span>
+                  </div>
+                  <div className="h-1 bg-gray-100 rounded-sm">
+                    <div className="h-full rounded-sm" style={{ width: `${pct}%`, background: colors[n.nature] || '#9CA3AF' }} />
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-        <div className="space-y-6">
+
+          {/* Top departments */}
           <div className="card p-5">
-            <h3 className="text-sm font-semibold text-txt mb-4">Par nature</h3>
-            <div className="space-y-3">
-              {data?.byNature?.map((n:any,i:number)=>{
-                const nc=getNatureColor(n.nature); const pct=Math.round((n.count/(data.totalOpen||1))*100);
-                return (<div key={i}><div className="flex justify-between text-xs mb-1.5"><span className={nc.text}>{getNatureLabel(n.nature)}</span><span className="text-txt-faint">{n.count} ({pct}%)</span></div><div className="h-1.5 bg-white/[0.04] rounded-full overflow-hidden"><div className={`h-full rounded-full ${nc.dot}`} style={{width:`${pct}%`}}/></div></div>);
-              })}
-            </div>
-          </div>
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold text-txt mb-4">Actions rapides</h3>
-            <div className="space-y-2">
-              <Link href="/marches" className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                <Search size={16} className="text-accent-cyan"/><span className="text-xs text-txt-secondary">Rechercher un marché</span><ArrowUpRight size={12} className="ml-auto text-txt-faint"/></Link>
-              <Link href="/alertes" className="flex items-center gap-3 p-3 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
-                <Bell size={16} className="text-accent-indigo"/><span className="text-xs text-txt-secondary">Créer une alerte</span><ArrowUpRight size={12} className="ml-auto text-txt-faint"/></Link>
-            </div>
+            <h3 className="text-[13px] font-semibold mb-3">Top départements (30 derniers jours)</h3>
+            <table className="w-full">
+              <tbody>
+                {data.topDepartments.slice(0, 5).map((d: any, i: number) => (
+                  <tr key={i} className={i < 4 ? 'border-b border-gray-100' : ''}>
+                    <td className="py-[7px] text-xs font-semibold text-gray-500 w-7">{d.department}</td>
+                    <td className="py-[7px] text-xs">{d.department}</td>
+                    <td className="py-[7px] text-xs font-semibold text-right">{d.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

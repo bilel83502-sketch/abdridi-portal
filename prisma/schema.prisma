@@ -8,114 +8,60 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  name           String?
-  company        String?
-  phone          String?
-  passwordHash   String
-  role           Role      @default(USER)
-  plan           Plan      @default(VEILLE)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  alerts         Alert[]
-  savedSearches  SavedSearch[]
-  favorites      Favorite[]
-  sessions       Session[]
-  @@map("users")
-}
-
-model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@map("sessions")
+  email        String   @unique
+  name         String
+  company      String?
+  phone        String?
+  siret        String?
+  sector       String?
+  passwordHash String
+  role         String   @default("USER")
+  plan         String   @default("VEILLE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  alerts       Alert[]
 }
-
-enum Role { USER ADMIN }
-enum Plan { VEILLE MONTAGE STRATEGIE }
 
 model Marche {
-  id              String       @id @default(cuid())
-  reference       String?      @unique
+  id              String   @id @default(cuid())
   title           String
-  description     String?      @db.Text
   buyer           String
-  buyerSiret      String?
+  nature          String
   department      String
+  departmentName  String?
   region          String?
-  nature          Nature
-  type            MarcheType   @default(APPEL_OFFRES)
+  value           Float?
+  deadline        DateTime?
+  publicationDate DateTime?
+  source          String
+  sourceRef       String?
+  procedureType   String?
   cpvCode         String?
   cpvLabel        String?
-  estimatedValue  Float?
-  currency        String       @default("EUR")
-  deadline        DateTime?
-  publicationDate DateTime
-  source          String
-  sourceUrl       String?      @db.Text
-  status          MarcheStatus @default(OUVERT)
-  lots            Int?
+  lots            Int      @default(1)
   duration        String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  favorites       Favorite[]
-  @@index([department])
-  @@index([nature])
-  @@index([publicationDate])
-  @@index([deadline])
-  @@index([cpvCode])
-  @@index([source])
-  @@index([status])
-  @@map("marches")
-}
+  status          String   @default("OUVERT")
+  createdAt       DateTime @default(now())
 
-enum Nature { TRAVAUX FOURNITURES SERVICES }
-enum MarcheType { APPEL_OFFRES PROCEDURE_ADAPTEE MARCHE_NEGOCIE DIALOGUE_COMPETITIF CONCESSION AUTRE }
-enum MarcheStatus { OUVERT FERME ATTRIBUE ANNULE }
+  @@index([nature])
+  @@index([department])
+  @@index([status])
+  @@index([publicationDate])
+}
 
 model Alert {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name          String
-  active        Boolean   @default(true)
-  frequency     AlertFreq @default(QUOTIDIEN)
-  keywords      String[]
-  departments   String[]
-  natures       Nature[]
-  cpvCodes      String[]
-  minValue      Float?
-  maxValue      Float?
-  sources       String[]
-  lastSentAt    DateTime?
-  matchCount    Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  @@map("alerts")
-}
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  keywords    String[]
+  natures     String[]
+  departments String[]
+  frequency   String   @default("DAILY")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-enum AlertFreq { IMMEDIAT QUOTIDIEN HEBDOMADAIRE }
-
-model SavedSearch {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  filters   Json
-  createdAt DateTime @default(now())
-  @@map("saved_searches")
-}
-
-model Favorite {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  marcheId  String
-  marche    Marche   @relation(fields: [marcheId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  @@unique([userId, marcheId])
-  @@map("favorites")
+  @@index([userId])
 }
