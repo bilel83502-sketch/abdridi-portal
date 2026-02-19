@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, SlidersHorizontal, Clock, Building2, MapPin, ExternalLink, FileText } from 'lucide-react';
 import { formatCurrency, formatDate, daysUntil, getNatureLabel, getNatureBadge } from '@/lib/utils';
 
 export default function MarchesPage() {
+  const router = useRouter();
   const [marches, setMarches] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, page: 1, pages: 0 });
   const [q, setQ] = useState('');
@@ -117,7 +119,7 @@ export default function MarchesPage() {
           {marches.map(m => {
             const dl = daysUntil(m.deadline);
             return (
-              <div key={m.id} className="card p-4 px-5 cursor-pointer hover:border-gray-300 transition-colors">
+              <div key={m.id} onClick={() => router.push(`/marches/${m.id}`)} className="card p-4 px-5 cursor-pointer hover:border-gray-300 transition-colors">
                 <div className="flex justify-between gap-5">
                   <div className="flex-1 min-w-0">
                     <div className="flex gap-[5px] mb-1.5 items-center flex-wrap">
@@ -143,7 +145,10 @@ export default function MarchesPage() {
                         <Clock size={13} /> {dl !== null ? `${dl} jours` : '—'}
                       </div>
                     </div>
-                    <span className="text-xs text-blue-600 font-medium flex items-center gap-1 justify-end mt-2 cursor-pointer">
+                    <span
+                      onClick={(e) => { e.stopPropagation(); router.push(`/marches/${m.id}`); }}
+                      className="text-xs text-blue-600 font-medium flex items-center gap-1 justify-end mt-2 cursor-pointer hover:text-blue-800"
+                    >
                       Voir la consultation <ExternalLink size={11} />
                     </span>
                   </div>
