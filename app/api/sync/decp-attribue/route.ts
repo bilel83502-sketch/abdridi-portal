@@ -16,9 +16,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    // For cron: fetch 2000/source, 12 months (fits in 60s)
+    // For cron: fetch 500/source, 12 months (fits in 60s on free plan)
     const records = await fetchAllAttribueRecords({
-      limitPerSource: 2000,
+      limitPerSource: 500,
       monthsBack: 12,
     });
 
