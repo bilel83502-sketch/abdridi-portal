@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchBoampRecords } from '@/lib/boamp';
 
+export const maxDuration = 60; // Vercel free plan max
+
 const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: Request) {
@@ -20,21 +22,16 @@ export async function GET(req: Request) {
     let updated = 0;
     let skipped = 0;
 
-    for (const record of records) {
-      if (!record.sourceRef) {
-        skipped++;
-        continue;
-      }
-
-      try {
-        const existing = await prisma.marche.findUnique({
-          where: { sourceRef: record.sourceRef },
-        });
-
-        if (existing) {
-          await prisma.marche.update({
+    // Process in batches of 50 using $transaction for better performance
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+      const batch = records.slice(i, i + BATCH_SIZE);
+      const ops = batch
+        .filter((r) => r.sourceRef)
+        .map((record) =>
+          prisma.marche.upsert({
             where: { sourceRef: record.sourceRef },
-            data: {
+            update: {
               title: record.title,
               buyer: record.buyer,
               nature: record.nature,
@@ -50,19 +47,43 @@ export async function GET(req: Request) {
               lots: record.lots,
               duration: record.duration,
             },
-          });
-          updated++;
-        } else {
-          await prisma.marche.create({ data: record });
-          created++;
-        }
+            create: record,
+          })
+        );
+
+      try {
+        const results = await prisma.$transaction(ops);
+        // Count creates vs updates (approximate: if id is new, it's created)
+        created += results.length;
       } catch (e: any) {
-        // Unique constraint violation — skip silently
-        if (e?.code === 'P2002') {
-          skipped++;
-        } else {
-          console.error(`[BOAMP] Error on ${record.sourceRef}:`, e?.message);
-          skipped++;
+        // Fallback: process individually on batch failure
+        for (const record of batch) {
+          if (!record.sourceRef) { skipped++; continue; }
+          try {
+            await prisma.marche.upsert({
+              where: { sourceRef: record.sourceRef },
+              update: {
+                title: record.title,
+                buyer: record.buyer,
+                nature: record.nature,
+                department: record.department,
+                departmentName: record.departmentName,
+                region: record.region,
+                value: record.value,
+                deadline: record.deadline,
+                publicationDate: record.publicationDate,
+                procedureType: record.procedureType,
+                cpvCode: record.cpvCode,
+                cpvLabel: record.cpvLabel,
+                lots: record.lots,
+                duration: record.duration,
+              },
+              create: record,
+            });
+            created++;
+          } catch {
+            skipped++;
+          }
         }
       }
     }
@@ -79,8 +100,7 @@ export async function GET(req: Request) {
 
     const summary = {
       total: records.length,
-      created,
-      updated,
+      upserted: created,
       skipped,
       expired: expired.count,
       syncedAt: new Date().toISOString(),
