@@ -7,6 +7,10 @@
     {
       "path": "/api/sync/ted",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/sync/decp",
+      "schedule": "0 8 * * *"
     }
   ]
 }

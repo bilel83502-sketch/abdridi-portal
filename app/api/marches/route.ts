@@ -12,8 +12,16 @@ export async function GET(req: Request) {
   const limit = parseInt(searchParams.get('limit') || '20');
   const sort = searchParams.get('sort') || 'publicationDate';
   const order = searchParams.get('order') || 'desc';
+  const status = searchParams.get('status') || '';
+  const source = searchParams.get('source') || '';
 
-  const where: any = { status: 'OUVERT' };
+  const where: any = {};
+  if (status) {
+    where.status = status;
+  }
+  if (source) {
+    where.source = source;
+  }
   if (q) where.OR = [{ title: { contains: q, mode: 'insensitive' } }, { buyer: { contains: q, mode: 'insensitive' } }, { cpvCode: { contains: q } }, { cpvLabel: { contains: q, mode: 'insensitive' } }];
   if (nature) where.nature = nature;
   if (department) where.department = department;

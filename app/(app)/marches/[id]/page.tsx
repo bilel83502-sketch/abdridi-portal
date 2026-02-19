@@ -39,6 +39,10 @@ function buildSourceUrl(sourceRef: string | null): string | null {
     if (!pubNumber) return null;
     return `https://ted.europa.eu/fr/notice/-/detail/${pubNumber}`;
   }
+  if (sourceRef.startsWith('DECP-')) {
+    // Les DECP n'ont pas de page individuelle publique, lien vers le dataset
+    return `https://data.economie.gouv.fr/explore/dataset/decp_augmente/table/`;
+  }
   return null;
 }
 
@@ -107,6 +111,10 @@ export default function MarcheDetailPage() {
           {marche.status === 'OUVERT' ? (
             <span className="px-2 py-[2px] rounded text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 font-semibold">
               OUVERT
+            </span>
+          ) : marche.status === 'ATTRIBUE' ? (
+            <span className="px-2 py-[2px] rounded text-[10px] bg-blue-50 text-blue-600 border border-blue-200 font-semibold">
+              ATTRIBUÉ
             </span>
           ) : (
             <span className="px-2 py-[2px] rounded text-[10px] bg-red-50 text-red-500 border border-red-200 font-semibold">
