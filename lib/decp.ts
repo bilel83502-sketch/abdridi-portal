@@ -228,7 +228,7 @@ export async function fetchDecpRecords(options?: {
       limit: take.toString(),
       offset: offset.toString(),
       order_by: 'datenotification desc',
-      where: `datenotification>='${sinceStr}' AND datenotification<='2025-12-31'`,
+      where: `datenotification>='${sinceStr}'`,
     });
 
     const url = `${DECP_API}?${params}`;
@@ -236,7 +236,6 @@ export async function fetchDecpRecords(options?: {
 
     const res = await fetch(url, {
       headers: { Accept: 'application/json' },
-      next: { revalidate: 0 },
     });
 
     if (!res.ok) {
