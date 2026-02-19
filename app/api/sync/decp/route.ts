@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const records = await fetchDecpRecords({ limit: 500, monthsBack: 6 });
+    const records = await fetchDecpRecords({ limit: 500, monthsBack: 36 });
 
     let upserted = 0;
     let skipped = 0;

@@ -208,7 +208,7 @@ export async function fetchDecpRecords(options?: {
   monthsBack?: number;
 }): Promise<DecpMarche[]> {
   const limit = options?.limit ?? 500;
-  const monthsBack = options?.monthsBack ?? 6;
+  const monthsBack = options?.monthsBack ?? 36; // DECP data has ~2 year lag, go back 3 years
 
   // Calculer la date depuis laquelle récupérer
   const since = new Date();
