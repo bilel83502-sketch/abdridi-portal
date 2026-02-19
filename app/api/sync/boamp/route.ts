@@ -19,7 +19,6 @@ export async function GET(req: Request) {
     const records = await fetchBoampRecords({ limit: 1000, daysBack: 30 });
 
     let created = 0;
-    let updated = 0;
     let skipped = 0;
 
     // Process in batches of 50 using $transaction for better performance
