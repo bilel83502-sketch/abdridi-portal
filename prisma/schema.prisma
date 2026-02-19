@@ -35,7 +35,7 @@ model Marche {
   deadline        DateTime?
   publicationDate DateTime?
   source          String
-  sourceRef       String?
+  sourceRef       String?   @unique
   procedureType   String?
   cpvCode         String?
   cpvLabel        String?
