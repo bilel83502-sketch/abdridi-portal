@@ -27,12 +27,19 @@ import {
   getNatureBadge,
 } from '@/lib/utils';
 
-function buildBoampUrl(sourceRef: string | null): string | null {
+function buildSourceUrl(sourceRef: string | null): string | null {
   if (!sourceRef) return null;
-  // sourceRef format: "BOAMP-26-17633" → idweb: "26-17633"
-  const idweb = sourceRef.replace('BOAMP-', '');
-  if (!idweb) return null;
-  return `https://www.boamp.fr/pages/avis/?q=idweb:${idweb}`;
+  if (sourceRef.startsWith('BOAMP-')) {
+    const idweb = sourceRef.replace('BOAMP-', '');
+    if (!idweb) return null;
+    return `https://www.boamp.fr/pages/avis/?q=idweb:${idweb}`;
+  }
+  if (sourceRef.startsWith('TED-')) {
+    const pubNumber = sourceRef.replace('TED-', '');
+    if (!pubNumber) return null;
+    return `https://ted.europa.eu/fr/notice/-/detail/${pubNumber}`;
+  }
+  return null;
 }
 
 export default function MarcheDetailPage() {
@@ -74,7 +81,7 @@ export default function MarcheDetailPage() {
   }
 
   const dl = daysUntil(marche.deadline);
-  const boampUrl = buildBoampUrl(marche.sourceRef);
+  const sourceUrl = buildSourceUrl(marche.sourceRef);
 
   return (
     <div>
@@ -195,9 +202,9 @@ export default function MarcheDetailPage() {
           {/* Actions */}
           <div className="card p-6">
             <h2 className="text-sm font-bold mb-4">Actions</h2>
-            {boampUrl && (
+            {sourceUrl && (
               <a
-                href={boampUrl}
+                href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-gradient !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"
@@ -206,9 +213,9 @@ export default function MarcheDetailPage() {
                 Voir l'annonce originale
               </a>
             )}
-            {boampUrl ? (
+            {sourceUrl ? (
               <a
-                href={boampUrl}
+                href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"

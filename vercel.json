@@ -3,6 +3,10 @@
     {
       "path": "/api/sync/boamp",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/sync/ted",
+      "schedule": "0 7 * * *"
     }
   ]
 }
