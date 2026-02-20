@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,87 +11,195 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
     const res = await signIn('credentials', { email, password, redirect: false });
-    if (res?.error) { setError('Email ou mot de passe incorrect.'); setLoading(false); }
-    else router.push('/dashboard');
+    if (res?.error) {
+      setError('Email ou mot de passe incorrect.');
+      setLoading(false);
+    } else {
+      router.push('/dashboard');
+    }
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left - Form */}
-      <div className="flex-1 flex items-center justify-center p-12 bg-white">
-        <div className="w-full max-w-[400px]">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 mb-12">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center font-extrabold text-[13px] text-white" style={{ background: 'var(--gradient)' }}>AB</div>
-            <div>
-              <span className="text-base font-bold text-gray-900">AB </span>
-              <span className="text-base font-bold gradient-text">DRIDI</span>
-            </div>
-          </div>
+    <div className="login-page">
+      {/* Left panel - Desktop only */}
+      <div className="login-left">
+        {/* Decorative elements */}
+        <div className="login-deco login-deco-1" />
+        <div className="login-deco login-deco-2" />
+        <div className="login-deco login-deco-3" />
+        <div className="login-deco login-deco-4" />
 
-          <h1 className="text-[22px] font-bold text-gray-900 mb-1.5">Connexion au portail</h1>
-          <p className="text-sm text-gray-500 mb-7">Accédez à votre espace de veille sur les marchés publics.</p>
-
-          {error && <div className="mb-4 p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-700">{error}</div>}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="label">Email professionnel</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input" placeholder="vous@entreprise.com" required />
-            </div>
-            <div>
-              <div className="flex justify-between mb-1.5">
-                <label className="label mb-0">Mot de passe</label>
-                <span className="text-[11px] text-blue-600 cursor-pointer">Oublié ?</span>
-              </div>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input" placeholder="••••••••" required />
-            </div>
-            <button type="submit" disabled={loading} className="btn-gradient w-full !py-3 !text-sm disabled:opacity-50">
-              {loading ? 'Connexion...' : 'Se connecter'}
-            </button>
-          </form>
-
-          <p className="text-center text-[13px] text-gray-500 mt-6">
-            Pas encore client ? <Link href="/auth/register" className="text-blue-600 font-semibold">Demander un accès</Link>
+        <div className="login-left-content">
+          <Image
+            src="/logo.png"
+            alt="AB DRIDI"
+            width={120}
+            height={120}
+            className="login-left-logo"
+          />
+          <h1 className="login-left-title">AB DRIDI</h1>
+          <p className="login-left-slogan">
+            Votre plateforme de veille sur les marchés publics
           </p>
-
-          <div className="mt-6 p-2.5 px-3.5 rounded-md bg-gray-50 border border-gray-200">
-            <p className="text-[11px] text-gray-500"><span className="font-bold text-emerald-600">Démo</span> — demo@abdridi.com / demo2026</p>
+          <div className="login-left-stats">
+            {[
+              { n: '500K+', t: 'consultations/an' },
+              { n: '93', t: 'sources officielles' },
+              { n: '101', t: 'départements couverts' },
+            ].map((s, i) => (
+              <div key={i} className="login-left-stat">
+                <div className="login-left-stat-n">{s.n}</div>
+                <div className="login-left-stat-t">{s.t}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Right - Dark panel */}
-      <div className="w-[44%] relative overflow-hidden flex flex-col justify-center px-14 py-14" style={{ background: 'var(--nav)' }}>
-        <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: 'var(--gradient)' }} />
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full" style={{ background: 'rgba(37,99,235,0.08)' }} />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full" style={{ background: 'rgba(124,58,237,0.06)' }} />
+      {/* Right panel - Form */}
+      <div className="login-right">
+        {/* Mobile header */}
+        <div className="login-mobile-header">
+          <div className="login-mobile-logo-wrap">
+            <Image
+              src="/logo.png"
+              alt="AB DRIDI"
+              width={60}
+              height={60}
+            />
+          </div>
+          <h1 className="login-mobile-title">AB DRIDI</h1>
+          <p className="login-mobile-subtitle">Espace Client</p>
+        </div>
 
-        <div className="relative z-10">
-          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-[2px] mb-3.5">Plateforme de veille B2B</p>
-          <h2 className="text-[26px] font-bold text-gray-100 leading-[1.35] mb-3.5">
-            Identifiez les marchés publics pertinents pour votre entreprise.
-          </h2>
-          <p className="text-sm text-gray-400 mb-9 leading-relaxed">
-            AB DRIDI agrège 93 sources officielles et vous alerte en temps réel sur les consultations qui correspondent à votre activité.
-          </p>
-          <div className="border-t border-gray-800 pt-6 flex gap-8">
-            {[
-              { n: '500K+', t: 'consultations/an' },
-              { n: '93', t: 'sources' },
-              { n: '101', t: 'départements' },
-            ].map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="text-xl font-bold text-gray-100">{s.n}</div>
-                <div className="text-[11px] text-gray-500 mt-0.5">{s.t}</div>
+        <div className="login-form-wrapper">
+          {/* Desktop logo in form */}
+          <div className="login-form-logo">
+            <Image
+              src="/logo.png"
+              alt="AB DRIDI"
+              width={48}
+              height={48}
+              className="login-form-logo-img"
+            />
+            <div>
+              <div className="login-form-brand">AB DRIDI</div>
+              <div className="login-form-brand-sub">Espace Client</div>
+            </div>
+          </div>
+
+          <h2 className="login-form-title">Connexion</h2>
+
+          {error && (
+            <div className="login-error">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="15" y1="9" x2="9" y2="15" />
+                <line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-field">
+              <label className="login-label">Email professionnel</label>
+              <div className="login-input-wrap">
+                <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="M22 7l-10 6L2 7" />
+                </svg>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="login-input"
+                  placeholder="vous@entreprise.com"
+                  required
+                  autoComplete="email"
+                />
               </div>
-            ))}
+            </div>
+
+            <div className="login-field">
+              <div className="login-label-row">
+                <label className="login-label">Mot de passe</label>
+                <a href="mailto:contact@abdridi.com?subject=Réinitialisation mot de passe" className="login-forgot">
+                  Mot de passe oublié ?
+                </a>
+              </div>
+              <div className="login-input-wrap">
+                <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0110 0v4" />
+                </svg>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="login-input login-input-pw"
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="login-eye-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Masquer' : 'Afficher'}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" disabled={loading} className="login-submit">
+              {loading ? (
+                <>
+                  <svg className="login-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                  </svg>
+                  Connexion en cours...
+                </>
+              ) : (
+                'Se connecter'
+              )}
+            </button>
+          </form>
+
+          <div className="login-separator">
+            <span>ou</span>
+          </div>
+
+          <a
+            href="mailto:contact@abdridi.com?subject=Demande d'essai gratuit – AB DRIDI&body=Bonjour,%0A%0AJe souhaite demander un essai gratuit de la plateforme AB DRIDI.%0A%0AMerci."
+            className="login-create-account"
+          >
+            Demander un essai gratuit
+          </a>
+
+          <div className="login-demo">
+            <span className="login-demo-badge">Démo</span>
+            demo@abdridi.com / demo2026
           </div>
         </div>
       </div>
