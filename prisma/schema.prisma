@@ -15,12 +15,19 @@ model User {
   phone        String?
   siret        String?
   sector       String?
-  passwordHash String
+  passwordHash String?
   role         String   @default("USER")
-  plan         String   @default("VEILLE")
+  plan         String   @default("DECOUVERTE")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
   alerts       Alert[]
+
+  // Stripe
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
 }
 
 model Marche {
