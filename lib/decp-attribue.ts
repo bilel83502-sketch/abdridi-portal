@@ -227,9 +227,11 @@ function mapDecpV3Record(r: any): AttribueRecord | null {
 export async function fetchDecpV3Records(options?: {
   limit?: number;
   monthsBack?: number;
+  startOffset?: number;
 }): Promise<AttribueRecord[]> {
   const limit = options?.limit ?? 5000;
   const monthsBack = options?.monthsBack ?? 12;
+  const startOffset = options?.startOffset ?? 0;
 
   const since = new Date();
   since.setMonth(since.getMonth() - monthsBack);
@@ -237,7 +239,7 @@ export async function fetchDecpV3Records(options?: {
 
   const allRecords: AttribueRecord[] = [];
   const seenRefs = new Set<string>();
-  let offset = 0;
+  let offset = startOffset;
   const pageSize = 100;
 
   while (allRecords.length < limit) {
@@ -337,9 +339,11 @@ function mapBoampAttribRecord(r: any): AttribueRecord | null {
 export async function fetchBoampAttribRecords(options?: {
   limit?: number;
   daysBack?: number;
+  startOffset?: number;
 }): Promise<AttribueRecord[]> {
   const limit = options?.limit ?? 5000;
   const daysBack = options?.daysBack ?? 365; // 12 mois
+  const startOffset = options?.startOffset ?? 0;
 
   const since = new Date();
   since.setDate(since.getDate() - daysBack);
@@ -347,7 +351,7 @@ export async function fetchBoampAttribRecords(options?: {
 
   const allRecords: AttribueRecord[] = [];
   const seenRefs = new Set<string>();
-  let offset = 0;
+  let offset = startOffset;
   const pageSize = 100;
 
   while (allRecords.length < limit) {

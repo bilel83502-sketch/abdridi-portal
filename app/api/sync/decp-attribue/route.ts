@@ -81,16 +81,19 @@ export async function GET(req: Request) {
   }
 
   // Use ?source=boamp or ?source=decp to sync one at a time
+  // Use ?page=0,1,2... to paginate (each page = 500 records)
   const { searchParams } = new URL(req.url);
   const source = searchParams.get('source') || 'boamp'; // default to boamp (best data)
+  const pageNum = parseInt(searchParams.get('page') || '0');
+  const batchSize = 500;
 
   try {
     let records: AttribueRecord[];
 
     if (source === 'decp') {
-      records = await fetchDecpV3Records({ limit: 500, monthsBack: 12 });
+      records = await fetchDecpV3Records({ limit: batchSize, monthsBack: 12, startOffset: pageNum * batchSize });
     } else {
-      records = await fetchBoampAttribRecords({ limit: 500, daysBack: 365 });
+      records = await fetchBoampAttribRecords({ limit: batchSize, daysBack: 365, startOffset: pageNum * batchSize });
     }
 
     const { upserted, skipped } = await upsertRecords(records);
@@ -98,6 +101,8 @@ export async function GET(req: Request) {
 
     const summary = {
       source,
+      page: pageNum,
+      offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
       fetched: records.length,
       upserted,
       skipped,
