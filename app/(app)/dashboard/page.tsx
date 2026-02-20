@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatCurrency, formatDate, daysUntil, getNatureLabel, getNatureBadge } from '@/lib/utils';
 import { Clock } from 'lucide-react';
+import Image from 'next/image';
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -16,9 +17,12 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
-        <p className="text-[13px] text-gray-500 mt-0.5">Vue d'ensemble — Données issues de 93 sources, mises à jour 3×/jour</p>
+      <div className="mb-6 flex items-center gap-3">
+        <Image src="/logo.png" alt="AB DRIDI" width={32} height={32} className="rounded-md" />
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
+          <p className="text-[13px] text-gray-500 mt-0.5">Vue d'ensemble — Données issues de 93 sources, mises à jour 3×/jour</p>
+        </div>
       </div>
 
       {/* Stats bar */}
