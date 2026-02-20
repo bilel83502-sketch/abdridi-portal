@@ -39,7 +39,7 @@ const plans = [
       '93 sources officielles',
       'Export des données',
     ],
-    negative: [],
+    negative: [] as string[],
   },
   {
     id: 'MONTAGE',
@@ -57,7 +57,7 @@ const plans = [
       'Analyse détaillée DCE',
       'Support prioritaire',
     ],
-    negative: [],
+    negative: [] as string[],
   },
 ];
 
