@@ -5,9 +5,9 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { Search, LayoutGrid, Bell, Settings, LogOut, Eye, Menu, X } from 'lucide-react';
+import { Search, LayoutGrid, Bell, Settings, LogOut, Eye, Menu, X, Shield, CreditCard } from 'lucide-react';
 
-const tabs = [
+const baseTabs = [
   { href: '/marches', label: 'Consultations', icon: Search },
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutGrid },
   { href: '/alertes', label: 'Alertes', icon: Bell },
@@ -19,15 +19,20 @@ export default function Header() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const user = session?.user as any;
+  const isAdmin = user?.role === 'ADMIN';
   const initials = user?.company ? user.company.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AB';
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  // Build tabs: add Admin tab for admins
+  const tabs = isAdmin
+    ? [...baseTabs, { href: '/admin', label: 'Admin', icon: Shield }]
+    : baseTabs;
 
-  // Prevent body scroll when menu is open
+  // Check if user is on free plan (no active subscription, not admin)
+  const isFreePlan = !isAdmin && (user?.plan === 'DECOUVERTE' || (!user?.plan));
+
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = 'hidden';
@@ -39,6 +44,37 @@ export default function Header() {
 
   return (
     <>
+      {/* Subscription banner for free users */}
+      {isFreePlan && (
+        <div style={{
+          background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontSize: 13,
+          color: '#fff',
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <CreditCard size={14} />
+          <span>Vous êtes en plan Découverte</span>
+          <span style={{ opacity: 0.7 }}>—</span>
+          <Link
+            href="/abonnement"
+            style={{
+              color: '#fff',
+              fontWeight: 700,
+              textDecoration: 'underline',
+              textUnderlineOffset: '2px',
+            }}
+          >
+            Passez au plan Veille pour un accès complet
+          </Link>
+        </div>
+      )}
+
       <header className="sticky top-0 z-50" style={{ background: 'var(--nav)' }}>
         {/* Gradient line */}
         <div className="h-[2px]" style={{ background: 'var(--gradient)' }} />
@@ -46,13 +82,7 @@ export default function Header() {
         <div className="max-w-[1220px] mx-auto px-4 md:px-8 flex items-center h-[52px]">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2.5 mr-9 no-underline shrink-0">
-            <Image
-              src="/logo.png"
-              alt="AB DRIDI"
-              width={36}
-              height={36}
-              className="rounded-md"
-            />
+            <Image src="/logo.png" alt="AB DRIDI" width={36} height={36} className="rounded-md" />
             <span className="text-[14px] font-bold text-white">AB DRIDI</span>
           </Link>
 
@@ -62,10 +92,11 @@ export default function Header() {
               const active = pathname === t.href || (t.href !== '/dashboard' && pathname.startsWith(t.href));
               const Icon = t.icon;
               const isConcu = t.href === '/concurrence';
+              const isAdminTab = t.href === '/admin';
               return (
                 <Link key={t.href} href={t.href} className="no-underline">
                   <div className={`flex items-center gap-[7px] px-3.5 py-[7px] rounded-md text-[13px] transition-colors ${active ? 'bg-white/[0.07] text-gray-200 font-semibold' : 'text-gray-500 hover:text-gray-400'}`}>
-                    <Icon size={15} className={active ? (isConcu ? 'text-violet-300' : 'text-blue-300') : 'text-gray-600'} />
+                    <Icon size={15} className={active ? (isConcu ? 'text-violet-300' : isAdminTab ? 'text-purple-300' : 'text-blue-300') : 'text-gray-600'} />
                     {t.label}
                   </div>
                 </Link>
@@ -96,11 +127,7 @@ export default function Header() {
 
           {/* Mobile hamburger */}
           <div className="ml-auto flex items-center">
-            <button
-              className="header-hamburger"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Menu"
-            >
+            <button className="header-hamburger" onClick={() => setMobileOpen(true)} aria-label="Menu">
               <Menu size={22} />
             </button>
           </div>
@@ -136,6 +163,16 @@ export default function Header() {
                 </Link>
               );
             })}
+
+            {/* Subscription link in mobile menu */}
+            <Link
+              href="/abonnement"
+              className={`header-mobile-link ${pathname === '/abonnement' ? 'header-mobile-link-active' : ''}`}
+              onClick={() => setMobileOpen(false)}
+            >
+              <CreditCard size={18} />
+              Abonnement
+            </Link>
 
             <div className="header-mobile-bottom">
               <div className="header-mobile-user">

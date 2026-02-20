@@ -202,6 +202,30 @@ select.input { cursor: pointer; }
 .login-form-title {
   font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 24px;
 }
+.login-google-btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.15s;
+  margin-bottom: 0;
+}
+.login-google-btn:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
 .login-error {
   display: flex; align-items: center; gap: 8px;
   padding: 12px 14px; border-radius: 8px;

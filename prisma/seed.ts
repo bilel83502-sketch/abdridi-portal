@@ -4,23 +4,25 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Users
-  const adminHash = await bcrypt.hash('admin2026', 12);
-  const demoHash = await bcrypt.hash('demo2026', 12);
+  // Delete ALL existing users and their alerts
+  await prisma.alert.deleteMany({});
+  await prisma.user.deleteMany({});
 
-  await prisma.user.upsert({
-    where: { email: 'admin@abdridi.com' },
-    update: {},
-    create: { email: 'admin@abdridi.com', name: 'Admin AB DRIDI', company: 'AB DRIDI', passwordHash: adminHash, role: 'ADMIN', plan: 'STRATEGIE', sector: 'Conseil', siret: '987 654 321 00010' },
+  // Create single admin account
+  const adminHash = await bcrypt.hash('Bilel2004', 12);
+  await prisma.user.create({
+    data: {
+      email: 'bilel83502@gmail.com',
+      name: 'Bilel Dridi',
+      company: 'AB DRIDI',
+      passwordHash: adminHash,
+      role: 'ADMIN',
+      plan: 'MONTAGE',
+      sector: 'Conseil',
+    },
   });
 
-  await prisma.user.upsert({
-    where: { email: 'demo@abdridi.com' },
-    update: {},
-    create: { email: 'demo@abdridi.com', name: 'Jean Dupont', company: 'Entreprise Démo SAS', passwordHash: demoHash, role: 'USER', plan: 'VEILLE', phone: '07 00 00 00 00', sector: 'BTP', siret: '123 456 789 00012' },
-  });
-
-  // Marchés
+  // Marchés (upsert to avoid duplicates)
   const marches = [
     { title: "Rénovation thermique du groupe scolaire Jules Ferry — Lots TCE", buyer: "Mairie de Lyon", nature: "TRAVAUX", department: "69", departmentName: "Rhône", region: "Auvergne-Rhône-Alpes", value: 850000, deadline: d(15), publicationDate: d(-7), source: "BOAMP", sourceRef: "BOAMP-2026-034521", procedureType: "Appel d'offres ouvert", cpvCode: "45321000", cpvLabel: "Isolation thermique", lots: 3, duration: "18 mois" },
     { title: "Fourniture de matériel informatique et équipements réseau", buyer: "CHU de Bordeaux", nature: "FOURNITURES", department: "33", departmentName: "Gironde", region: "Nouvelle-Aquitaine", value: 320000, deadline: d(21), publicationDate: d(-9), source: "PLACE", sourceRef: "PLACE-2026-078432", procedureType: "Procédure adaptée", cpvCode: "30200000", cpvLabel: "Matériel informatique", lots: 2, duration: "12 mois" },
@@ -49,22 +51,14 @@ async function main() {
   ];
 
   for (const m of marches) {
-    await prisma.marche.create({ data: { ...m, status: 'OUVERT' } });
-  }
-
-  // Demo alerts
-  const demoUser = await prisma.user.findUnique({ where: { email: 'demo@abdridi.com' } });
-  if (demoUser) {
-    await prisma.alert.createMany({
-      data: [
-        { userId: demoUser.id, name: 'Travaux BTP — Rhône-Alpes', keywords: ['rénovation', 'construction', 'bâtiment'], natures: ['TRAVAUX'], departments: ['69', '38', '01'], frequency: 'DAILY' },
-        { userId: demoUser.id, name: 'IT & Cybersécurité — National', keywords: ['informatique', 'cybersécurité', 'RGPD'], natures: ['SERVICES', 'FOURNITURES'], departments: [], frequency: 'IMMEDIATE' },
-        { userId: demoUser.id, name: 'BTP Île-de-France', keywords: ['bâtiment', 'VRD'], natures: ['TRAVAUX'], departments: ['75', '92', '93'], frequency: 'WEEKLY', active: false },
-      ],
+    await prisma.marche.upsert({
+      where: { sourceRef: m.sourceRef },
+      update: {},
+      create: { ...m, status: 'OUVERT' },
     });
   }
 
-  console.log('✅ Seed terminé : 2 utilisateurs, 24 marchés, 3 alertes');
+  console.log('✅ Seed terminé : 1 admin (bilel83502@gmail.com), 24 marchés');
 }
 
 function d(days: number): Date {
