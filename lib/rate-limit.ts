@@ -5,9 +5,9 @@ const requests = new Map<string, { count: number; resetAt: number }>();
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
-    for (const [key, value] of requests) {
+    requests.forEach((value, key) => {
       if (value.resetAt < now) requests.delete(key);
-    }
+    });
   }, 10 * 60 * 1000);
 }
 
