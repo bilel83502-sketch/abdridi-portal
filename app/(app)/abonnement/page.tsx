@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { Check, Sparkles, Crown, Zap } from 'lucide-react';
 
 const plans = [
@@ -61,7 +61,7 @@ const plans = [
   },
 ];
 
-export default function AbonnementPage() {
+function AbonnementContent() {
   const { data: session } = useSession();
   const user = session?.user as any;
   const searchParams = useSearchParams();
@@ -232,4 +232,8 @@ export default function AbonnementPage() {
       </div>
     </div>
   );
+}
+
+export default function AbonnementPage() {
+  return <Suspense fallback={<div>Chargement...</div>}><AbonnementContent /></Suspense>;
 }
