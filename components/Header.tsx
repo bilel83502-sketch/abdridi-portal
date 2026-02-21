@@ -5,14 +5,13 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { Search, LayoutGrid, Bell, Settings, LogOut, Eye, Menu, X, Shield, CreditCard } from 'lucide-react';
+import { Search, LayoutGrid, Bell, Settings, LogOut, Eye, Menu, X, Shield, CreditCard, Calendar } from 'lucide-react';
 
 const baseTabs = [
   { href: '/marches', label: 'Consultations', icon: Search },
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutGrid },
   { href: '/alertes', label: 'Alertes', icon: Bell },
   { href: '/concurrence', label: 'Concurrence', icon: Eye },
-  { href: '/parametres', label: 'Paramètres', icon: Settings },
 ];
 
 export default function Header() {
@@ -20,13 +19,19 @@ export default function Header() {
   const { data: session } = useSession();
   const user = session?.user as any;
   const isAdmin = user?.role === 'ADMIN';
+  const isPaid = user?.plan === 'VEILLE' || isAdmin;
   const initials = user?.company ? user.company.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AB';
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Build tabs: add Admin tab for admins
-  const tabs = isAdmin
-    ? [...baseTabs, { href: '/admin', label: 'Admin', icon: Shield }]
-    : baseTabs;
+  // Build tabs dynamically
+  const tabs = [
+    ...baseTabs,
+    // RDV tab only for paid users
+    ...(isPaid ? [{ href: '/rendez-vous', label: 'Rendez-vous', icon: Calendar }] : []),
+    { href: '/parametres', label: 'Param\u00e8tres', icon: Settings },
+    // Admin tab
+    ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
+  ];
 
   // Check if user is on free plan (no active subscription, not admin)
   const isFreePlan = !isAdmin && (user?.plan === 'DECOUVERTE' || (!user?.plan));
@@ -59,8 +64,8 @@ export default function Header() {
           gap: 8,
         }}>
           <CreditCard size={14} />
-          <span>Vous êtes en plan Découverte</span>
-          <span style={{ opacity: 0.7 }}>—</span>
+          <span>Vous &ecirc;tes en plan D&eacute;couverte</span>
+          <span style={{ opacity: 0.7 }}>&mdash;</span>
           <Link
             href="/abonnement"
             style={{
@@ -70,7 +75,7 @@ export default function Header() {
               textUnderlineOffset: '2px',
             }}
           >
-            Passez au plan Veille pour un accès complet
+            Passez au plan Veille pour un acc&egrave;s complet
           </Link>
         </div>
       )}
@@ -93,10 +98,11 @@ export default function Header() {
               const Icon = t.icon;
               const isConcu = t.href === '/concurrence';
               const isAdminTab = t.href === '/admin';
+              const isRdv = t.href === '/rendez-vous';
               return (
                 <Link key={t.href} href={t.href} className="no-underline">
                   <div className={`flex items-center gap-[7px] px-3.5 py-[7px] rounded-md text-[13px] transition-colors ${active ? 'bg-white/[0.07] text-gray-200 font-semibold' : 'text-gray-500 hover:text-gray-400'}`}>
-                    <Icon size={15} className={active ? (isConcu ? 'text-violet-300' : isAdminTab ? 'text-purple-300' : 'text-blue-300') : 'text-gray-600'} />
+                    <Icon size={15} className={active ? (isConcu ? 'text-violet-300' : isAdminTab ? 'text-purple-300' : isRdv ? 'text-emerald-300' : 'text-blue-300') : 'text-gray-600'} />
                     {t.label}
                   </div>
                 </Link>
@@ -120,7 +126,7 @@ export default function Header() {
               <span className="text-xs text-gray-400">{user?.company || user?.name || 'Mon compte'}</span>
             </div>
 
-            <button onClick={() => signOut({ callbackUrl: '/auth/login' })} className="p-1 bg-transparent border-none cursor-pointer" title="Déconnexion">
+            <button onClick={() => signOut({ callbackUrl: '/auth/login' })} className="p-1 bg-transparent border-none cursor-pointer" title="D\u00e9connexion">
               <LogOut size={15} className="text-gray-600 hover:text-gray-400" />
             </button>
           </div>
@@ -184,7 +190,7 @@ export default function Header() {
                 onClick={() => signOut({ callbackUrl: '/auth/login' })}
               >
                 <LogOut size={16} />
-                Se déconnecter
+                Se d&eacute;connecter
               </button>
             </div>
           </div>

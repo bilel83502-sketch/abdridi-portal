@@ -29,20 +29,28 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === 'google' && user.email) {
+        const email = user.email.toLowerCase();
+        const isAdminEmail = email === 'bilel83502@gmail.com';
+
         // Upsert user for Google OAuth
-        const existing = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() } });
+        const existing = await prisma.user.findUnique({ where: { email } });
         if (!existing) {
           await prisma.user.create({
             data: {
-              email: user.email.toLowerCase(),
+              email,
               name: user.name || 'Utilisateur',
-              role: 'USER',
-              plan: 'DECOUVERTE',
+              role: isAdminEmail ? 'ADMIN' : 'USER',
+              plan: isAdminEmail ? 'VEILLE' : 'DECOUVERTE',
               lastLoginAt: new Date(),
             },
           });
         } else {
-          await prisma.user.update({ where: { id: existing.id }, data: { lastLoginAt: new Date() } });
+          // Force ADMIN role for admin email on every login
+          const updateData: any = { lastLoginAt: new Date() };
+          if (isAdminEmail && existing.role !== 'ADMIN') {
+            updateData.role = 'ADMIN';
+          }
+          await prisma.user.update({ where: { id: existing.id }, data: updateData });
         }
       }
       return true;

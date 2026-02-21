@@ -3,7 +3,8 @@
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
-import { Check, Sparkles, Crown, Zap } from 'lucide-react';
+import { Check, X, Zap, Sparkles, Calendar } from 'lucide-react';
+import Link from 'next/link';
 
 const plans = [
   {
@@ -15,49 +16,31 @@ const plans = [
     color: '#6B7280',
     popular: false,
     features: [
-      '10 consultations/jour',
-      'Recherche basique',
-      '93 sources officielles',
-      'Pas d\'alertes email',
-      'Pas de concurrence',
+      { text: '10 consultations/jour', included: true },
+      { text: 'Recherche basique', included: true },
+      { text: '93 sources officielles', included: true },
+      { text: 'Alertes email', included: false },
+      { text: 'Analyse de concurrence', included: false },
+      { text: 'Prise de rendez-vous', included: false },
     ],
-    negative: ['Pas d\'alertes email', 'Pas de concurrence'],
   },
   {
     id: 'VEILLE',
-    name: 'Veille',
-    price: 49,
+    name: 'Veille & Accompagnement',
+    price: 25.90,
     period: '/mois',
     icon: Sparkles,
     color: '#2563EB',
     popular: true,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || 'price_veille_placeholder',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || '',
     features: [
-      'Consultations illimitées',
-      'Alertes email personnalisées',
-      'Analyse de concurrence',
-      '93 sources officielles',
-      'Export des données',
+      { text: 'Consultations illimit\u00e9es', included: true },
+      { text: 'Alertes email personnalis\u00e9es', included: true },
+      { text: 'Analyse de concurrence', included: true },
+      { text: '93 sources officielles', included: true },
+      { text: 'Export des donn\u00e9es', included: true },
+      { text: 'Prise de rendez-vous pour accompagnement montage de dossier (de A \u00e0 Z)', included: true },
     ],
-    negative: [] as string[],
-  },
-  {
-    id: 'MONTAGE',
-    name: 'Montage',
-    price: 199,
-    period: '/mois',
-    icon: Crown,
-    color: '#7C3AED',
-    popular: false,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTAGE || 'price_montage_placeholder',
-    features: [
-      'Tout le plan Veille',
-      'Aide au montage de dossiers',
-      'Templates de réponse',
-      'Analyse détaillée DCE',
-      'Support prioritaire',
-    ],
-    negative: [] as string[],
   },
 ];
 
@@ -70,21 +53,30 @@ function AbonnementContent() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const currentPlan = user?.role === 'ADMIN' ? 'ADMIN' : (user?.plan || 'DECOUVERTE');
+  const isPaid = currentPlan === 'VEILLE' || currentPlan === 'ADMIN';
 
   async function handleSubscribe(priceId: string, planId: string) {
+    if (!priceId) {
+      console.error('Stripe priceId is empty. Check NEXT_PUBLIC_STRIPE_PRICE_VEILLE env var.');
+      return;
+    }
     setLoadingPlan(planId);
     try {
+      console.log('Starting checkout with priceId:', priceId);
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priceId }),
       });
       const data = await res.json();
+      console.log('Checkout response:', data);
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        console.error('No checkout URL returned:', data);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Checkout error:', e);
     }
     setLoadingPlan(null);
   }
@@ -105,21 +97,21 @@ function AbonnementContent() {
     <div>
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Abonnement</h1>
-        <p className="text-sm text-gray-500">Choisissez le plan adapté à vos besoins</p>
+        <p className="text-sm text-gray-500">Choisissez le plan adapt&eacute; &agrave; vos besoins</p>
       </div>
 
       {success && (
         <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: 14, textAlign: 'center' }}>
-          Votre abonnement a été activé avec succès !
+          Votre abonnement a &eacute;t&eacute; activ&eacute; avec succ&egrave;s !
         </div>
       )}
       {canceled && (
         <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#FFFBEB', border: '1px solid #FDE68A', color: '#92400E', fontSize: 14, textAlign: 'center' }}>
-          Paiement annulé. Vous pouvez réessayer quand vous le souhaitez.
+          Paiement annul&eacute;. Vous pouvez r&eacute;essayer quand vous le souhaitez.
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 720, margin: '0 auto' }}>
         {plans.map((plan) => {
           const isCurrent = currentPlan === plan.id;
           const isAdmin = currentPlan === 'ADMIN';
@@ -161,7 +153,7 @@ function AbonnementContent() {
 
                 <div style={{ marginBottom: 24 }}>
                   <span style={{ fontSize: 36, fontWeight: 800, color: '#111827' }}>
-                    {plan.price === 0 ? 'Gratuit' : `${plan.price}€`}
+                    {plan.price === 0 ? 'Gratuit' : `${plan.price.toFixed(2).replace('.', ',')}€`}
                   </span>
                   {plan.price > 0 && (
                     <span style={{ fontSize: 14, color: '#6B7280' }}>{plan.period}</span>
@@ -169,27 +161,32 @@ function AbonnementContent() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-                  {plan.features.map((f, i) => {
-                    const isNeg = plan.negative.includes(f);
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: isNeg ? '#9CA3AF' : '#374151' }}>
-                        <Check size={16} style={{ color: isNeg ? '#D1D5DB' : plan.color, flexShrink: 0 }} />
-                        <span style={{ textDecoration: isNeg ? 'line-through' : 'none' }}>{f}</span>
-                      </div>
-                    );
-                  })}
+                  {plan.features.map((f, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: f.included ? '#374151' : '#9CA3AF' }}>
+                      {f.included ? (
+                        <Check size={16} style={{ color: plan.color, flexShrink: 0, marginTop: 1 }} />
+                      ) : (
+                        <X size={16} style={{ color: '#D1D5DB', flexShrink: 0, marginTop: 1 }} />
+                      )}
+                      <span style={{ textDecoration: f.included ? 'none' : 'line-through' }}>{f.text}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {isAdmin ? (
                   <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: '#059669', fontWeight: 600 }}>
-                    Accès Admin illimité
+                    Acc&egrave;s Admin illimit&eacute;
                   </div>
-                ) : isCurrent ? (
-                  plan.id === 'DECOUVERTE' ? (
-                    <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: '#6B7280', fontWeight: 500 }}>
-                      Plan actuel
-                    </div>
-                  ) : (
+                ) : isCurrent && plan.id === 'DECOUVERTE' ? (
+                  <div style={{
+                    width: '100%', padding: '12px 0', borderRadius: 8,
+                    background: '#F3F4F6', textAlign: 'center',
+                    fontSize: 14, fontWeight: 600, color: '#9CA3AF',
+                  }}>
+                    Plan actuel
+                  </div>
+                ) : isCurrent && plan.id === 'VEILLE' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <button
                       onClick={handleManage}
                       style={{
@@ -199,11 +196,29 @@ function AbonnementContent() {
                         cursor: 'pointer', fontFamily: 'inherit',
                       }}
                     >
-                      Gérer l&apos;abonnement
+                      G&eacute;rer l&apos;abonnement
                     </button>
-                  )
+                    <Link
+                      href="/rendez-vous"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                        width: '100%', padding: '10px 0', borderRadius: 8,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
+                        color: '#fff', fontSize: 13, fontWeight: 600,
+                        textDecoration: 'none', fontFamily: 'inherit',
+                      }}
+                    >
+                      <Calendar size={14} />
+                      Prendre rendez-vous
+                    </Link>
+                  </div>
                 ) : plan.price === 0 ? (
-                  <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: '#9CA3AF' }}>
+                  <div style={{
+                    width: '100%', padding: '12px 0', borderRadius: 8,
+                    background: '#F9FAFB', textAlign: 'center',
+                    fontSize: 13, color: '#9CA3AF',
+                  }}>
                     Plan de base
                   </div>
                 ) : (
@@ -213,9 +228,7 @@ function AbonnementContent() {
                     style={{
                       width: '100%', padding: '12px 0', borderRadius: 8,
                       border: 'none',
-                      background: plan.popular
-                        ? 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)'
-                        : `linear-gradient(135deg, ${plan.color}, ${plan.color}cc)`,
+                      background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
                       color: '#fff', fontSize: 14, fontWeight: 600,
                       cursor: loadingPlan === plan.id ? 'not-allowed' : 'pointer',
                       opacity: loadingPlan === plan.id ? 0.6 : 1,
@@ -230,6 +243,15 @@ function AbonnementContent() {
           );
         })}
       </div>
+
+      {/* Responsive mobile override */}
+      <style jsx>{`
+        @media (max-width: 640px) {
+          div[style*="gridTemplateColumns: repeat(2"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

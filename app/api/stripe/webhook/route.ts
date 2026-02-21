@@ -35,11 +35,6 @@ export async function POST(req: Request) {
 
         if (userId) {
           const priceId = subscription.items.data[0]?.price.id;
-          // Determine plan from priceId
-          let plan = 'VEILLE';
-          if (priceId === process.env.STRIPE_PRICE_MONTAGE) {
-            plan = 'MONTAGE';
-          }
 
           await prisma.user.update({
             where: { id: userId },
@@ -47,7 +42,7 @@ export async function POST(req: Request) {
               stripeSubscriptionId: subscription.id,
               stripePriceId: priceId,
               stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-              plan,
+              plan: 'VEILLE',
             },
           });
         }
@@ -62,17 +57,13 @@ export async function POST(req: Request) {
 
         if (user) {
           const priceId = subscription.items.data[0]?.price.id;
-          let plan = 'VEILLE';
-          if (priceId === process.env.STRIPE_PRICE_MONTAGE) {
-            plan = 'MONTAGE';
-          }
 
           await prisma.user.update({
             where: { id: user.id },
             data: {
               stripePriceId: priceId,
               stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-              plan,
+              plan: 'VEILLE',
             },
           });
         }

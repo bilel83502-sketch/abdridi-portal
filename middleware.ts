@@ -8,5 +8,6 @@ export const config = {
     '/concurrence/:path*',
     '/abonnement/:path*',
     '/admin/:path*',
+    '/rendez-vous/:path*',
   ],
 };
