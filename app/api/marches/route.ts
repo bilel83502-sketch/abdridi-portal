@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+
+const FREE_DAILY_LIMIT = 3;
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -14,6 +18,25 @@ export async function GET(req: Request) {
   const order = searchParams.get('order') || 'desc';
   const status = searchParams.get('status') || '';
   const source = searchParams.get('source') || '';
+
+  // Check user plan
+  let isPaid = false;
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email) {
+      const user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { role: true, plan: true, stripeCurrentPeriodEnd: true },
+      });
+      if (user) {
+        isPaid = user.role === 'ADMIN' ||
+          (user.plan === 'VEILLE' && user.stripeCurrentPeriodEnd && new Date(user.stripeCurrentPeriodEnd) > new Date()) ||
+          user.role === 'ADMIN';
+      }
+    }
+  } catch (e) {
+    // Continue as free user if session check fails
+  }
 
   const where: any = {};
   // Default to OUVERT to exclude attributed/closed contracts
@@ -30,5 +53,26 @@ export async function GET(req: Request) {
     prisma.marche.count({ where }),
   ]);
 
-  return NextResponse.json({ data, meta: { total, page, pages: Math.ceil(total / limit) } });
+  // For free users, mark results beyond the daily limit as locked
+  const results = data.map((m: any, index: number) => {
+    const globalIndex = (page - 1) * limit + index;
+    if (!isPaid && globalIndex >= FREE_DAILY_LIMIT) {
+      return {
+        ...m,
+        locked: true,
+        // Mask sensitive fields
+        buyer: '\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF\u25CF',
+        value: null,
+        sourceRef: null,
+        cpvCode: null,
+        cpvLabel: null,
+      };
+    }
+    return { ...m, locked: false };
+  });
+
+  return NextResponse.json({
+    data: results,
+    meta: { total, page, pages: Math.ceil(total / limit), isPaid, freeLimit: FREE_DAILY_LIMIT },
+  });
 }

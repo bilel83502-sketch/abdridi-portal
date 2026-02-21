@@ -3,25 +3,25 @@
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
-import { Check, X, Zap, Sparkles, Calendar } from 'lucide-react';
-import Link from 'next/link';
+import { Check, X, Zap, Sparkles } from 'lucide-react';
 
 const plans = [
   {
     id: 'DECOUVERTE',
-    name: 'Découverte',
+    name: 'D\u00e9couverte',
     price: 0,
     period: 'Gratuit',
     icon: Zap,
     color: '#6B7280',
     popular: false,
     features: [
-      { text: '10 consultations/jour', included: true },
-      { text: 'Recherche basique', included: true },
-      { text: '93 sources officielles', included: true },
+      { text: '3 appels d\'offres visibles par jour', included: true },
+      { text: 'R\u00e9sultats avec d\u00e9lai de 48h', included: true },
+      { text: 'R\u00e9sultats au-del\u00e0 de 3 flout\u00e9s', included: true },
+      { text: 'Prise de rendez-vous accompagnement', included: true },
       { text: 'Alertes email', included: false },
-      { text: 'Analyse de concurrence', included: false },
-      { text: 'Prise de rendez-vous', included: false },
+      { text: 'Veille concurrentielle', included: false },
+      { text: 'Export des donn\u00e9es', included: false },
     ],
   },
   {
@@ -34,12 +34,14 @@ const plans = [
     popular: true,
     priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || '',
     features: [
-      { text: 'Consultations illimit\u00e9es', included: true },
+      { text: 'Appels d\'offres illimit\u00e9s', included: true },
+      { text: 'R\u00e9sultats en temps r\u00e9el', included: true },
+      { text: 'Tous les filtres (CPV, montant, r\u00e9gion)', included: true },
       { text: 'Alertes email personnalis\u00e9es', included: true },
-      { text: 'Analyse de concurrence', included: true },
-      { text: '93 sources officielles', included: true },
-      { text: 'Export des donn\u00e9es', included: true },
-      { text: 'Prise de rendez-vous pour accompagnement montage de dossier (de A \u00e0 Z)', included: true },
+      { text: 'Veille concurrentielle compl\u00e8te', included: true },
+      { text: 'Export des donn\u00e9es (CSV/Excel)', included: true },
+      { text: 'Prise de rendez-vous accompagnement', included: true },
+      { text: 'Support prioritaire', included: true },
     ],
   },
 ];
@@ -53,7 +55,6 @@ function AbonnementContent() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const currentPlan = user?.role === 'ADMIN' ? 'ADMIN' : (user?.plan || 'DECOUVERTE');
-  const isPaid = currentPlan === 'VEILLE' || currentPlan === 'ADMIN';
 
   async function handleSubscribe(priceId: string, planId: string) {
     if (!priceId) {
@@ -101,8 +102,8 @@ function AbonnementContent() {
       </div>
 
       {success && (
-        <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: 14, textAlign: 'center' }}>
-          Votre abonnement a &eacute;t&eacute; activ&eacute; avec succ&egrave;s !
+        <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: 14, textAlign: 'center', fontWeight: 500 }}>
+          &#x2705; Abonnement activ&eacute; avec succ&egrave;s !
         </div>
       )}
       {canceled && (
@@ -111,7 +112,7 @@ function AbonnementContent() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 720, margin: '0 auto' }}>
+      <div className="abonnement-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 760, margin: '0 auto' }}>
         {plans.map((plan) => {
           const isCurrent = currentPlan === plan.id;
           const isAdmin = currentPlan === 'ADMIN';
@@ -135,7 +136,7 @@ function AbonnementContent() {
                   color: '#fff', textAlign: 'center', fontSize: 11, fontWeight: 700,
                   padding: '6px 0', letterSpacing: '0.5px', textTransform: 'uppercase',
                 }}>
-                  Populaire
+                  &#x2B50; Populaire
                 </div>
               )}
 
@@ -160,7 +161,7 @@ function AbonnementContent() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 24 }}>
                   {plan.features.map((f, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: f.included ? '#374151' : '#9CA3AF' }}>
                       {f.included ? (
@@ -186,33 +187,17 @@ function AbonnementContent() {
                     Plan actuel
                   </div>
                 ) : isCurrent && plan.id === 'VEILLE' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <button
-                      onClick={handleManage}
-                      style={{
-                        width: '100%', padding: '12px 0', borderRadius: 8,
-                        border: '1px solid #E5E7EB', background: '#fff',
-                        fontSize: 14, fontWeight: 600, color: '#374151',
-                        cursor: 'pointer', fontFamily: 'inherit',
-                      }}
-                    >
-                      G&eacute;rer l&apos;abonnement
-                    </button>
-                    <Link
-                      href="/rendez-vous"
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                        width: '100%', padding: '10px 0', borderRadius: 8,
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
-                        color: '#fff', fontSize: 13, fontWeight: 600,
-                        textDecoration: 'none', fontFamily: 'inherit',
-                      }}
-                    >
-                      <Calendar size={14} />
-                      Prendre rendez-vous
-                    </Link>
-                  </div>
+                  <button
+                    onClick={handleManage}
+                    style={{
+                      width: '100%', padding: '12px 0', borderRadius: 8,
+                      border: '1px solid #E5E7EB', background: '#fff',
+                      fontSize: 14, fontWeight: 600, color: '#374151',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    G&eacute;rer l&apos;abonnement
+                  </button>
                 ) : plan.price === 0 ? (
                   <div style={{
                     width: '100%', padding: '12px 0', borderRadius: 8,
@@ -235,7 +220,7 @@ function AbonnementContent() {
                       fontFamily: 'inherit',
                     }}
                   >
-                    {loadingPlan === plan.id ? 'Redirection...' : 'S\'abonner'}
+                    {loadingPlan === plan.id ? 'Redirection vers Stripe...' : 'S\'abonner \u2014 25,90€/mois'}
                   </button>
                 )}
               </div>
@@ -244,10 +229,10 @@ function AbonnementContent() {
         })}
       </div>
 
-      {/* Responsive mobile override */}
+      {/* Responsive mobile */}
       <style jsx>{`
         @media (max-width: 640px) {
-          div[style*="gridTemplateColumns: repeat(2"] {
+          .abonnement-grid {
             grid-template-columns: 1fr !important;
           }
         }

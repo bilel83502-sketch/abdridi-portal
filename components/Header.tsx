@@ -12,6 +12,8 @@ const baseTabs = [
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutGrid },
   { href: '/alertes', label: 'Alertes', icon: Bell },
   { href: '/concurrence', label: 'Concurrence', icon: Eye },
+  { href: '/rendez-vous', label: 'Rendez-vous', icon: Calendar },
+  { href: '/parametres', label: 'Param\u00e8tres', icon: Settings },
 ];
 
 export default function Header() {
@@ -19,22 +21,17 @@ export default function Header() {
   const { data: session } = useSession();
   const user = session?.user as any;
   const isAdmin = user?.role === 'ADMIN';
-  const isPaid = user?.plan === 'VEILLE' || isAdmin;
+  const isPaid = isAdmin || (user?.plan === 'VEILLE');
   const initials = user?.company ? user.company.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() : 'AB';
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Build tabs dynamically
-  const tabs = [
-    ...baseTabs,
-    // RDV tab only for paid users
-    ...(isPaid ? [{ href: '/rendez-vous', label: 'Rendez-vous', icon: Calendar }] : []),
-    { href: '/parametres', label: 'Param\u00e8tres', icon: Settings },
-    // Admin tab
-    ...(isAdmin ? [{ href: '/admin', label: 'Admin', icon: Shield }] : []),
-  ];
+  // Build tabs: add Admin tab for admins
+  const tabs = isAdmin
+    ? [...baseTabs, { href: '/admin', label: 'Admin', icon: Shield }]
+    : baseTabs;
 
-  // Check if user is on free plan (no active subscription, not admin)
-  const isFreePlan = !isAdmin && (user?.plan === 'DECOUVERTE' || (!user?.plan));
+  // Free plan = not admin AND not paid subscriber
+  const isFreePlan = !isAdmin && !isPaid;
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
@@ -49,7 +46,7 @@ export default function Header() {
 
   return (
     <>
-      {/* Subscription banner for free users */}
+      {/* Subscription banner for free users only (NOT for admin or paid) */}
       {isFreePlan && (
         <div style={{
           background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
@@ -62,9 +59,10 @@ export default function Header() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 8,
+          flexWrap: 'wrap',
         }}>
           <CreditCard size={14} />
-          <span>Vous &ecirc;tes en plan D&eacute;couverte</span>
+          <span>Vous &ecirc;tes en plan D&eacute;couverte (3 march&eacute;s/jour)</span>
           <span style={{ opacity: 0.7 }}>&mdash;</span>
           <Link
             href="/abonnement"
@@ -75,7 +73,7 @@ export default function Header() {
               textUnderlineOffset: '2px',
             }}
           >
-            Passez au plan Veille pour un acc&egrave;s complet
+            Passez au plan Veille &amp; Accompagnement pour un acc&egrave;s illimit&eacute;
           </Link>
         </div>
       )}
