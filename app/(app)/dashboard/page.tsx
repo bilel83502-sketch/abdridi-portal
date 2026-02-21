@@ -31,9 +31,10 @@ export default function DashboardPage() {
           { label: 'Consultations ouvertes', value: data.totalOpen.toLocaleString('fr-FR') },
           { label: 'Nouvelles cette semaine', value: data.newThisWeek.toLocaleString('fr-FR'), badge: true },
           { label: 'Clôture < 7 jours', value: data.closingSoon.toLocaleString('fr-FR') },
+          { label: 'Contrats attribués suivis', value: (data.totalAttribues || 0).toLocaleString('fr-FR') },
           { label: 'Vos alertes actives', value: data.userAlerts.toString() },
         ].map((s, i) => (
-          <div key={i} className={`flex items-center gap-3 flex-1 px-4 ${i < 3 ? 'border-r border-gray-100' : ''}`}>
+          <div key={i} className={`flex items-center gap-3 flex-1 px-4 ${i < 4 ? 'border-r border-gray-100' : ''}`}>
             <div>
               <div className="text-[11px] text-gray-400 mb-0.5">{s.label}</div>
               <div className="flex items-baseline gap-1.5">

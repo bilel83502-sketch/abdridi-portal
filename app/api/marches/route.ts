@@ -16,9 +16,8 @@ export async function GET(req: Request) {
   const source = searchParams.get('source') || '';
 
   const where: any = {};
-  if (status) {
-    where.status = status;
-  }
+  // Default to OUVERT to exclude attributed/closed contracts
+  where.status = status || 'OUVERT';
   if (source) {
     where.source = source;
   }
