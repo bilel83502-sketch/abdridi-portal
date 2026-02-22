@@ -53,31 +53,27 @@ function AbonnementContent() {
   const success = searchParams.get('success');
   const canceled = searchParams.get('canceled');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const currentPlan = user?.role === 'ADMIN' ? 'ADMIN' : (user?.plan || 'DECOUVERTE');
 
-  async function handleSubscribe(priceId: string, planId: string) {
-    if (!priceId) {
-      console.error('Stripe priceId is empty. Check NEXT_PUBLIC_STRIPE_PRICE_VEILLE env var.');
-      return;
-    }
-    setLoadingPlan(planId);
+  async function handleSubscribe() {
+    setLoadingPlan('VEILLE');
+    setError(null);
     try {
-      console.log('Starting checkout with priceId:', priceId);
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ priceId: 'price_1T34V638OYpA4xNLxlkyivkz' }),
       });
       const data = await res.json();
-      console.log('Checkout response:', data);
       if (data.url) {
         window.location.href = data.url;
       } else {
-        console.error('No checkout URL returned:', data);
+        setError(data.error || 'Erreur lors de la redirection vers Stripe.');
       }
-    } catch (e) {
-      console.error('Checkout error:', e);
+    } catch (e: any) {
+      setError(e.message || 'Erreur de connexion.');
     }
     setLoadingPlan(null);
   }
@@ -207,21 +203,32 @@ function AbonnementContent() {
                     Plan de base
                   </div>
                 ) : (
-                  <button
-                    onClick={() => handleSubscribe(plan.priceId!, plan.id)}
-                    disabled={loadingPlan === plan.id}
-                    style={{
-                      width: '100%', padding: '12px 0', borderRadius: 8,
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
-                      color: '#fff', fontSize: 14, fontWeight: 600,
-                      cursor: loadingPlan === plan.id ? 'not-allowed' : 'pointer',
-                      opacity: loadingPlan === plan.id ? 0.6 : 1,
-                      fontFamily: 'inherit',
-                    }}
-                  >
-                    {loadingPlan === plan.id ? 'Redirection vers Stripe...' : 'S\'abonner \u2014 25,90€/mois'}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleSubscribe()}
+                      disabled={loadingPlan === plan.id}
+                      style={{
+                        width: '100%', padding: '12px 0', borderRadius: 8,
+                        border: 'none',
+                        background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+                        color: '#fff', fontSize: 14, fontWeight: 600,
+                        cursor: loadingPlan === plan.id ? 'not-allowed' : 'pointer',
+                        opacity: loadingPlan === plan.id ? 0.6 : 1,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {loadingPlan === plan.id ? 'Redirection vers Stripe...' : 'S\'abonner \u2014 25,90\u20AC/mois'}
+                    </button>
+                    {error && (
+                      <div style={{
+                        marginTop: 8, padding: '10px 14px', borderRadius: 8,
+                        background: '#FEF2F2', border: '1px solid #FECACA',
+                        color: '#DC2626', fontSize: 12, textAlign: 'center',
+                      }}>
+                        {error}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
