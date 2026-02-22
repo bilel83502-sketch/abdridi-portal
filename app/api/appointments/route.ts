@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { sendAppointmentEmails } from '@/lib/email';
+import { sendAppointmentEmails, sendConfirmationEmail } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -170,7 +170,25 @@ export async function PATCH(req: Request) {
     const appointment = await prisma.appointment.update({
       where: { id },
       data: { status },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
     });
+
+    // Send confirmation email to client when admin confirms
+    if (status === 'CONFIRMED' && appointment.user?.email) {
+      try {
+        await sendConfirmationEmail({
+          clientEmail: appointment.user.email,
+          clientName: appointment.user.name || 'Client',
+          subject: appointment.subject,
+          requestedDate: appointment.requestedDate,
+          timeSlot: appointment.timeSlot,
+        });
+      } catch (emailErr: any) {
+        console.error('[Appointments PATCH] Confirmation email failed (non-blocking):', emailErr.message);
+      }
+    }
 
     return NextResponse.json({ appointment });
   } catch (e: any) {
