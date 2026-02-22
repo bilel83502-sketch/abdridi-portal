@@ -11,36 +11,57 @@ type Message = {
 
 const WELCOME_MESSAGE: Message = {
   role: 'bot',
-  text: 'Bonjour, je suis votre assistant AB DRIDI IA. Comment puis-je vous aider ?',
+  text: 'Bonjour, je suis votre Assistant AB DRIDI. Comment puis-je vous aider ?',
 };
 
-/* ─── AB DRIDI IA Logo: circle with "AB" + green "IA" badge ─── */
-function ABDridiLogo({ size = 24 }: { size?: number }) {
-  const badgeSize = size * 0.42;
+/* ─── Mascotte Assistant : petit personnage minimaliste ─── */
+function AssistantMascot({ size = 60 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
-      {/* Main blue circle */}
-      <circle cx="24" cy="24" r="22" fill="#2563EB" />
-      {/* AB text */}
-      <text x="24" y="28" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="800" fontSize="16" fill="#fff">AB</text>
-      {/* Green IA badge */}
-      <circle cx="38" cy="38" r={badgeSize} fill="#22C55E" stroke="#fff" strokeWidth="2" />
-      <text x="38" y="41.5" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="8" fill="#fff">IA</text>
+    <svg width={size} height={size} viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="30" cy="30" r="30" fill="url(#grad)" />
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="60" y2="60">
+          <stop offset="0%" stopColor="#2563EB" />
+          <stop offset="100%" stopColor="#1D4ED8" />
+        </linearGradient>
+      </defs>
+      {/* Tete */}
+      <circle cx="30" cy="22" r="10" fill="white" />
+      {/* Yeux */}
+      <circle cx="26.5" cy="20.5" r="1.8" fill="#1E293B" />
+      <circle cx="33.5" cy="20.5" r="1.8" fill="#1E293B" />
+      {/* Sourire */}
+      <path d="M26 25 Q30 28.5 34 25" stroke="#1E293B" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* Corps */}
+      <rect x="22" y="33" width="16" height="12" rx="6" fill="white" />
+      {/* Bras gauche */}
+      <rect x="16" y="35" width="6" height="4" rx="2" fill="white" />
+      {/* Bras droit */}
+      <rect x="38" y="35" width="6" height="4" rx="2" fill="white" />
     </svg>
   );
 }
 
-/* ─── Small bot avatar for messages ─── */
+/* ─── Small bot avatar for messages (28px) ─── */
 function BotAvatar() {
   return (
-    <div style={{
-      width: 28, height: 28, borderRadius: '50%',
-      background: '#2563EB',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-      color: '#fff', fontSize: 10, fontWeight: 800, fontFamily: 'Arial, sans-serif',
-    }}>
-      AB
+    <div style={{ width: 28, height: 28, flexShrink: 0 }}>
+      <svg width="28" height="28" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="30" cy="30" r="30" fill="url(#gradSmall)" />
+        <defs>
+          <linearGradient id="gradSmall" x1="0" y1="0" x2="60" y2="60">
+            <stop offset="0%" stopColor="#2563EB" />
+            <stop offset="100%" stopColor="#1D4ED8" />
+          </linearGradient>
+        </defs>
+        <circle cx="30" cy="22" r="10" fill="white" />
+        <circle cx="26.5" cy="20.5" r="1.8" fill="#1E293B" />
+        <circle cx="33.5" cy="20.5" r="1.8" fill="#1E293B" />
+        <path d="M26 25 Q30 28.5 34 25" stroke="#1E293B" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+        <rect x="22" y="33" width="16" height="12" rx="6" fill="white" />
+        <rect x="16" y="35" width="6" height="4" rx="2" fill="white" />
+        <rect x="38" y="35" width="6" height="4" rx="2" fill="white" />
+      </svg>
     </div>
   );
 }
@@ -85,18 +106,19 @@ export default function Chatbot() {
           aria-label="Ouvrir le chat"
           style={{
             position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
-            width: 56, height: 56, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+            width: 60, height: 60, borderRadius: '50%',
+            background: 'transparent',
             border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 20px rgba(37, 99, 235, 0.35)',
             transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             padding: 0,
+            overflow: 'hidden',
           }}
           onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(37, 99, 235, 0.45)'; }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(37, 99, 235, 0.35)'; }}
         >
-          <ABDridiLogo size={32} />
+          <AssistantMascot size={60} />
         </button>
       )}
 
@@ -135,18 +157,17 @@ export default function Chatbot() {
             display: 'flex', alignItems: 'center', gap: 10,
           }}>
             <div style={{
-              width: 34, height: 34, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: '50%',
+              overflow: 'hidden',
               flexShrink: 0,
             }}>
-              <ABDridiLogo size={28} />
+              <AssistantMascot size={36} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>AB DRIDI IA</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Assistant AB DRIDI</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }} />
-                Assistant intelligent
+                En ligne
               </div>
             </div>
           </div>
