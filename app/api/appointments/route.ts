@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { sendAppointmentEmails } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,6 +120,23 @@ export async function POST(req: Request) {
     });
 
     console.log('[Appointments POST] Created:', appointment.id, 'for user:', user.email);
+
+    // Send email notifications (non-blocking: errors won't affect the response)
+    try {
+      await sendAppointmentEmails({
+        clientName: user.name || 'Client',
+        clientEmail: user.email,
+        clientCompany: user.company || null,
+        subject,
+        marketReference: marketReference || null,
+        requestedDate: parsedDate,
+        timeSlot,
+        message: message || null,
+      });
+    } catch (emailErr: any) {
+      console.error('[Appointments POST] Email sending failed (non-blocking):', emailErr.message);
+    }
+
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (e: any) {
     console.error('[Appointments POST] ERROR:', e.message);
