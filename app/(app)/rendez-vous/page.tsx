@@ -132,14 +132,14 @@ export default function RendezVousPage() {
                         <div style={{ fontWeight: 600, color: '#111827', lineHeight: 1.3, marginBottom: 2 }} className="line-clamp-2">
                           {apt.subject}
                         </div>
-                        {apt.reference && (
-                          <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>{apt.reference}</span>
+                        {apt.marketReference && (
+                          <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>{apt.marketReference}</span>
                         )}
                       </td>
                       <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#374151' }}>
                           <Calendar size={13} style={{ color: '#9CA3AF' }} />
-                          {formatDateFr(apt.date)}
+                          {formatDateFr(apt.requestedDate)}
                         </div>
                       </td>
                       <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
@@ -191,7 +191,7 @@ export default function RendezVousPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6B7280' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Calendar size={12} /> {formatDateFr(apt.date)}
+                      <Calendar size={12} /> {formatDateFr(apt.requestedDate)}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Clock size={12} /> {apt.timeSlot}

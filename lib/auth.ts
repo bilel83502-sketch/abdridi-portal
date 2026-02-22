@@ -56,12 +56,14 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async jwt({ token, user, account }) {
+      // Set basic fields for ALL providers on sign-in
       if (user) {
+        token.id = user.id;
         token.role = (user as any).role;
         token.plan = (user as any).plan;
         token.company = (user as any).company;
       }
-      // For Google OAuth, fetch user data from DB
+      // For Google OAuth, override with DB data (Google user.id is Google ID, not DB ID)
       if (account?.provider === 'google' && token.email) {
         const dbUser = await prisma.user.findUnique({ where: { email: token.email.toLowerCase() } });
         if (dbUser) {
@@ -71,15 +73,15 @@ export const authOptions: NextAuthOptions = {
           token.company = dbUser.company;
         }
       }
-      // For credentials, keep existing behavior
-      if (user && !account?.provider) {
-        token.id = user.id;
+      // Fallback: ensure token.id is always set
+      if (!token.id && token.sub) {
+        token.id = token.sub;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as any).id = token.id;
+        (session.user as any).id = token.id || token.sub;
         (session.user as any).role = token.role;
         (session.user as any).plan = token.plan;
         (session.user as any).company = token.company;

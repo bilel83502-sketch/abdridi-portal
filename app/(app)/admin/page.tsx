@@ -157,11 +157,11 @@ export default function AdminPage() {
                       <td style={{ padding: '10px 14px', fontSize: 13, color: '#6B7280' }}>{a.user?.email || '\u2014'}</td>
                       <td style={{ padding: '10px 14px', fontSize: 13, maxWidth: 220 }}>
                         <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>{a.subject}</div>
-                        {a.reference && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>R\u00e9f: {a.reference}</div>}
+                        {a.marketReference && <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>R\u00e9f: {a.marketReference}</div>}
                         {a.message && <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2, fontStyle: 'italic' }}>{a.message.slice(0, 60)}{a.message.length > 60 ? '...' : ''}</div>}
                       </td>
                       <td style={{ padding: '10px 14px', fontSize: 13 }}>
-                        <div style={{ fontWeight: 500 }}>{new Date(a.date).toLocaleDateString('fr-FR')}</div>
+                        <div style={{ fontWeight: 500 }}>{new Date(a.requestedDate).toLocaleDateString('fr-FR')}</div>
                         <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>{a.timeSlot}</div>
                       </td>
                       <td style={{ padding: '10px 14px' }}>

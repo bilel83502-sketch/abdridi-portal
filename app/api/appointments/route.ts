@@ -5,6 +5,27 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+// ─── Helper: find user by session (id first, email fallback) ───
+async function findSessionUser(session: any) {
+  const userId = session?.user?.id;
+  const email = session?.user?.email;
+
+  // Try by id first
+  if (userId) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user) return user;
+    console.warn('[Appointments] User not found by id:', userId, '— trying email fallback');
+  }
+
+  // Fallback by email
+  if (email) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) return user;
+  }
+
+  return null;
+}
+
 // GET — list appointments for current user (or all if admin)
 export async function GET(req: Request) {
   try {
@@ -13,8 +34,9 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Non authentifi\u00e9.' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const user = await findSessionUser(session);
     if (!user) {
+      console.error('[Appointments GET] User not found. id:', (session.user as any).id, 'email:', session.user.email);
       return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
     }
 
@@ -29,7 +51,7 @@ export async function GET(req: Request) {
             select: { name: true, email: true, company: true },
           },
         },
-        orderBy: { date: 'desc' },
+        orderBy: { requestedDate: 'desc' },
       });
       return NextResponse.json({ appointments });
     }
@@ -37,13 +59,14 @@ export async function GET(req: Request) {
     // Any authenticated user can see their own appointments
     const appointments = await prisma.appointment.findMany({
       where: { userId: user.id },
-      orderBy: { date: 'desc' },
+      orderBy: { requestedDate: 'desc' },
     });
 
     return NextResponse.json({ appointments });
   } catch (e: any) {
-    console.error('Appointments GET error:', e);
-    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
+    console.error('[Appointments GET] ERROR:', e.message);
+    console.error('[Appointments GET] Stack:', e.stack);
+    return NextResponse.json({ error: e.message || 'Erreur serveur.' }, { status: 500 });
   }
 }
 
@@ -52,37 +75,57 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
+      console.error('[Appointments POST] No session or email found');
       return NextResponse.json({ error: 'Non authentifi\u00e9.' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const user = await findSessionUser(session);
     if (!user) {
-      return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
+      console.error('[Appointments POST] User not found. id:', (session.user as any).id, 'email:', session.user.email);
+      return NextResponse.json({ error: 'Utilisateur introuvable. Veuillez vous reconnecter.' }, { status: 404 });
     }
 
     const body = await req.json();
-    const { subject, reference, date, timeSlot, message } = body;
+    const { subject, marketReference, requestedDate, timeSlot, message } = body;
 
-    if (!subject || !date || !timeSlot) {
-      return NextResponse.json({ error: 'Champs obligatoires manquants (objet, date, cr\u00e9neau).' }, { status: 400 });
+    if (!subject || !requestedDate || !timeSlot) {
+      console.error('[Appointments POST] Missing required fields:', {
+        subject: !!subject,
+        requestedDate: !!requestedDate,
+        timeSlot: !!timeSlot,
+      });
+      return NextResponse.json({
+        error: 'Champs obligatoires manquants (objet, date, cr\u00e9neau).',
+      }, { status: 400 });
+    }
+
+    // Validate date
+    const parsedDate = new Date(requestedDate);
+    if (isNaN(parsedDate.getTime())) {
+      console.error('[Appointments POST] Invalid date:', requestedDate);
+      return NextResponse.json({ error: 'Date invalide.' }, { status: 400 });
     }
 
     const appointment = await prisma.appointment.create({
       data: {
         userId: user.id,
         subject,
-        reference: reference || null,
-        date: new Date(date),
+        marketReference: marketReference || null,
+        requestedDate: parsedDate,
         timeSlot,
         message: message || null,
         status: 'PENDING',
       },
     });
 
+    console.log('[Appointments POST] Created:', appointment.id, 'for user:', user.email);
     return NextResponse.json({ appointment }, { status: 201 });
   } catch (e: any) {
-    console.error('Appointments POST error:', e);
-    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
+    console.error('[Appointments POST] ERROR:', e.message);
+    console.error('[Appointments POST] Stack:', e.stack);
+    return NextResponse.json({
+      error: e.message || 'Erreur lors de la cr\u00e9ation du rendez-vous.',
+    }, { status: 500 });
   }
 }
 
@@ -94,7 +137,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: 'Non authentifi\u00e9.' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const user = await findSessionUser(session);
     if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Acc\u00e8s r\u00e9serv\u00e9 aux administrateurs.' }, { status: 403 });
     }
@@ -113,7 +156,8 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ appointment });
   } catch (e: any) {
-    console.error('Appointments PATCH error:', e);
-    return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
+    console.error('[Appointments PATCH] ERROR:', e.message);
+    console.error('[Appointments PATCH] Stack:', e.stack);
+    return NextResponse.json({ error: e.message || 'Erreur serveur.' }, { status: 500 });
   }
 }

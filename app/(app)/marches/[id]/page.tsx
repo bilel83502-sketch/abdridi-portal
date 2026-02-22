@@ -130,8 +130,8 @@ export default function MarcheDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subject: marche.title,
-          reference: marche.sourceRef || marche.id,
-          date: rdvDate,
+          marketReference: marche.sourceRef || marche.id,
+          requestedDate: new Date(rdvDate).toISOString(),
           timeSlot: rdvSlot,
           message: rdvMessage || null,
         }),
