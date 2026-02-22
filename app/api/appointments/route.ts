@@ -34,12 +34,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ appointments });
     }
 
-    // Regular user: only their own appointments
-    // Check plan access
-    if (user.role !== 'ADMIN' && user.plan !== 'VEILLE') {
-      return NextResponse.json({ error: 'Acc\u00e8s r\u00e9serv\u00e9 aux abonn\u00e9s.' }, { status: 403 });
-    }
-
+    // Any authenticated user can see their own appointments
     const appointments = await prisma.appointment.findMany({
       where: { userId: user.id },
       orderBy: { date: 'desc' },
@@ -52,7 +47,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST — create a new appointment
+// POST — create a new appointment (accessible to ALL users)
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -63,11 +58,6 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { email: session.user.email } });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
-    }
-
-    // Check plan access (VEILLE or ADMIN only)
-    if (user.role !== 'ADMIN' && user.plan !== 'VEILLE') {
-      return NextResponse.json({ error: 'Acc\u00e8s r\u00e9serv\u00e9 aux abonn\u00e9s Veille & Accompagnement.' }, { status: 403 });
     }
 
     const body = await req.json();
