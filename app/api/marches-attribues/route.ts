@@ -1,9 +1,26 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+  // Check user plan
+  let isPaid = false;
+  try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email) {
+      const currentUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { role: true, plan: true, stripeCurrentPeriodEnd: true },
+      });
+      if (currentUser) {
+        isPaid = currentUser.role === 'ADMIN' ||
+          (currentUser.plan === 'VEILLE' && !!currentUser.stripeCurrentPeriodEnd && new Date(currentUser.stripeCurrentPeriodEnd) > new Date());
+      }
+    }
+  } catch (_e) { /* continue as free */ }
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q') || '';
   const titulaire = searchParams.get('titulaire') || '';
@@ -89,6 +106,7 @@ export async function GET(req: Request) {
       total,
       page,
       pages: Math.ceil(total / limit),
+      isPaid,
     },
     stats: {
       totalAll,

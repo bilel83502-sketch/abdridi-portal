@@ -15,8 +15,10 @@ import {
   ExternalLink,
   Tag,
   User,
+  Lock,
 } from 'lucide-react';
 import { formatCurrency, formatDate, getNatureLabel } from '@/lib/utils';
+import Link from 'next/link';
 
 const AMOUNT_BRACKETS = [
   { label: 'Tous', min: '', max: '' },
@@ -290,17 +292,95 @@ export default function ConcurrencePage() {
         </div>
       )}
 
+      {/* Free user banner */}
+      {!meta.isPaid && !loading && data.length > 0 && (
+        <div style={{
+          marginBottom: 12, padding: '10px 16px', borderRadius: 8,
+          background: 'linear-gradient(135deg, #EDE9FE, #F5F3FF)',
+          border: '1px solid #C4B5FD',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          fontSize: 13,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5B21B6' }}>
+            <Lock size={14} />
+            <span>Version gratuite &mdash; <strong>3 r&eacute;sultats visibles</strong> sur {meta.total.toLocaleString('fr-FR')}</span>
+          </div>
+          <Link
+            href="/abonnement"
+            style={{
+              padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+              background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+              color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
+            }}
+          >
+            D&eacute;bloquer &mdash; 25,90€/mois
+          </Link>
+        </div>
+      )}
+
       {/* Results */}
       {loading ? (
         <div className="text-center text-gray-400 py-16">Chargement...</div>
       ) : data.length === 0 ? (
         <div className="card p-16 text-center text-gray-400">
-          Aucun contrat attribué trouvé.
+          Aucun contrat attribu&eacute; trouv&eacute;.
         </div>
       ) : (
         <div className="flex flex-col gap-1.5">
-          {data.map((m) => {
+          {data.map((m, idx) => {
             const badge = getMontantBadge(m.montant);
+            const isLocked = !meta.isPaid && idx >= 3;
+
+            if (isLocked) {
+              return (
+                <div
+                  key={m.id}
+                  className="card p-4 px-5"
+                  style={{ position: 'relative', overflow: 'hidden', cursor: 'default' }}
+                >
+                  <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>
+                    <div className="flex justify-between gap-5">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex gap-[5px] mb-1.5 items-center flex-wrap">
+                          <span className={getNatureBadgeConcurrence(m.nature)}>{getNatureLabel(m.nature)}</span>
+                        </div>
+                        <h3 className="text-sm font-semibold leading-snug mb-1.5">{m.objet}</h3>
+                        <div className="flex gap-3.5 text-xs text-gray-500 flex-wrap mb-1">
+                          <span className="flex items-center gap-1"><Building2 size={13} className="text-gray-400" /> {m.acheteurNom}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1.5 px-2.5 py-1.5 bg-violet-50 rounded border border-violet-100 w-fit">
+                          <Trophy size={13} className="text-violet-500 shrink-0" />
+                          <span className="text-[12px] font-bold text-violet-700">{m.titulaireNom}</span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 min-w-[130px]">
+                        <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 6, background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color, fontSize: 15, fontWeight: 700 }}>
+                          {formatCurrency(m.montant)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'rgba(255,255,255,0.75)',
+                    backdropFilter: 'blur(2px)',
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Lock size={18} style={{ color: '#7C3AED' }} />
+                    </div>
+                    <span style={{ fontSize: 13, color: '#374151', fontWeight: 500, textAlign: 'center' }}>
+                      Passez au plan Veille pour voir toutes les attributions
+                    </span>
+                    <Link href="/abonnement" style={{ padding: '7px 18px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: '#fff', textDecoration: 'none' }}>
+                      D&eacute;bloquer &mdash; 25,90€/mois
+                    </Link>
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={m.id}
@@ -309,7 +389,6 @@ export default function ConcurrencePage() {
               >
                 <div className="flex justify-between gap-5">
                   <div className="flex-1 min-w-0">
-                    {/* Badges */}
                     <div className="flex gap-[5px] mb-1.5 items-center flex-wrap">
                       <span className={getNatureBadgeConcurrence(m.nature)}>
                         {getNatureLabel(m.nature)}
@@ -328,13 +407,9 @@ export default function ConcurrencePage() {
                         {m.source}
                       </span>
                     </div>
-
-                    {/* Title */}
                     <h3 className="text-sm font-semibold leading-snug mb-1.5 line-clamp-2">
                       {m.objet}
                     </h3>
-
-                    {/* Buyer */}
                     <div className="flex gap-3.5 text-xs text-gray-500 flex-wrap mb-1">
                       <span className="flex items-center gap-1">
                         <Building2 size={13} className="text-gray-400" />
@@ -350,8 +425,6 @@ export default function ConcurrencePage() {
                         <span className="text-gray-400">{m.labelCPV}</span>
                       )}
                     </div>
-
-                    {/* Winner — HIGHLIGHTED */}
                     <div className="flex items-center gap-1.5 mt-1.5 px-2.5 py-1.5 bg-violet-50 rounded border border-violet-100 w-fit">
                       <Trophy size={13} className="text-violet-500 shrink-0" />
                       <span className="text-[12px] font-bold text-violet-700">
@@ -363,30 +436,21 @@ export default function ConcurrencePage() {
                         </span>
                       )}
                     </div>
-
-                    {/* Date */}
                     <div className="flex gap-2.5 mt-1.5 text-[11px] text-gray-400">
                       <span className="flex items-center gap-1">
                         <Calendar size={11} />
-                        Notifié le {formatDate(m.dateNotification)}
+                        Notifi&eacute; le {formatDate(m.dateNotification)}
                       </span>
-                      {m.dureeMois && <span>Durée {m.dureeMois} mois</span>}
+                      {m.dureeMois && <span>Dur&eacute;e {m.dureeMois} mois</span>}
                     </div>
                   </div>
-
-                  {/* Right — Montant + CTA */}
                   <div className="text-right shrink-0 min-w-[130px] flex flex-col justify-between">
                     <div>
                       <div
                         style={{
-                          display: 'inline-block',
-                          padding: '4px 10px',
-                          borderRadius: 6,
-                          background: badge.bg,
-                          border: `1px solid ${badge.border}`,
-                          color: badge.color,
-                          fontSize: 15,
-                          fontWeight: 700,
+                          display: 'inline-block', padding: '4px 10px', borderRadius: 6,
+                          background: badge.bg, border: `1px solid ${badge.border}`,
+                          color: badge.color, fontSize: 15, fontWeight: 700,
                         }}
                       >
                         {formatCurrency(m.montant)}
@@ -398,13 +462,10 @@ export default function ConcurrencePage() {
                       )}
                     </div>
                     <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/concurrence/${m.id}`);
-                      }}
+                      onClick={(e) => { e.stopPropagation(); router.push(`/concurrence/${m.id}`); }}
                       className="text-xs text-violet-600 font-medium flex items-center gap-1 justify-end mt-2 cursor-pointer hover:text-violet-800"
                     >
-                      Voir les détails <ExternalLink size={11} />
+                      Voir les d&eacute;tails <ExternalLink size={11} />
                     </span>
                   </div>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -18,6 +19,9 @@ import {
   Scale,
   Bell,
   Download,
+  CalendarCheck,
+  CheckCircle2,
+  Send,
 } from 'lucide-react';
 import {
   formatCurrency,
@@ -46,12 +50,26 @@ function buildSourceUrl(sourceRef: string | null): string | null {
   return null;
 }
 
+const TIME_SLOTS = [
+  '8h00 - 9h00', '9h00 - 10h00', '10h00 - 11h00', '11h00 - 12h00',
+  '13h00 - 14h00', '14h00 - 15h00', '15h00 - 16h00', '16h00 - 17h00', '17h00 - 18h00',
+];
+
 export default function MarcheDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [marche, setMarche] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  // RDV widget state
+  const [rdvDate, setRdvDate] = useState('');
+  const [rdvSlot, setRdvSlot] = useState('');
+  const [rdvMessage, setRdvMessage] = useState('');
+  const [rdvLoading, setRdvLoading] = useState(false);
+  const [rdvSuccess, setRdvSuccess] = useState(false);
+  const [rdvError, setRdvError] = useState('');
 
   useEffect(() => {
     if (!params.id) return;
@@ -86,6 +104,51 @@ export default function MarcheDetailPage() {
 
   const dl = daysUntil(marche.deadline);
   const sourceUrl = buildSourceUrl(marche.sourceRef);
+
+  // Minimum date = tomorrow, exclude Sundays
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split('T')[0];
+
+  async function handleRdvSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setRdvError('');
+    if (!rdvDate || !rdvSlot) {
+      setRdvError('Veuillez sélectionner une date et un créneau.');
+      return;
+    }
+    // Check not Sunday
+    const day = new Date(rdvDate).getDay();
+    if (day === 0) {
+      setRdvError('Les dimanches ne sont pas disponibles. Veuillez choisir un autre jour (lundi à samedi).');
+      return;
+    }
+    setRdvLoading(true);
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: marche.title,
+          reference: marche.sourceRef || marche.id,
+          date: rdvDate,
+          timeSlot: rdvSlot,
+          message: rdvMessage || null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erreur lors de la demande.');
+      }
+      setRdvSuccess(true);
+      setRdvDate('');
+      setRdvSlot('');
+      setRdvMessage('');
+    } catch (err: any) {
+      setRdvError(err.message || 'Erreur serveur.');
+    }
+    setRdvLoading(false);
+  }
 
   return (
     <div>
@@ -270,6 +333,119 @@ export default function MarcheDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ── RDV Widget ── */}
+      {session && (
+        <div className="card p-6 mt-3">
+          <div className="flex items-center gap-3 mb-5">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #059669, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CalendarCheck size={20} color="#fff" />
+            </div>
+            <div>
+              <h2 className="text-[15px] font-bold text-gray-900">Demander un rendez-vous</h2>
+              <p className="text-[12px] text-gray-500 mt-0.5">Accompagnement personnalisé pour ce marché</p>
+            </div>
+          </div>
+
+          {rdvSuccess ? (
+            <div style={{ padding: '24px 20px', borderRadius: 10, background: '#ECFDF5', border: '1px solid #A7F3D0', textAlign: 'center' }}>
+              <CheckCircle2 size={32} style={{ color: '#059669', margin: '0 auto 10px' }} />
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#065F46', marginBottom: 4 }}>Demande envoyée avec succès !</p>
+              <p style={{ fontSize: 13, color: '#047857' }}>Nous vous recontacterons très rapidement pour confirmer le créneau.</p>
+              <button
+                onClick={() => setRdvSuccess(false)}
+                style={{ marginTop: 14, padding: '8px 20px', borderRadius: 8, border: '1px solid #A7F3D0', background: '#fff', fontSize: 13, fontWeight: 600, color: '#059669', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Faire une autre demande
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleRdvSubmit}>
+              {/* Pre-filled subject */}
+              <div className="mb-4">
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Objet du marché</label>
+                <div style={{ padding: '10px 14px', borderRadius: 8, background: '#F9FAFB', border: '1px solid #E5E7EB', fontSize: 13, color: '#6B7280', lineHeight: 1.4 }}>
+                  {marche.title}
+                </div>
+              </div>
+
+              {/* Date + Time slot row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="rdv-grid">
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                    Date souhaitée <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={rdvDate}
+                    onChange={(e) => setRdvDate(e.target.value)}
+                    min={minDate}
+                    required
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', background: '#fff', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                  <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Du lundi au samedi uniquement</p>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                    Créneau horaire <span style={{ color: '#EF4444' }}>*</span>
+                  </label>
+                  <select
+                    value={rdvSlot}
+                    onChange={(e) => setRdvSlot(e.target.value)}
+                    required
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', background: '#fff', outline: 'none', boxSizing: 'border-box', appearance: 'auto' as any }}
+                  >
+                    <option value="">Sélectionnez un créneau</option>
+                    {TIME_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Message */}
+              <div className="mt-4">
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Message (optionnel)</label>
+                <textarea
+                  value={rdvMessage}
+                  onChange={(e) => setRdvMessage(e.target.value)}
+                  placeholder="Précisez vos besoins ou questions..."
+                  rows={3}
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {rdvError && (
+                <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: '#FEF2F2', border: '1px solid #FECACA', fontSize: 13, color: '#991B1B' }}>
+                  {rdvError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={rdvLoading}
+                style={{
+                  marginTop: 16, width: '100%', padding: '12px 0', borderRadius: 8,
+                  border: 'none', background: 'linear-gradient(135deg, #059669, #10B981)',
+                  color: '#fff', fontSize: 14, fontWeight: 600, cursor: rdvLoading ? 'not-allowed' : 'pointer',
+                  opacity: rdvLoading ? 0.6 : 1, fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                <Send size={15} />
+                {rdvLoading ? 'Envoi en cours...' : 'Demander un rendez-vous'}
+              </button>
+            </form>
+          )}
+
+          {/* Responsive */}
+          <style jsx>{`
+            @media (max-width: 640px) {
+              .rdv-grid {
+                grid-template-columns: 1fr !important;
+              }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,37 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Calendar, FileText, Target, Bell, Mail } from 'lucide-react';
+import Link from 'next/link';
+import { Calendar, Clock, FileText, CheckCircle2, Hourglass, CircleDot, Search, RefreshCw } from 'lucide-react';
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  PENDING: { label: 'En attente', bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
+  CONFIRMED: { label: 'Confirmé', bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' },
+  DONE: { label: 'Terminé', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' },
+};
+
+function formatDateFr(d: string) {
+  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
 
 export default function RendezVousPage() {
   const { data: session, status: sessionStatus } = useSession();
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  function fetchAppointments() {
+    setLoading(true);
+    fetch('/api/appointments')
+      .then(r => r.json())
+      .then(data => setAppointments(data.appointments || []))
+      .catch(() => setAppointments([]))
+      .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    if (sessionStatus === 'authenticated') fetchAppointments();
+  }, [sessionStatus]);
 
   if (sessionStatus === 'loading') {
     return <div className="flex items-center justify-center h-64 text-gray-400">Chargement...</div>;
@@ -13,98 +40,178 @@ export default function RendezVousPage() {
   return (
     <div>
       {/* Page header */}
-      <div className="mb-6 flex items-center gap-3">
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Calendar size={18} color="#fff" />
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-3">
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Calendar size={18} color="#fff" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Mes rendez-vous</h1>
+            <p className="text-[13px] text-gray-500 mt-0.5">Suivi de vos demandes d&apos;accompagnement</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Prendre rendez-vous</h1>
-          <p className="text-[13px] text-gray-500 mt-0.5">Accompagnement &amp; Strat&eacute;gie</p>
-        </div>
+        <button
+          onClick={fetchAppointments}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', fontSize: 13, fontWeight: 500, color: '#374151', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          <RefreshCw size={14} />
+          Actualiser
+        </button>
       </div>
 
-      {/* Subtitle */}
-      <div className="card p-5 mb-6" style={{ background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)', border: '1px solid #A7F3D0' }}>
-        <p style={{ fontSize: 14, color: '#065F46', lineHeight: 1.6, margin: 0 }}>
-          R&eacute;servez un cr&eacute;neau pour un accompagnement personnalis&eacute; sur le montage de votre dossier de A &agrave; Z.
-          Nos experts vous guident &agrave; chaque &eacute;tape de votre r&eacute;ponse aux appels d&apos;offres.
+      {/* Info banner */}
+      <div className="card p-4 mb-5" style={{ background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)', border: '1px solid #A7F3D0' }}>
+        <p style={{ fontSize: 13, color: '#065F46', lineHeight: 1.5, margin: 0 }}>
+          Demandez un rendez-vous depuis n&apos;importe quelle page de d&eacute;tail d&apos;une consultation.
+          Nos experts vous accompagnent de A &agrave; Z dans le montage de votre dossier.
         </p>
       </div>
 
-      {/* Google Calendar iframe */}
-      <div className="card mb-6" style={{ overflow: 'hidden', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Calendar size={16} style={{ color: '#059669' }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>S&eacute;lectionnez un cr&eacute;neau</span>
+      {/* Stats cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }} className="rdv-stats-grid">
+        <div className="card p-4" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#F59E0B' }}>
+            {appointments.filter(a => a.status === 'PENDING').length}
+          </div>
+          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>En attente</div>
         </div>
-        <iframe
-          src="https://calendar.google.com/calendar/appointments/schedules/AcZssZ0"
-          style={{
-            width: '100%',
-            minHeight: 600,
-            border: 'none',
-            display: 'block',
-          }}
-          title="Calendrier de prise de rendez-vous AB DRIDI"
-        />
-      </div>
-
-      {/* Services section */}
-      <div className="mb-6">
-        <h2 className="text-[15px] font-bold text-gray-900 mb-4">Nos services d&apos;accompagnement</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }} className="services-grid">
-          {/* Card 1 */}
-          <div className="card p-5" style={{ borderTop: '3px solid #2563EB' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <FileText size={18} style={{ color: '#2563EB' }} />
-            </div>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Montage de dossier</h3>
-            <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, margin: 0 }}>
-              Nous vous accompagnons de A &agrave; Z dans la constitution de votre dossier de r&eacute;ponse aux appels d&apos;offres publics.
-            </p>
+        <div className="card p-4" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#059669' }}>
+            {appointments.filter(a => a.status === 'CONFIRMED').length}
           </div>
-
-          {/* Card 2 */}
-          <div className="card p-5" style={{ borderTop: '3px solid #059669' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <Target size={18} style={{ color: '#059669' }} />
-            </div>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Strat&eacute;gie de r&eacute;ponse</h3>
-            <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, margin: 0 }}>
-              Analyse de vos chances et optimisation de votre offre pour maximiser vos taux de r&eacute;ussite.
-            </p>
+          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>Confirmés</div>
+        </div>
+        <div className="card p-4" style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#2563EB' }}>
+            {appointments.filter(a => a.status === 'DONE').length}
           </div>
-
-          {/* Card 3 */}
-          <div className="card p-5" style={{ borderTop: '3px solid #7C3AED' }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-              <Bell size={18} style={{ color: '#7C3AED' }} />
-            </div>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Veille personnalis&eacute;e</h3>
-            <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5, margin: 0 }}>
-              Configuration d&apos;alertes sur-mesure selon votre activit&eacute; et vos domaines de comp&eacute;tence.
-            </p>
-          </div>
+          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>Terminés</div>
         </div>
       </div>
 
-      {/* Contact */}
-      <div className="card p-5" style={{ textAlign: 'center', background: '#F9FAFB' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14, color: '#6B7280' }}>
-          <Mail size={16} style={{ color: '#2563EB' }} />
-          <span>Des questions ? Contactez-nous &agrave; </span>
-          <a href="mailto:contact@abdridi.com" style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
-            contact@abdridi.com
-          </a>
+      {/* Appointments list */}
+      {loading ? (
+        <div className="card p-16 text-center text-gray-400">Chargement des rendez-vous...</div>
+      ) : appointments.length === 0 ? (
+        <div className="card p-16 text-center">
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <Calendar size={24} style={{ color: '#9CA3AF' }} />
+          </div>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Aucun rendez-vous</p>
+          <p style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 16 }}>
+            Vous n&apos;avez pas encore demand&eacute; de rendez-vous.
+          </p>
+          <Link
+            href="/marches"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10B981)', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+          >
+            <Search size={14} />
+            Parcourir les consultations
+          </Link>
         </div>
-      </div>
+      ) : (
+        <div className="card" style={{ overflow: 'hidden' }}>
+          {/* Desktop table */}
+          <div className="rdv-table-wrapper">
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Objet</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Créneau</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Statut</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Demandé le</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((apt) => {
+                  const sc = STATUS_CONFIG[apt.status] || STATUS_CONFIG.PENDING;
+                  return (
+                    <tr key={apt.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                      <td style={{ padding: '14px 16px', maxWidth: 320 }}>
+                        <div style={{ fontWeight: 600, color: '#111827', lineHeight: 1.3, marginBottom: 2 }} className="line-clamp-2">
+                          {apt.subject}
+                        </div>
+                        {apt.reference && (
+                          <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>{apt.reference}</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#374151' }}>
+                          <Calendar size={13} style={{ color: '#9CA3AF' }} />
+                          {formatDateFr(apt.date)}
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#374151' }}>
+                          <Clock size={13} style={{ color: '#9CA3AF' }} />
+                          {apt.timeSlot}
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          padding: '4px 10px', borderRadius: 6,
+                          fontSize: 11, fontWeight: 600,
+                          background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
+                        }}>
+                          {apt.status === 'PENDING' && <Hourglass size={11} />}
+                          {apt.status === 'CONFIRMED' && <CheckCircle2 size={11} />}
+                          {apt.status === 'DONE' && <CircleDot size={11} />}
+                          {sc.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px', color: '#9CA3AF', fontSize: 12, whiteSpace: 'nowrap' }}>
+                        {formatDateFr(apt.createdAt)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards (hidden on desktop) */}
+          <div className="rdv-mobile-cards">
+            {appointments.map((apt) => {
+              const sc = STATUS_CONFIG[apt.status] || STATUS_CONFIG.PENDING;
+              return (
+                <div key={apt.id} style={{ padding: 16, borderBottom: '1px solid #F3F4F6' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+                    <div style={{ fontWeight: 600, color: '#111827', fontSize: 13, lineHeight: 1.3, flex: 1 }}>
+                      {apt.subject}
+                    </div>
+                    <span style={{
+                      padding: '3px 8px', borderRadius: 6,
+                      fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap',
+                      background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
+                    }}>
+                      {sc.label}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6B7280' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Calendar size={12} /> {formatDateFr(apt.date)}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Clock size={12} /> {apt.timeSlot}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Responsive */}
       <style jsx>{`
+        .rdv-table-wrapper { display: block; }
+        .rdv-mobile-cards { display: none; }
         @media (max-width: 768px) {
-          .services-grid {
-            grid-template-columns: 1fr !important;
-          }
+          .rdv-stats-grid { grid-template-columns: 1fr 1fr 1fr !important; }
+          .rdv-table-wrapper { display: none !important; }
+          .rdv-mobile-cards { display: block !important; }
         }
       `}</style>
     </div>
