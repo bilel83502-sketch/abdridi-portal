@@ -19,6 +19,12 @@ export async function GET(req: Request) {
   const status = searchParams.get('status') || '';
   const source = searchParams.get('source') || '';
 
+  // Date filters
+  const datePublishedFrom = searchParams.get('datePublishedFrom') || '';
+  const datePublishedTo = searchParams.get('datePublishedTo') || '';
+  const deadlineFrom = searchParams.get('deadlineFrom') || '';
+  const deadlineTo = searchParams.get('deadlineTo') || '';
+
   // Check user plan
   let isPaid = false;
   try {
@@ -47,6 +53,33 @@ export async function GET(req: Request) {
   if (q) where.OR = [{ title: { contains: q, mode: 'insensitive' } }, { buyer: { contains: q, mode: 'insensitive' } }, { cpvCode: { contains: q } }, { cpvLabel: { contains: q, mode: 'insensitive' } }];
   if (nature) where.nature = nature;
   if (department) where.department = department;
+
+  // Date filters for publication date
+  if (datePublishedFrom || datePublishedTo) {
+    where.publicationDate = {};
+    if (datePublishedFrom) {
+      where.publicationDate.gte = new Date(datePublishedFrom);
+    }
+    if (datePublishedTo) {
+      // Add end of day
+      const endDate = new Date(datePublishedTo);
+      endDate.setHours(23, 59, 59, 999);
+      where.publicationDate.lte = endDate;
+    }
+  }
+
+  // Date filters for deadline
+  if (deadlineFrom || deadlineTo) {
+    where.deadline = {};
+    if (deadlineFrom) {
+      where.deadline.gte = new Date(deadlineFrom);
+    }
+    if (deadlineTo) {
+      const endDate = new Date(deadlineTo);
+      endDate.setHours(23, 59, 59, 999);
+      where.deadline.lte = endDate;
+    }
+  }
 
   const [data, total] = await Promise.all([
     prisma.marche.findMany({ where, orderBy: { [sort]: order }, skip: (page - 1) * limit, take: limit }),

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, SlidersHorizontal, Clock, Building2, MapPin, ExternalLink, Lock } from 'lucide-react';
+import { Search, SlidersHorizontal, Clock, Building2, MapPin, ExternalLink, Lock, Calendar, RotateCcw } from 'lucide-react';
 import { formatCurrency, formatDate, daysUntil, getNatureLabel, getNatureBadge } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -17,22 +17,43 @@ export default function MarchesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Date filters
+  const [datePublishedFrom, setDatePublishedFrom] = useState('');
+  const [datePublishedTo, setDatePublishedTo] = useState('');
+  const [deadlineFrom, setDeadlineFrom] = useState('');
+  const [deadlineTo, setDeadlineTo] = useState('');
+
+  const hasDateFilters = datePublishedFrom || datePublishedTo || deadlineFrom || deadlineTo;
+
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams({ page: page.toString(), limit: '20' });
     if (q) params.set('q', q);
     if (nature) params.set('nature', nature);
     if (department) params.set('department', department);
+    if (datePublishedFrom) params.set('datePublishedFrom', datePublishedFrom);
+    if (datePublishedTo) params.set('datePublishedTo', datePublishedTo);
+    if (deadlineFrom) params.set('deadlineFrom', deadlineFrom);
+    if (deadlineTo) params.set('deadlineTo', deadlineTo);
     const res = await fetch(`/api/marches?${params}`);
     const data = await res.json();
     setMarches(data.data);
     setMeta(data.meta);
     setLoading(false);
-  }, [q, nature, department, page]);
+  }, [q, nature, department, page, datePublishedFrom, datePublishedTo, deadlineFrom, deadlineTo]);
 
   useEffect(() => { load(); }, [load]);
 
   function handleSearch(e: React.FormEvent) { e.preventDefault(); setPage(1); load(); }
+
+  function resetAllFilters() {
+    setNature('');
+    setDepartment('');
+    setDatePublishedFrom('');
+    setDatePublishedTo('');
+    setDeadlineFrom('');
+    setDeadlineTo('');
+  }
 
   const isPaid = meta.isPaid;
   const freeLimit = meta.freeLimit || 3;
@@ -70,7 +91,7 @@ export default function MarchesPage() {
               color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
             }}
           >
-            D&eacute;bloquer &mdash; 25,90€/mois
+            D&eacute;bloquer &mdash; 25,90&euro;/mois
           </Link>
         </div>
       )}
@@ -92,9 +113,17 @@ export default function MarchesPage() {
         <div className="card p-5 mb-3">
           <div className="flex justify-between mb-3.5">
             <span className="text-xs font-bold">Crit&egrave;res de recherche</span>
-            <button onClick={() => { setNature(''); setDepartment(''); }} className="text-[11px] text-blue-600 font-semibold bg-transparent border-none cursor-pointer">R&eacute;initialiser</button>
+            <button
+              onClick={resetAllFilters}
+              className="text-[11px] text-blue-600 font-semibold bg-transparent border-none cursor-pointer flex items-center gap-1"
+            >
+              <RotateCcw size={10} />
+              R&eacute;initialiser les filtres
+            </button>
           </div>
-          <div className="grid grid-cols-4 gap-2.5">
+
+          {/* Row 1: Nature, Department, CPV, Montant */}
+          <div className="grid grid-cols-4 gap-2.5 mb-4 marches-filters-grid">
             <div>
               <label className="label">Nature</label>
               <select value={nature} onChange={e => setNature(e.target.value)} className="input">
@@ -126,13 +155,104 @@ export default function MarchesPage() {
               <select className="input">
                 <option>Tous</option>
                 <option>{'< 100 K\u20AC'}</option>
-                <option>100K &ndash; 500K€</option>
-                <option>500K &ndash; 2M€</option>
+                <option>100K &ndash; 500K&euro;</option>
+                <option>500K &ndash; 2M&euro;</option>
                 <option>{'> 2 M\u20AC'}</option>
               </select>
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-3">
+
+          {/* Row 2: Date filters */}
+          <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <Calendar size={13} style={{ color: '#6B7280' }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Filtres par date</span>
+              {hasDateFilters && (
+                <span style={{
+                  marginLeft: 8, fontSize: 10, fontWeight: 600,
+                  padding: '2px 8px', borderRadius: 4,
+                  background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE',
+                }}>
+                  Actif
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-4 marches-date-grid">
+              {/* Publication date range */}
+              <div style={{ padding: '12px 14px', borderRadius: 8, background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                  Date de publication
+                </label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Du</label>
+                    <input
+                      type="date"
+                      value={datePublishedFrom}
+                      onChange={e => setDatePublishedFrom(e.target.value)}
+                      style={{
+                        width: '100%', padding: '7px 10px', borderRadius: 6,
+                        border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit',
+                        background: '#fff', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: 11, color: '#D1D5DB', marginTop: 14 }}>&rarr;</span>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Au</label>
+                    <input
+                      type="date"
+                      value={datePublishedTo}
+                      onChange={e => setDatePublishedTo(e.target.value)}
+                      style={{
+                        width: '100%', padding: '7px 10px', borderRadius: 6,
+                        border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit',
+                        background: '#fff', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Deadline date range */}
+              <div style={{ padding: '12px 14px', borderRadius: 8, background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                  Date limite de r&eacute;ponse
+                </label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Du</label>
+                    <input
+                      type="date"
+                      value={deadlineFrom}
+                      onChange={e => setDeadlineFrom(e.target.value)}
+                      style={{
+                        width: '100%', padding: '7px 10px', borderRadius: 6,
+                        border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit',
+                        background: '#fff', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: 11, color: '#D1D5DB', marginTop: 14 }}>&rarr;</span>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Au</label>
+                    <input
+                      type="date"
+                      value={deadlineTo}
+                      onChange={e => setDeadlineTo(e.target.value)}
+                      style={{
+                        width: '100%', padding: '7px 10px', borderRadius: 6,
+                        border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit',
+                        background: '#fff', outline: 'none', boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-3">
             <button onClick={() => { setPage(1); load(); }} className="btn-primary !text-xs !py-[7px] !px-4">Appliquer</button>
             <span className="text-xs text-blue-600 font-semibold cursor-pointer">Sauvegarder comme alerte &rarr;</span>
           </div>
@@ -209,7 +329,7 @@ export default function MarchesPage() {
                         color: '#fff', textDecoration: 'none',
                       }}
                     >
-                      D&eacute;bloquer &mdash; 25,90€/mois
+                      D&eacute;bloquer &mdash; 25,90&euro;/mois
                     </Link>
                   </div>
                 </div>
@@ -267,6 +387,23 @@ export default function MarchesPage() {
           </div>
         </div>
       )}
+
+      {/* Responsive */}
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .marches-filters-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .marches-date-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .marches-filters-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

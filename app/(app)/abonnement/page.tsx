@@ -103,7 +103,7 @@ function AbonnementContent() {
 
       {success && (
         <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: 14, textAlign: 'center', fontWeight: 500 }}>
-          &#x2705; Abonnement activ&eacute; avec succ&egrave;s !
+          Abonnement activ&eacute; avec succ&egrave;s !
         </div>
       )}
       {canceled && (
@@ -136,7 +136,7 @@ function AbonnementContent() {
                   color: '#fff', textAlign: 'center', fontSize: 11, fontWeight: 700,
                   padding: '6px 0', letterSpacing: '0.5px', textTransform: 'uppercase',
                 }}>
-                  &#x2B50; Populaire
+                  POPULAIRE
                 </div>
               )}
 
