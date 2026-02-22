@@ -1,5 +1,5 @@
 // ───────────────────────────────────────────────────────
-// AB DRIDI — Chatbot DRIBI Knowledge Base & Response Engine
+// AB DRIDI — Chatbot AB DRIDI IA Knowledge Base & Response Engine
 // ───────────────────────────────────────────────────────
 
 export const knowledgeBase = {
@@ -108,9 +108,9 @@ const categories: Category[] = [
       { word: 'hey', weight: 3 }, { word: 'coucou', weight: 3 }, { word: 'bonsoir', weight: 3 },
     ],
     responses: [
-      () => 'Bonjour ! Je suis Dribi, votre assistant AB DRIDI. Je peux vous aider sur les marches publics, l\'utilisation du portail, ou la prise de rendez-vous. Que puis-je faire pour vous ?',
-      () => 'Bonjour et bienvenue ! Je suis Dribi. Posez-moi vos questions sur les appels d\'offres, les abonnements, ou l\'accompagnement. Je suis la pour vous aider.',
-      () => 'Bienvenue, Dribi a votre service. Besoin d\'aide sur les marches publics, votre abonnement, ou un rendez-vous ? N\'hesitez pas.',
+      () => 'Bonjour ! Je suis votre assistant AB DRIDI IA. Je peux vous aider sur les marches publics, l\'utilisation du portail, ou la prise de rendez-vous. Que puis-je faire pour vous ?',
+      () => 'Bonjour et bienvenue ! Je suis l\'assistant AB DRIDI IA. Posez-moi vos questions sur les appels d\'offres, les abonnements, ou l\'accompagnement. Je suis la pour vous aider.',
+      () => 'Bienvenue, assistant AB DRIDI IA a votre service. Besoin d\'aide sur les marches publics, votre abonnement, ou un rendez-vous ? N\'hesitez pas.',
     ],
   },
   {

@@ -11,30 +11,36 @@ type Message = {
 
 const WELCOME_MESSAGE: Message = {
   role: 'bot',
-  text: 'Bonjour, je suis Dribi, votre assistant AB DRIDI. Comment puis-je vous aider ?',
+  text: 'Bonjour, je suis votre assistant AB DRIDI IA. Comment puis-je vous aider ?',
 };
 
-/* ─── Headset SVG icon (clean, professional) ─── */
-function HeadsetIcon({ size = 24, color = '#fff' }: { size?: number; color?: string }) {
+/* ─── AB DRIDI IA Logo: circle with "AB" + green "IA" badge ─── */
+function ABDridiLogo({ size = 24 }: { size?: number }) {
+  const badgeSize = size * 0.42;
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3v5z" />
-      <path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3v5z" />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      {/* Main blue circle */}
+      <circle cx="24" cy="24" r="22" fill="#2563EB" />
+      {/* AB text */}
+      <text x="24" y="28" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="800" fontSize="16" fill="#fff">AB</text>
+      {/* Green IA badge */}
+      <circle cx="38" cy="38" r={badgeSize} fill="#22C55E" stroke="#fff" strokeWidth="2" />
+      <text x="38" y="41.5" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="700" fontSize="8" fill="#fff">IA</text>
     </svg>
   );
 }
 
-/* ─── Small headset for bot avatar in messages ─── */
+/* ─── Small bot avatar for messages ─── */
 function BotAvatar() {
   return (
     <div style={{
       width: 28, height: 28, borderRadius: '50%',
-      background: '#EFF6FF', border: '1px solid #DBEAFE',
+      background: '#2563EB',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexShrink: 0,
+      color: '#fff', fontSize: 10, fontWeight: 800, fontFamily: 'Arial, sans-serif',
     }}>
-      <HeadsetIcon size={15} color="#2563EB" />
+      AB
     </div>
   );
 }
@@ -90,7 +96,7 @@ export default function Chatbot() {
           onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(37, 99, 235, 0.45)'; }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(37, 99, 235, 0.35)'; }}
         >
-          <HeadsetIcon size={24} color="#fff" />
+          <ABDridiLogo size={32} />
         </button>
       )}
 
@@ -134,13 +140,13 @@ export default function Chatbot() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <HeadsetIcon size={18} color="#fff" />
+              <ABDridiLogo size={28} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Dribi — Assistant AB DRIDI</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>AB DRIDI IA</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', display: 'inline-block' }} />
-                En ligne
+                Assistant intelligent
               </div>
             </div>
           </div>
@@ -198,12 +204,12 @@ export default function Chatbot() {
                   fontSize: 13, color: '#9CA3AF', fontStyle: 'italic',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}>
-                  <span className="dribi-dots">
-                    <span className="dribi-dot" />
-                    <span className="dribi-dot" />
-                    <span className="dribi-dot" />
+                  <span className="ab-dots">
+                    <span className="ab-dot" />
+                    <span className="ab-dot" />
+                    <span className="ab-dot" />
                   </span>
-                  Dribi analyse...
+                  Analyse en cours...
                 </div>
               </div>
             )}
@@ -275,12 +281,12 @@ export default function Chatbot() {
           0%, 80%, 100% { transform: translateY(0); }
           40% { transform: translateY(-4px); }
         }
-        .dribi-dots {
+        .ab-dots {
           display: inline-flex;
           gap: 3px;
           margin-right: 4px;
         }
-        .dribi-dot {
+        .ab-dot {
           width: 5px;
           height: 5px;
           border-radius: 50%;
@@ -288,9 +294,9 @@ export default function Chatbot() {
           display: inline-block;
           animation: dotBounce 1.2s infinite ease-in-out;
         }
-        .dribi-dot:nth-child(1) { animation-delay: 0s; }
-        .dribi-dot:nth-child(2) { animation-delay: 0.15s; }
-        .dribi-dot:nth-child(3) { animation-delay: 0.3s; }
+        .ab-dot:nth-child(1) { animation-delay: 0s; }
+        .ab-dot:nth-child(2) { animation-delay: 0.15s; }
+        .ab-dot:nth-child(3) { animation-delay: 0.3s; }
 
         @media (max-width: 640px) {
           .chatbot-panel {
