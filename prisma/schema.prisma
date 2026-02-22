@@ -22,6 +22,7 @@ model User {
   updatedAt    DateTime @updatedAt
   lastLoginAt  DateTime?
   alerts       Alert[]
+  appointments Appointment[]
 
   // Stripe
   stripeCustomerId       String?
@@ -104,4 +105,21 @@ model Alert {
   updatedAt   DateTime @updatedAt
 
   @@index([userId])
+}
+
+model Appointment {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  reference String?
+  date      DateTime
+  timeSlot  String
+  message   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([status])
+  @@index([date])
 }

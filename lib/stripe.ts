@@ -7,38 +7,26 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 export const PLANS = {
   DECOUVERTE: {
-    name: 'Découverte',
+    name: 'D\u00e9couverte',
     price: 0,
     priceId: null,
     features: [
       '10 consultations/jour',
       'Recherche basique',
-      'Pas d\'alertes email',
-      'Pas de concurrence',
+      '93 sources officielles',
     ],
   },
   VEILLE: {
-    name: 'Veille',
-    price: 49,
-    priceId: process.env.STRIPE_PRICE_VEILLE || 'price_veille_placeholder',
+    name: 'Veille & Accompagnement',
+    price: 25.90,
+    priceId: process.env.STRIPE_PRICE_VEILLE || '',
     features: [
-      'Consultations illimitées',
-      'Alertes email personnalisées',
+      'Consultations illimit\u00e9es',
+      'Alertes email personnalis\u00e9es',
       'Analyse de concurrence',
       '93 sources officielles',
-      'Export des données',
-    ],
-  },
-  MONTAGE: {
-    name: 'Montage',
-    price: 199,
-    priceId: process.env.STRIPE_PRICE_MONTAGE || 'price_montage_placeholder',
-    features: [
-      'Tout le plan Veille',
-      'Aide au montage de dossiers',
-      'Templates de réponse',
-      'Analyse détaillée DCE',
-      'Support prioritaire',
+      'Export des donn\u00e9es',
+      'Prise de rendez-vous accompagnement',
     ],
   },
 } as const;

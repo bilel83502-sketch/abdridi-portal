@@ -3,61 +3,46 @@
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
-import { Check, Sparkles, Crown, Zap } from 'lucide-react';
+import { Check, X, Zap, Sparkles } from 'lucide-react';
 
 const plans = [
   {
     id: 'DECOUVERTE',
-    name: 'Découverte',
+    name: 'D\u00e9couverte',
     price: 0,
     period: 'Gratuit',
     icon: Zap,
     color: '#6B7280',
     popular: false,
     features: [
-      '10 consultations/jour',
-      'Recherche basique',
-      '93 sources officielles',
-      'Pas d\'alertes email',
-      'Pas de concurrence',
+      { text: '3 appels d\'offres visibles par jour', included: true },
+      { text: 'R\u00e9sultats avec d\u00e9lai de 48h', included: true },
+      { text: 'R\u00e9sultats au-del\u00e0 de 3 flout\u00e9s', included: true },
+      { text: 'Prise de rendez-vous accompagnement', included: true },
+      { text: 'Alertes email', included: false },
+      { text: 'Veille concurrentielle', included: false },
+      { text: 'Export des donn\u00e9es', included: false },
     ],
-    negative: ['Pas d\'alertes email', 'Pas de concurrence'],
   },
   {
     id: 'VEILLE',
-    name: 'Veille',
-    price: 49,
+    name: 'Veille & Accompagnement',
+    price: 25.90,
     period: '/mois',
     icon: Sparkles,
     color: '#2563EB',
     popular: true,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || 'price_veille_placeholder',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || '',
     features: [
-      'Consultations illimitées',
-      'Alertes email personnalisées',
-      'Analyse de concurrence',
-      '93 sources officielles',
-      'Export des données',
+      { text: 'Appels d\'offres illimit\u00e9s', included: true },
+      { text: 'R\u00e9sultats en temps r\u00e9el', included: true },
+      { text: 'Tous les filtres (CPV, montant, r\u00e9gion)', included: true },
+      { text: 'Alertes email personnalis\u00e9es', included: true },
+      { text: 'Veille concurrentielle compl\u00e8te', included: true },
+      { text: 'Export des donn\u00e9es (CSV/Excel)', included: true },
+      { text: 'Prise de rendez-vous accompagnement', included: true },
+      { text: 'Support prioritaire', included: true },
     ],
-    negative: [] as string[],
-  },
-  {
-    id: 'MONTAGE',
-    name: 'Montage',
-    price: 199,
-    period: '/mois',
-    icon: Crown,
-    color: '#7C3AED',
-    popular: false,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTAGE || 'price_montage_placeholder',
-    features: [
-      'Tout le plan Veille',
-      'Aide au montage de dossiers',
-      'Templates de réponse',
-      'Analyse détaillée DCE',
-      'Support prioritaire',
-    ],
-    negative: [] as string[],
   },
 ];
 
@@ -72,19 +57,27 @@ function AbonnementContent() {
   const currentPlan = user?.role === 'ADMIN' ? 'ADMIN' : (user?.plan || 'DECOUVERTE');
 
   async function handleSubscribe(priceId: string, planId: string) {
+    if (!priceId) {
+      console.error('Stripe priceId is empty. Check NEXT_PUBLIC_STRIPE_PRICE_VEILLE env var.');
+      return;
+    }
     setLoadingPlan(planId);
     try {
+      console.log('Starting checkout with priceId:', priceId);
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ priceId }),
       });
       const data = await res.json();
+      console.log('Checkout response:', data);
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        console.error('No checkout URL returned:', data);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Checkout error:', e);
     }
     setLoadingPlan(null);
   }
@@ -105,21 +98,21 @@ function AbonnementContent() {
     <div>
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Abonnement</h1>
-        <p className="text-sm text-gray-500">Choisissez le plan adapté à vos besoins</p>
+        <p className="text-sm text-gray-500">Choisissez le plan adapt&eacute; &agrave; vos besoins</p>
       </div>
 
       {success && (
-        <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: 14, textAlign: 'center' }}>
-          Votre abonnement a été activé avec succès !
+        <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: 14, textAlign: 'center', fontWeight: 500 }}>
+          &#x2705; Abonnement activ&eacute; avec succ&egrave;s !
         </div>
       )}
       {canceled && (
         <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#FFFBEB', border: '1px solid #FDE68A', color: '#92400E', fontSize: 14, textAlign: 'center' }}>
-          Paiement annulé. Vous pouvez réessayer quand vous le souhaitez.
+          Paiement annul&eacute;. Vous pouvez r&eacute;essayer quand vous le souhaitez.
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, maxWidth: 960, margin: '0 auto' }}>
+      <div className="abonnement-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 760, margin: '0 auto' }}>
         {plans.map((plan) => {
           const isCurrent = currentPlan === plan.id;
           const isAdmin = currentPlan === 'ADMIN';
@@ -143,7 +136,7 @@ function AbonnementContent() {
                   color: '#fff', textAlign: 'center', fontSize: 11, fontWeight: 700,
                   padding: '6px 0', letterSpacing: '0.5px', textTransform: 'uppercase',
                 }}>
-                  Populaire
+                  &#x2B50; Populaire
                 </div>
               )}
 
@@ -161,49 +154,56 @@ function AbonnementContent() {
 
                 <div style={{ marginBottom: 24 }}>
                   <span style={{ fontSize: 36, fontWeight: 800, color: '#111827' }}>
-                    {plan.price === 0 ? 'Gratuit' : `${plan.price}€`}
+                    {plan.price === 0 ? 'Gratuit' : `${plan.price.toFixed(2).replace('.', ',')}€`}
                   </span>
                   {plan.price > 0 && (
                     <span style={{ fontSize: 14, color: '#6B7280' }}>{plan.period}</span>
                   )}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-                  {plan.features.map((f, i) => {
-                    const isNeg = plan.negative.includes(f);
-                    return (
-                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: isNeg ? '#9CA3AF' : '#374151' }}>
-                        <Check size={16} style={{ color: isNeg ? '#D1D5DB' : plan.color, flexShrink: 0 }} />
-                        <span style={{ textDecoration: isNeg ? 'line-through' : 'none' }}>{f}</span>
-                      </div>
-                    );
-                  })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginBottom: 24 }}>
+                  {plan.features.map((f, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: f.included ? '#374151' : '#9CA3AF' }}>
+                      {f.included ? (
+                        <Check size={16} style={{ color: plan.color, flexShrink: 0, marginTop: 1 }} />
+                      ) : (
+                        <X size={16} style={{ color: '#D1D5DB', flexShrink: 0, marginTop: 1 }} />
+                      )}
+                      <span style={{ textDecoration: f.included ? 'none' : 'line-through' }}>{f.text}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {isAdmin ? (
                   <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: '#059669', fontWeight: 600 }}>
-                    Accès Admin illimité
+                    Acc&egrave;s Admin illimit&eacute;
                   </div>
-                ) : isCurrent ? (
-                  plan.id === 'DECOUVERTE' ? (
-                    <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: '#6B7280', fontWeight: 500 }}>
-                      Plan actuel
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleManage}
-                      style={{
-                        width: '100%', padding: '12px 0', borderRadius: 8,
-                        border: '1px solid #E5E7EB', background: '#fff',
-                        fontSize: 14, fontWeight: 600, color: '#374151',
-                        cursor: 'pointer', fontFamily: 'inherit',
-                      }}
-                    >
-                      Gérer l&apos;abonnement
-                    </button>
-                  )
+                ) : isCurrent && plan.id === 'DECOUVERTE' ? (
+                  <div style={{
+                    width: '100%', padding: '12px 0', borderRadius: 8,
+                    background: '#F3F4F6', textAlign: 'center',
+                    fontSize: 14, fontWeight: 600, color: '#9CA3AF',
+                  }}>
+                    Plan actuel
+                  </div>
+                ) : isCurrent && plan.id === 'VEILLE' ? (
+                  <button
+                    onClick={handleManage}
+                    style={{
+                      width: '100%', padding: '12px 0', borderRadius: 8,
+                      border: '1px solid #E5E7EB', background: '#fff',
+                      fontSize: 14, fontWeight: 600, color: '#374151',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    G&eacute;rer l&apos;abonnement
+                  </button>
                 ) : plan.price === 0 ? (
-                  <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 13, color: '#9CA3AF' }}>
+                  <div style={{
+                    width: '100%', padding: '12px 0', borderRadius: 8,
+                    background: '#F9FAFB', textAlign: 'center',
+                    fontSize: 13, color: '#9CA3AF',
+                  }}>
                     Plan de base
                   </div>
                 ) : (
@@ -213,16 +213,14 @@ function AbonnementContent() {
                     style={{
                       width: '100%', padding: '12px 0', borderRadius: 8,
                       border: 'none',
-                      background: plan.popular
-                        ? 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)'
-                        : `linear-gradient(135deg, ${plan.color}, ${plan.color}cc)`,
+                      background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
                       color: '#fff', fontSize: 14, fontWeight: 600,
                       cursor: loadingPlan === plan.id ? 'not-allowed' : 'pointer',
                       opacity: loadingPlan === plan.id ? 0.6 : 1,
                       fontFamily: 'inherit',
                     }}
                   >
-                    {loadingPlan === plan.id ? 'Redirection...' : 'S\'abonner'}
+                    {loadingPlan === plan.id ? 'Redirection vers Stripe...' : 'S\'abonner \u2014 25,90€/mois'}
                   </button>
                 )}
               </div>
@@ -230,6 +228,15 @@ function AbonnementContent() {
           );
         })}
       </div>
+
+      {/* Responsive mobile */}
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .abonnement-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

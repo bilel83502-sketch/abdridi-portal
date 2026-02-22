@@ -13,7 +13,7 @@ export async function GET() {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const [totalOpen, newThisWeek, closingSoon, userAlerts, byNature, recentMarches, topDepartments] = await Promise.all([
+  const [totalOpen, newThisWeek, closingSoon, userAlerts, byNature, recentMarches, topDepartments, totalAttribues] = await Promise.all([
     prisma.marche.count({ where: { status: 'OUVERT' } }),
     prisma.marche.count({ where: { publicationDate: { gte: weekAgo }, status: 'OUVERT' } }),
     prisma.marche.count({ where: { deadline: { lte: weekLater, gte: now }, status: 'OUVERT' } }),
@@ -21,10 +21,11 @@ export async function GET() {
     prisma.marche.groupBy({ by: ['nature'], where: { status: 'OUVERT' }, _count: true }),
     prisma.marche.findMany({ where: { status: 'OUVERT' }, orderBy: { publicationDate: 'desc' }, take: 5 }),
     prisma.marche.groupBy({ by: ['department'], where: { status: 'OUVERT' }, _count: true, orderBy: { _count: { department: 'desc' } }, take: 5 }),
+    prisma.marcheAttribue.count(),
   ]);
 
   return NextResponse.json({
-    totalOpen, newThisWeek, closingSoon, userAlerts,
+    totalOpen, newThisWeek, closingSoon, userAlerts, totalAttribues,
     byNature: byNature.map(b => ({ nature: b.nature, count: b._count })),
     recentMarches,
     topDepartments: topDepartments.map(d => ({ department: d.department, count: d._count })),

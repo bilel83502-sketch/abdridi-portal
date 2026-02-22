@@ -39,15 +39,8 @@ export async function GET() {
       (u) => u.stripeCurrentPeriodEnd && new Date(u.stripeCurrentPeriodEnd) > now
     );
 
-    // Calculate monthly revenue
-    let monthlyRevenue = 0;
-    for (const u of paidUsers) {
-      if (u.stripePriceId === process.env.STRIPE_PRICE_MONTAGE) {
-        monthlyRevenue += 199;
-      } else {
-        monthlyRevenue += 49;
-      }
-    }
+    // Calculate monthly revenue (single plan at 25.90€)
+    const monthlyRevenue = paidUsers.length * 25.90;
 
     return NextResponse.json({
       totalUsers,
