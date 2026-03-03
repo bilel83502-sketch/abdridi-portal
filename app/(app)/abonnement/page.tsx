@@ -32,7 +32,7 @@ const plans = [
     icon: Sparkles,
     color: '#2563EB',
     popular: true,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || 'price_1T34V638OYpA4xNLxlkyivkz',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || undefined,
     features: [
       { text: 'Appels d\'offres illimit\u00e9s', included: true },
       { text: 'R\u00e9sultats en temps r\u00e9el', included: true },
@@ -64,7 +64,7 @@ function AbonnementContent() {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: 'price_1T34V638OYpA4xNLxlkyivkz' }),
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (data.url) {

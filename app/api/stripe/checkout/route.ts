@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import Stripe from 'stripe';
+import { stripe } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  typescript: true,
-});
 
 export async function POST(req: Request) {
   try {
@@ -17,10 +13,10 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const priceId = body.priceId || process.env.STRIPE_PRICE_VEILLE || 'price_1T34V638OYpA4xNLxlkyivkz';
+    const priceId = body.priceId || process.env.STRIPE_PRICE_VEILLE;
 
     if (!priceId) {
-      return NextResponse.json({ error: 'Price ID manquant.' }, { status: 400 });
+      return NextResponse.json({ error: 'Price ID manquant. Vérifiez la variable STRIPE_PRICE_VEILLE.' }, { status: 400 });
     }
 
     const checkoutSession = await stripe.checkout.sessions.create({

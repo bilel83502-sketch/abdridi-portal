@@ -31,14 +31,15 @@ export async function POST(req: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
-        const userId = session.metadata?.userId;
+        const userEmail = session.metadata?.userEmail || session.customer_email;
 
-        if (userId) {
+        if (userEmail) {
           const priceId = subscription.items.data[0]?.price.id;
 
           await prisma.user.update({
-            where: { id: userId },
+            where: { email: userEmail },
             data: {
+              stripeCustomerId: session.customer as string,
               stripeSubscriptionId: subscription.id,
               stripePriceId: priceId,
               stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
