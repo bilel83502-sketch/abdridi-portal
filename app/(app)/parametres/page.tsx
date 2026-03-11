@@ -48,7 +48,7 @@ export default function ParametresPage() {
                 {user?.plan === 'VEILLE' ? '— 49€ HT/mois' : user?.plan === 'MONTAGE' ? '— 199€/dossier' : '— Sur devis'}
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">Recherche illimitée · Alertes quotidiennes · Accès 93 sources</p>
+            <p className="text-xs text-gray-500 mt-0.5">Recherche illimitée · Alertes quotidiennes · Accès 94 sources</p>
           </div>
           <span className="px-3 py-[3px] rounded text-[10px] font-bold bg-emerald-50 text-emerald-600">Actif</span>
         </div>

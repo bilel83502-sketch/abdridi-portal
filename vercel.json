@@ -15,6 +15,10 @@
     {
       "path": "/api/sync/decp-attribue",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/sync/e-marchespublics",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

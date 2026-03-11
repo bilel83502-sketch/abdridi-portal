@@ -68,7 +68,7 @@ export default function RegisterPage() {
           <div className="login-left-stats">
             {[
               { n: '500K+', t: 'consultations/an' },
-              { n: '93', t: 'sources officielles' },
+              { n: '94', t: 'sources officielles' },
               { n: '101', t: 'départements couverts' },
             ].map((s, i) => (
               <div key={i} className="login-left-stat">
