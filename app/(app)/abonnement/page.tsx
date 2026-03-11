@@ -32,7 +32,11 @@ const plans = [
     icon: Sparkles,
     color: '#2563EB',
     popular: true,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || 'price_1T34V638OYpA4xNLxlkyivkz',
+    priceId: (() => {
+      const id = process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE;
+      if (!id) throw new Error('NEXT_PUBLIC_STRIPE_PRICE_VEILLE is not defined');
+      return id;
+    })(),
     features: [
       { text: 'Appels d\'offres illimit\u00e9s', included: true },
       { text: 'R\u00e9sultats en temps r\u00e9el', included: true },
@@ -64,7 +68,13 @@ function AbonnementContent() {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: 'price_1T34V638OYpA4xNLxlkyivkz' }),
+        body: JSON.stringify({
+          priceId: (() => {
+            const id = process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE;
+            if (!id) throw new Error('NEXT_PUBLIC_STRIPE_PRICE_VEILLE is not defined');
+            return id;
+          })(),
+        }),
       });
       const data = await res.json();
       if (data.url) {

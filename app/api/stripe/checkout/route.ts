@@ -17,11 +17,12 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const priceId = body.priceId || process.env.STRIPE_PRICE_VEILLE || 'price_1T34V638OYpA4xNLxlkyivkz';
-
+    const priceId = body.priceId || process.env.STRIPE_PRICE_VEILLE;
     if (!priceId) {
-      return NextResponse.json({ error: 'Price ID manquant.' }, { status: 400 });
+      throw new Error('STRIPE_PRICE_VEILLE is not defined and no priceId provided');
     }
+
+    // priceId is already validated above
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
