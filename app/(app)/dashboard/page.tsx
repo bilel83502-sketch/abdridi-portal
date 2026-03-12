@@ -21,7 +21,7 @@ export default function DashboardPage() {
         <Image src="/logo.png" alt="AB DRIDI" width={32} height={32} className="rounded-md" />
         <div>
           <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
-          <p className="text-[13px] text-gray-500 mt-0.5">Vue d'ensemble — Données issues de 94 sources, mises à jour 3×/jour</p>
+          <p className="text-[13px] text-gray-500 mt-0.5">Vue d'ensemble — Données issues de 95 sources, mises à jour 3×/jour</p>
         </div>
       </div>
 

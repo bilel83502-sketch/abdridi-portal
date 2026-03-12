@@ -13,7 +13,7 @@ export const PLANS = {
     features: [
       '10 consultations/jour',
       'Recherche basique',
-      '94 sources officielles',
+      '95 sources officielles',
     ],
   },
   VEILLE: {
@@ -24,7 +24,7 @@ export const PLANS = {
       'Consultations illimit\u00e9es',
       'Alertes email personnalis\u00e9es',
       'Analyse de concurrence',
-      '94 sources officielles',
+      '95 sources officielles',
       'Export des donn\u00e9es',
       'Prise de rendez-vous accompagnement',
     ],
