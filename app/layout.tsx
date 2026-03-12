@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'AB DRIDI — Portail Marchés Publics',
-  description: 'Plateforme de veille B2B sur les marchés publics. 98 sources agrégées.',
+  description: 'Plateforme de veille B2B sur les marchés publics. 99 sources agrégées.',
   icons: {
     icon: '/favicon.png',
     shortcut: '/favicon.png',
