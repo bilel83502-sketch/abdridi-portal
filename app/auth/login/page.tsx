@@ -25,7 +25,7 @@ function LoginContent() {
       setError('Email ou mot de passe incorrect.');
       setLoading(false);
     } else {
-      router.push('/dashboard');
+      router.push('/marches');
     }
   }
 
@@ -99,7 +99,7 @@ function LoginContent() {
           {/* Google OAuth button */}
           <button
             type="button"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            onClick={() => signIn('google', { callbackUrl: '/marches' })}
             className="login-google-btn"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">

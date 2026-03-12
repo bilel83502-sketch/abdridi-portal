@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search, SlidersHorizontal, Clock, Building2, MapPin, ArrowRight, Lock, Calendar, RotateCcw, Layers, Tag } from 'lucide-react';
 import { formatCurrency, formatDate, daysUntil, getNatureLabel } from '@/lib/utils';
 import Link from 'next/link';
+import DepartmentSelect from '@/components/DepartmentSelect';
 
 /* ─── Nature badge with requested color mapping ─── */
 function NatureBadge({ nature }: { nature: string }) {
@@ -222,16 +223,7 @@ export default function MarchesPage() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Departement</label>
-              <select value={department} onChange={e => setDepartment(e.target.value)} className="input" style={{ height: 40, fontSize: 13 }}>
-                <option value="">Tous</option>
-                <option value="75">75 &mdash; Paris</option>
-                <option value="69">69 &mdash; Rhone</option>
-                <option value="13">13 &mdash; Bouches-du-Rhone</option>
-                <option value="33">33 &mdash; Gironde</option>
-                <option value="59">59 &mdash; Nord</option>
-                <option value="31">31 &mdash; Haute-Garonne</option>
-                <option value="67">67 &mdash; Bas-Rhin</option>
-              </select>
+              <DepartmentSelect value={department} onChange={setDepartment} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Code CPV</label>

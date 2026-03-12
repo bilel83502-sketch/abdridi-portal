@@ -105,7 +105,7 @@ export default function RegisterPage() {
           {/* Google OAuth */}
           <button
             type="button"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            onClick={() => signIn('google', { callbackUrl: '/marches' })}
             className="login-google-btn"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">

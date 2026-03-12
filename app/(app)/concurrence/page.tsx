@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatDate, getNatureLabel } from '@/lib/utils';
 import Link from 'next/link';
+import DepartmentSelect from '@/components/DepartmentSelect';
 
 const AMOUNT_BRACKETS = [
   { label: 'Tous', min: '', max: '' },
@@ -251,19 +252,7 @@ export default function ConcurrencePage() {
             </div>
             <div>
               <label className="label">Département</label>
-              <select value={department} onChange={(e) => setDepartment(e.target.value)} className="input">
-                <option value="">Tous</option>
-                <option value="75">75 — Paris</option>
-                <option value="69">69 — Rhône</option>
-                <option value="13">13 — Bouches-du-Rhône</option>
-                <option value="33">33 — Gironde</option>
-                <option value="59">59 — Nord</option>
-                <option value="31">31 — Haute-Garonne</option>
-                <option value="67">67 — Bas-Rhin</option>
-                <option value="44">44 — Loire-Atlantique</option>
-                <option value="34">34 — Hérault</option>
-                <option value="06">06 — Alpes-Maritimes</option>
-              </select>
+              <DepartmentSelect value={department} onChange={setDepartment} />
             </div>
             <div>
               <label className="label">Période</label>
