@@ -18,15 +18,15 @@
     },
     {
       "path": "/api/sync/e-marchespublics",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/sync/place",
-      "schedule": "30 */6 * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/sync/achatpublic",
-      "schedule": "0 1,7,13,19 * * *"
+      "schedule": "0 8 * * *"
     }
   ]
 }
