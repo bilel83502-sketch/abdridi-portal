@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { extractSiren } from '@/lib/sirene';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,8 +101,34 @@ export async function GET(req: Request) {
       }),
     ]);
 
+  // Enrich with entreprise data
+  const sirens = new Set<string>();
+  for (const m of data) {
+    if (m.titulaireSiret && m.titulaireSiret.length >= 9) {
+      sirens.add(extractSiren(m.titulaireSiret));
+    }
+  }
+
+  const entreprises = sirens.size > 0
+    ? await prisma.entreprise.findMany({
+        where: { siren: { in: Array.from(sirens) } },
+      })
+    : [];
+  const entrepriseMap = new Map(entreprises.map(e => [e.siren, e]));
+
+  const enrichedData = data.map(m => {
+    if (m.titulaireSiret && m.titulaireSiret.length >= 9) {
+      const siren = extractSiren(m.titulaireSiret);
+      const ent = entrepriseMap.get(siren);
+      if (ent) {
+        return { ...m, entreprise: ent };
+      }
+    }
+    return m;
+  });
+
   return NextResponse.json({
-    data,
+    data: enrichedData,
     meta: {
       total,
       page,

@@ -18,6 +18,11 @@ import {
   Hash,
   CreditCard,
   Globe,
+  Users,
+  Briefcase,
+  CheckCircle,
+  XCircle,
+  Info,
 } from 'lucide-react';
 import { formatCurrency, formatDate, getNatureLabel } from '@/lib/utils';
 
@@ -56,7 +61,7 @@ export default function ConcurrenceDetailPage() {
           href="/concurrence"
           className="text-violet-600 text-sm font-semibold no-underline"
         >
-          ← Retour à la veille concurrentielle
+          &larr; Retour à la veille concurrentielle
         </Link>
       </div>
     );
@@ -73,6 +78,9 @@ export default function ConcurrenceDetailPage() {
     };
     return map[n] || '';
   }
+
+  const entreprise = marche.entreprise;
+  const autresMarches = marche.autresMarches || [];
 
   return (
     <div>
@@ -115,7 +123,7 @@ export default function ConcurrenceDetailPage() {
               <MapPin size={15} className="text-gray-400" />
               {marche.departementNom} ({marche.departement})
               {marche.region && (
-                <span className="text-gray-400">· {marche.region}</span>
+                <span className="text-gray-400">&middot; {marche.region}</span>
               )}
             </span>
           )}
@@ -298,6 +306,118 @@ export default function ConcurrenceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Fiche entreprise enrichie */}
+      {entreprise && (
+        <div className="card p-6 mb-3" style={{ borderLeft: '3px solid #10B981' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Briefcase size={16} className="text-emerald-500" />
+            <h2 className="text-sm font-bold">Fiche entreprise — {entreprise.raisonSociale}</h2>
+            <span className="ml-auto text-[10px] text-gray-400">
+              Enrichi le {formatDate(entreprise.enrichiLe)}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-x-6 gap-y-4">
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">Raison sociale</div>
+              <div className="text-sm font-semibold">{entreprise.raisonSociale}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">SIREN</div>
+              <div className="text-sm font-mono">{entreprise.siren}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">Statut</div>
+              <div className="text-sm font-semibold flex items-center gap-1">
+                {entreprise.statut === 'Actif' ? (
+                  <><CheckCircle size={13} className="text-emerald-500" /> <span className="text-emerald-700">Actif</span></>
+                ) : (
+                  <><XCircle size={13} className="text-red-500" /> <span className="text-red-700">Fermé</span></>
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">Date de création</div>
+              <div className="text-sm">{entreprise.dateCreation ? formatDate(entreprise.dateCreation) : 'N/C'}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">Forme juridique</div>
+              <div className="text-sm">{entreprise.formeJuridique || 'N/C'}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">Code NAF</div>
+              <div className="text-sm font-mono">{entreprise.codeNaf || 'N/C'}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5">Activité</div>
+              <div className="text-sm">{entreprise.activite || 'N/C'}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-gray-400 mb-0.5 flex items-center gap-1"><Users size={11} /> Effectifs</div>
+              <div className="text-sm">{entreprise.effectifs || 'N/C'}</div>
+            </div>
+            <div className="col-span-4">
+              <div className="text-[11px] text-gray-400 mb-0.5 flex items-center gap-1"><MapPin size={11} /> Adresse du siège</div>
+              <div className="text-sm">{entreprise.adresse || 'N/C'}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Autres marchés remportés */}
+      {autresMarches.length > 0 && (
+        <div className="card p-6" style={{ borderLeft: '3px solid #7C3AED' }}>
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy size={16} className="text-violet-500" />
+            <h2 className="text-sm font-bold">
+              Autres marchés remportés par {marche.titulaireNom}
+            </h2>
+            <span className="ml-auto text-[10px] text-gray-400 font-semibold">
+              {autresMarches.length} marché{autresMarches.length > 1 ? 's' : ''}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {autresMarches.map((am: any) => (
+              <div
+                key={am.id}
+                onClick={() => router.push(`/concurrence/${am.id}`)}
+                className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-violet-200 hover:bg-violet-50/30 cursor-pointer transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`px-[5px] py-[1px] rounded text-[9px] font-bold uppercase ${
+                      am.nature === 'TRAVAUX' ? 'bg-amber-50 text-amber-700' :
+                      am.nature === 'SERVICES' ? 'bg-indigo-50 text-indigo-700' :
+                      'bg-violet-50 text-violet-700'
+                    }`}>
+                      {getNatureLabel(am.nature)}
+                    </span>
+                    <span className="text-[10px] text-gray-400">{formatDate(am.dateNotification)}</span>
+                    {am.departementNom && (
+                      <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                        <MapPin size={9} /> {am.departementNom}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs font-medium text-gray-700 truncate">{am.objet}</div>
+                  <div className="text-[11px] text-gray-400 mt-0.5">{am.acheteurNom}</div>
+                </div>
+                <div className="text-sm font-bold text-violet-700 ml-4 shrink-0">
+                  {formatCurrency(am.montant)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* No entreprise data notice */}
+      {!entreprise && marche.titulaireSiret && (
+        <div className="card p-4 flex items-center gap-3 text-sm text-gray-400">
+          <Info size={15} />
+          Les données entreprise seront disponibles après le prochain enrichissement automatique.
+        </div>
+      )}
     </div>
   );
 }

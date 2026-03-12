@@ -425,6 +425,25 @@ export default function ConcurrencePage() {
                         </span>
                       )}
                     </div>
+                    {m.entreprise && (
+                      <div className="flex gap-2 mt-1 flex-wrap">
+                        {m.entreprise.formeJuridique && (
+                          <span className="px-[6px] py-[1px] rounded text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {m.entreprise.formeJuridique}
+                          </span>
+                        )}
+                        {m.entreprise.effectifs && (
+                          <span className="px-[6px] py-[1px] rounded text-[9px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                            {m.entreprise.effectifs}
+                          </span>
+                        )}
+                        {m.entreprise.activite && (
+                          <span className="px-[6px] py-[1px] rounded text-[9px] text-gray-500 bg-gray-50 border border-gray-200 truncate max-w-[200px]">
+                            {m.entreprise.activite}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex gap-2.5 mt-1.5 text-[11px] text-gray-400">
                       <span className="flex items-center gap-1">
                         <Calendar size={11} />

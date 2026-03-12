@@ -91,6 +91,21 @@ model MarcheAttribue {
   @@index([montant])
 }
 
+model Entreprise {
+  siren            String    @id
+  raisonSociale    String
+  formeJuridique   String?
+  codeNaf          String?
+  activite         String?
+  effectifs        String?
+  adresse          String?
+  dateCreation     DateTime?
+  statut           String?
+  enrichiLe        DateTime  @default(now())
+
+  @@index([raisonSociale])
+}
+
 model Alert {
   id          String   @id @default(cuid())
   userId      String
