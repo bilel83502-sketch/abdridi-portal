@@ -27,6 +27,10 @@
     {
       "path": "/api/sync/achatpublic",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/sync/maximilien",
+      "schedule": "0 10 * * *"
     }
   ]
 }

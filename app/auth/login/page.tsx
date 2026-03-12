@@ -47,7 +47,7 @@ function LoginContent() {
           <div className="login-left-stats">
             {[
               { n: '500K+', t: 'consultations/an' },
-              { n: '96', t: 'sources officielles' },
+              { n: '97', t: 'sources officielles' },
               { n: '101', t: 'départements couverts' },
             ].map((s, i) => (
               <div key={i} className="login-left-stat">

@@ -103,7 +103,7 @@ export default function MarchesPage() {
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>
-            <strong style={{ color: '#2563EB' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts &mdash; 96 sources officielles
+            <strong style={{ color: '#2563EB' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts &mdash; 97 sources officielles
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#9CA3AF' }}>
             <Clock size={13} /> Mise &agrave; jour il y a 4 min
