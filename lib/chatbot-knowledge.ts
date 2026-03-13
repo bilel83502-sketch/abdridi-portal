@@ -17,7 +17,7 @@ export const knowledgeBase = {
       avantages: [
         '3 appels d\'offres visibles par jour',
         'Recherche basique',
-        'Acces aux 101 sources officielles',
+        'Acces aux 102 sources officielles',
         'Prise de rendez-vous accompagnement',
       ],
       limites: [
@@ -68,7 +68,7 @@ export const knowledgeBase = {
     ],
   },
   sources: {
-    description: 'AB DRIDI agrege 101 sources officielles dont le BOAMP (Bulletin Officiel des Annonces de Marches Publics), les plateformes de dematerialisation regionales, et le TED (marches europeens).',
+    description: 'AB DRIDI agrege 102 sources officielles dont le BOAMP (Bulletin Officiel des Annonces de Marches Publics), les plateformes de dematerialisation regionales, et le TED (marches europeens).',
     boamp: 'Le BOAMP est la source officielle francaise pour les avis de marches publics. Tous les marches au-dessus de 40 000 euros HT y sont publies.',
     decp: 'Les DECP (Donnees Essentielles de la Commande Publique) recensent les contrats attribues, permettant de savoir qui a gagne quel marche et a quel prix.',
   },
@@ -135,9 +135,9 @@ const categories: Category[] = [
       { word: 'trouver', weight: 2 }, { word: 'mot-cle', weight: 2 }, { word: 'filtre', weight: 1 },
     ],
     responses: [
-      () => `${knowledgeBase.pages.consultations}\n\nLes resultats proviennent de **101 sources officielles** (BOAMP, TED, DECP, e-marchespublics). Pour des recherches illimitees, passez au plan Veille & Accompagnement.`,
+      () => `${knowledgeBase.pages.consultations}\n\nLes resultats proviennent de **102 sources officielles** (BOAMP, TED, DECP, e-marchespublics). Pour des recherches illimitees, passez au plan Veille & Accompagnement.`,
       () => `Pour trouver des marches :\n1. Allez sur la page **Consultations**\n2. Tapez un mot-cle (ex: "nettoyage", "informatique")\n3. Utilisez les filtres (nature, departement, montant)\n\nAvec le plan gratuit, vous voyez 3 resultats/jour. Le plan Veille debloque tout.`,
-      () => `La recherche de marches est simple : utilisez la page **Consultations** pour filtrer par mot-cle, nature (travaux, services, fournitures), departement et montant. Les donnees proviennent de 101 sources officielles francaises et europeennes.`,
+      () => `La recherche de marches est simple : utilisez la page **Consultations** pour filtrer par mot-cle, nature (travaux, services, fournitures), departement et montant. Les donnees proviennent de 102 sources officielles francaises et europeennes.`,
     ],
   },
   {
@@ -245,7 +245,7 @@ const categories: Category[] = [
     ],
     responses: [
       () => `${knowledgeBase.sources.description}\n\n- **BOAMP** : ${knowledgeBase.sources.boamp}\n- **DECP** : ${knowledgeBase.sources.decp}`,
-      () => `Nos donnees proviennent de **101 sources officielles** :\n\n- **BOAMP** — Bulletin Officiel des Annonces des Marches Publics (source principale francaise)\n- **TED** — Tenders Electronic Daily (marches europeens)\n- **DECP** — Donnees Essentielles de la Commande Publique (marches attribues)\n- **e-marchespublics.com** — Plus gros profil d\'acheteur prive (5500+ collectivites)\n- Plateformes de dematerialisation regionales`,
+      () => `Nos donnees proviennent de **102 sources officielles** :\n\n- **BOAMP** — Bulletin Officiel des Annonces des Marches Publics (source principale francaise)\n- **TED** — Tenders Electronic Daily (marches europeens)\n- **DECP** — Donnees Essentielles de la Commande Publique (marches attribues)\n- **e-marchespublics.com** — Plus gros profil d\'acheteur prive (5500+ collectivites)\n- Plateformes de dematerialisation regionales`,
     ],
   },
   {

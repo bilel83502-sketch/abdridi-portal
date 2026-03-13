@@ -51,6 +51,10 @@
     {
       "path": "/api/enrich/entreprises",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/sync/klekoon",
+      "schedule": "30 15 * * *"
     }
   ]
 }

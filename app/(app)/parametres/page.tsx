@@ -48,7 +48,7 @@ export default function ParametresPage() {
                 {user?.plan === 'VEILLE' ? '— 25,90€/mois' : '— Gratuit'}
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">{user?.plan === 'VEILLE' ? 'Recherche illimitée · Alertes quotidiennes · Accès 101 sources' : '10 consultations/jour · Recherche basique · 101 sources'}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{user?.plan === 'VEILLE' ? 'Recherche illimitée · Alertes quotidiennes · Accès 102 sources' : '10 consultations/jour · Recherche basique · 102 sources'}</p>
           </div>
           <span className="px-3 py-[3px] rounded text-[10px] font-bold bg-emerald-50 text-emerald-600">Actif</span>
         </div>
