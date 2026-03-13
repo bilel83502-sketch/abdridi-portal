@@ -154,7 +154,7 @@ export interface AwsAchatMarche {
 /* ───── Parser le HTML avec cheerio ───── */
 function parseResultsHtml(html: string): AwsAchatMarche[] {
   const results: AwsAchatMarche[] = [];
-  const $ = cheerio.load(html, { decodeEntities: true });
+  const $ = cheerio.load(html);
 
   // The site lists announcements in table rows or divs
   // Look for announcement blocks — adapt selectors based on actual structure
