@@ -112,7 +112,7 @@ export default function Header() {
           <div className="header-desktop-right flex items-center gap-3.5">
             <div className="flex items-center gap-[5px] px-2.5 py-[3px] rounded bg-emerald-500/10">
               <div className="w-[5px] h-[5px] rounded-full bg-emerald-400" />
-              <span className="text-[10px] font-semibold text-emerald-400">99 sources</span>
+              <span className="text-[10px] font-semibold text-emerald-400">101 sources</span>
             </div>
 
             <div className="w-px h-5 bg-gray-800" />

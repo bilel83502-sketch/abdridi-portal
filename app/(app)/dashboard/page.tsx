@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatCurrency, formatDate, daysUntil, getNatureLabel, getNatureBadge } from '@/lib/utils';
 import { Clock } from 'lucide-react';
 import Image from 'next/image';
+import { DEPARTMENTS } from '@/components/DepartmentSelect';
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -21,7 +22,7 @@ export default function DashboardPage() {
         <Image src="/logo.png" alt="AB DRIDI" width={32} height={32} className="rounded-md" />
         <div>
           <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
-          <p className="text-[13px] text-gray-500 mt-0.5">Vue d'ensemble — Données issues de 99 sources, mises à jour 3×/jour</p>
+          <p className="text-[13px] text-gray-500 mt-0.5">Vue d'ensemble — Données issues de 101 sources, mises à jour quotidiennes</p>
         </div>
       </div>
 
@@ -103,13 +104,16 @@ export default function DashboardPage() {
             <h3 className="text-[13px] font-semibold mb-3">Top départements (30 derniers jours)</h3>
             <table className="w-full">
               <tbody>
-                {data.topDepartments.slice(0, 5).map((d: any, i: number) => (
-                  <tr key={i} className={i < 4 ? 'border-b border-gray-100' : ''}>
-                    <td className="py-[7px] text-xs font-semibold text-gray-500 w-7">{d.department}</td>
-                    <td className="py-[7px] text-xs">{d.department}</td>
-                    <td className="py-[7px] text-xs font-semibold text-right">{d.count}</td>
-                  </tr>
-                ))}
+                {data.topDepartments.slice(0, 5).map((d: any, i: number) => {
+                  const dept = DEPARTMENTS.find(dep => dep.code === d.department);
+                  return (
+                    <tr key={i} className={i < 4 ? 'border-b border-gray-100' : ''}>
+                      <td className="py-[7px] text-xs font-semibold text-gray-500 w-7">{d.department}</td>
+                      <td className="py-[7px] text-xs">{dept ? dept.name : d.department}</td>
+                      <td className="py-[7px] text-xs font-semibold text-right">{d.count}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
