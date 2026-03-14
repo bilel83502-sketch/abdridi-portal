@@ -223,8 +223,8 @@ export async function fetchTedRecords(options?: {
   limit?: number;
   daysBack?: number;
 }): Promise<TedMarche[]> {
-  const limit = options?.limit ?? 500;
-  const daysBack = options?.daysBack ?? 30;
+  const limit = options?.limit ?? 5000;
+  const daysBack = options?.daysBack ?? 90;
 
   const since = new Date();
   since.setDate(since.getDate() - daysBack);

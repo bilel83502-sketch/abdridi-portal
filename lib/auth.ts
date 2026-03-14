@@ -3,6 +3,12 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
+import { rateLimit } from './rate-limit';
+
+// Rate limit store keyed by IP — 5 attempts per 15 minutes
+function getLoginRateLimitKey(email: string): string {
+  return `login:${email.toLowerCase().trim()}`;
+}
 
 export const authOptions: NextAuthOptions = {
   session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
@@ -17,6 +23,14 @@ export const authOptions: NextAuthOptions = {
       credentials: { email: { type: 'email' }, password: { type: 'password' } },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        // Rate limit: max 5 attempts per email per 15 minutes
+        const rlKey = getLoginRateLimitKey(credentials.email);
+        const rl = rateLimit(rlKey, 5, 15 * 60 * 1000);
+        if (!rl.allowed) {
+          throw new Error('Trop de tentatives. Réessayez dans 15 minutes.');
+        }
+
         const user = await prisma.user.findUnique({ where: { email: credentials.email.toLowerCase().trim() } });
         if (!user || !user.passwordHash) return null;
         if (!(await bcrypt.compare(credentials.password, user.passwordHash))) return null;
@@ -30,7 +44,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === 'google' && user.email) {
         const email = user.email.toLowerCase();
-        const isAdminEmail = email === 'bilel83502@gmail.com';
+        const isAdminEmail = email === (process.env.ADMIN_EMAIL || '').toLowerCase();
 
         // Upsert user for Google OAuth
         const existing = await prisma.user.findUnique({ where: { email } });

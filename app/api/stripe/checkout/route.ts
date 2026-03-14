@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
@@ -22,14 +23,17 @@ export async function POST(req: Request) {
       throw new Error('STRIPE_PRICE_VEILLE is not defined and no priceId provided');
     }
 
-    // priceId is already validated above
+    const dbUser = await prisma.user.findUnique({ where: { email: session.user.email } });
+    if (!dbUser) {
+      return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
+    }
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer_email: session.user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: {
-        userEmail: session.user.email,
+        userId: dbUser.id,
       },
       success_url: `${process.env.NEXTAUTH_URL || 'https://portal.abdridi.com'}/abonnement?success=true`,
       cancel_url: `${process.env.NEXTAUTH_URL || 'https://portal.abdridi.com'}/abonnement?canceled=true`,

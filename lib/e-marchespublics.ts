@@ -298,7 +298,7 @@ async function getSession(): Promise<{ cookies: string; csrf: string }> {
 export async function fetchEMarchesPublicsRecords(options?: {
   limit?: number;
 }): Promise<EMarchesPublicsMarche[]> {
-  const limit = options?.limit ?? 500;
+  const limit = options?.limit ?? 5000;
 
   console.log(`[E-MARCHESPUBLICS] Getting session...`);
   const { cookies, csrf } = await getSession();

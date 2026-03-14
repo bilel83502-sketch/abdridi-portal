@@ -10,7 +10,7 @@ import DepartmentSelect from '@/components/DepartmentSelect';
 /* ─── Nature badge with requested color mapping ─── */
 function NatureBadge({ nature }: { nature: string }) {
   const map: Record<string, { bg: string; text: string }> = {
-    FOURNITURES: { bg: '#DBEAFE', text: '#1D4ED8' },
+    FOURNITURES: { bg: '#DBEAFE', text: '#4F46E5' },
     SERVICES: { bg: '#EDE9FE', text: '#6D28D9' },
     TRAVAUX: { bg: '#FFEDD5', text: '#C2410C' },
   };
@@ -53,6 +53,8 @@ export default function MarchesPage() {
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [procedure, setProcedure] = useState('');
+  const [deadlineFilter, setDeadlineFilter] = useState(''); // '7' | '30' | ''
 
   // Date filters
   const [datePublishedFrom, setDatePublishedFrom] = useState('');
@@ -60,7 +62,32 @@ export default function MarchesPage() {
   const [deadlineFrom, setDeadlineFrom] = useState('');
   const [deadlineTo, setDeadlineTo] = useState('');
 
+  const SECTOR_TAGS = [
+    { label: '🚚 Transport', q: 'transport' },
+    { label: '📦 Logistique', q: 'logistique' },
+    { label: '🧹 Nettoyage', q: 'nettoyage' },
+    { label: '🏗️ BTP', q: 'travaux construction' },
+    { label: '🍽️ Restauration', q: 'restauration' },
+    { label: '💻 Informatique', q: 'informatique' },
+    { label: '⚡ Énergie', q: 'énergie' },
+  ];
+
   const hasDateFilters = datePublishedFrom || datePublishedTo || deadlineFrom || deadlineTo;
+
+  // Deadline quick filter → compute deadlineTo
+  function applyDeadlineFilter(val: string) {
+    setDeadlineFilter(val);
+    if (val === '7') {
+      const d = new Date(); d.setDate(d.getDate() + 7);
+      setDeadlineTo(d.toISOString().split('T')[0]); setDeadlineFrom('');
+    } else if (val === '30') {
+      const d = new Date(); d.setDate(d.getDate() + 30);
+      setDeadlineTo(d.toISOString().split('T')[0]); setDeadlineFrom('');
+    } else {
+      setDeadlineTo(''); setDeadlineFrom('');
+    }
+    setPage(1);
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -104,7 +131,7 @@ export default function MarchesPage() {
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>
-            <strong style={{ color: '#2563EB' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts &mdash; 102 sources officielles
+            <strong style={{ color: '#6366F1' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts &mdash; 102 sources officielles
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#9CA3AF' }}>
             <Clock size={13} /> Mise &agrave; jour il y a 4 min
@@ -131,7 +158,7 @@ export default function MarchesPage() {
             href="/abonnement"
             style={{
               padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-              background: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+              background: 'linear-gradient(135deg, #6366F1, #3B82F6)',
               color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
             }}
           >
@@ -155,42 +182,95 @@ export default function MarchesPage() {
               boxSizing: 'border-box',
               transition: 'border-color 0.15s',
             }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#2563EB')}
+            onFocus={e => (e.currentTarget.style.borderColor = '#6366F1')}
             onBlur={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
           />
         </div>
         <button
-          type="button"
-          onClick={() => setShowFilters(!showFilters)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '0 16px', height: 48, borderRadius: 12,
-            border: showFilters ? '1px solid #2563EB' : '1px solid #E5E7EB',
-            background: showFilters ? '#EFF6FF' : '#fff',
-            color: showFilters ? '#2563EB' : '#374151',
-            fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <SlidersHorizontal size={16} /> Filtres
-        </button>
-        <button
           type="submit"
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            padding: '0 24px', height: 48, borderRadius: 12,
+            padding: '0 28px', height: 48, borderRadius: 12,
             border: 'none',
-            background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+            background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
             color: '#fff', fontSize: 14, fontWeight: 600,
             cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
           }}
         >
           <Search size={16} /> Rechercher
         </button>
       </form>
 
-      {/* ─── Filters panel ─── */}
-      {showFilters && (
+      {/* ─── Inline filters (always visible) ─── */}
+      <div style={{
+        background: '#fff', border: '1px solid var(--border)',
+        borderRadius: 12, padding: '16px 20px', marginBottom: 12,
+        display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end',
+      }}>
+        {/* Nature toggle */}
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Nature</label>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[{ v: '', l: 'Tous' }, { v: 'SERVICES', l: '● Services' }, { v: 'TRAVAUX', l: '● Travaux' }, { v: 'FOURNITURES', l: '● Fournitures' }].map(n => (
+              <button key={n.v} onClick={() => { setNature(n.v); setPage(1); }} style={{
+                padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', border: 'none',
+                background: nature === n.v ? (n.v === 'SERVICES' ? '#EDE9FE' : n.v === 'TRAVAUX' ? '#FFF7ED' : n.v === 'FOURNITURES' ? '#EEF2FF' : '#6366F1') : '#F1F5F9',
+                color: nature === n.v ? (n.v === 'SERVICES' ? '#6D28D9' : n.v === 'TRAVAUX' ? '#C2410C' : n.v === 'FOURNITURES' ? '#4F46E5' : '#fff') : '#64748B',
+                transition: 'all 0.15s',
+              }}>{n.l}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Département */}
+        <div style={{ minWidth: 200 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Département</label>
+          <DepartmentSelect value={department} onChange={v => { setDepartment(v); setPage(1); }} />
+        </div>
+
+        {/* Délai */}
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Délai restant</label>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[{ v: '', l: 'Tous' }, { v: '7', l: '< 7 jours' }, { v: '30', l: '< 30 jours' }].map(d => (
+              <button key={d.v} onClick={() => applyDeadlineFilter(d.v)} style={{
+                padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', border: 'none',
+                background: deadlineFilter === d.v ? (d.v === '7' ? '#FEF2F2' : d.v === '30' ? '#FFF7ED' : '#6366F1') : '#F1F5F9',
+                color: deadlineFilter === d.v ? (d.v === '7' ? '#991B1B' : d.v === '30' ? '#C2410C' : '#fff') : '#64748B',
+                transition: 'all 0.15s',
+              }}>{d.l}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Reset */}
+        {(nature || department || deadlineFilter || hasDateFilters) && (
+          <button onClick={() => { resetAllFilters(); setDeadlineFilter(''); setPage(1); }} style={{
+            display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
+            background: 'transparent', border: '1px solid #E2E8F0', cursor: 'pointer',
+            fontSize: 12, color: '#94A3B8', fontFamily: 'inherit',
+          }}>
+            <RotateCcw size={12} /> Réinitialiser
+          </button>
+        )}
+      </div>
+
+      {/* ─── Sector tags ─── */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
+        {SECTOR_TAGS.map(s => (
+          <button key={s.q} onClick={() => { setQ(s.q); setPage(1); }} style={{
+            padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+            background: q === s.q ? 'var(--indigo-bg)' : '#F8FAFC',
+            color: q === s.q ? 'var(--indigo)' : '#64748B',
+            border: `1px solid ${q === s.q ? '#C7D2FE' : '#E2E8F0'}`,
+            cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+          }}>{s.label}</button>
+        ))}
+      </div>
+
+      {/* ─── Advanced date filters (collapsible) ─── */}
+      {false && (
         <div style={{
           marginBottom: 20, padding: 24, borderRadius: 12,
           background: '#fff', border: '1px solid #E5E7EB',
@@ -201,7 +281,7 @@ export default function MarchesPage() {
             <button
               onClick={resetAllFilters}
               style={{
-                fontSize: 12, color: '#2563EB', fontWeight: 600,
+                fontSize: 12, color: '#6366F1', fontWeight: 600,
                 background: 'transparent', border: 'none', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit',
               }}
@@ -250,7 +330,7 @@ export default function MarchesPage() {
                 <span style={{
                   marginLeft: 8, fontSize: 10, fontWeight: 600,
                   padding: '2px 8px', borderRadius: 4,
-                  background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE',
+                  background: '#EEF2FF', color: '#6366F1', border: '1px solid #BFDBFE',
                 }}>
                   Actif
                 </span>
@@ -293,8 +373,8 @@ export default function MarchesPage() {
           </div>
 
           <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => { setPage(1); load(); }} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: '#2563EB', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Appliquer</button>
-            <span style={{ fontSize: 13, color: '#2563EB', fontWeight: 600, cursor: 'pointer' }}>Sauvegarder comme alerte &rarr;</span>
+            <button onClick={() => { setPage(1); load(); }} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Appliquer</button>
+            <span style={{ fontSize: 13, color: '#6366F1', fontWeight: 600, cursor: 'pointer' }}>Sauvegarder comme alerte &rarr;</span>
           </div>
         </div>
       )}
@@ -348,7 +428,7 @@ export default function MarchesPage() {
                       href="/abonnement"
                       style={{
                         padding: '9px 24px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                        background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                        background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
                         color: '#fff', textDecoration: 'none',
                       }}
                     >
@@ -442,12 +522,12 @@ export default function MarchesPage() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '8px 18px', borderRadius: 8,
-                      border: 'none', background: '#2563EB', color: '#fff',
+                      border: 'none', background: '#6366F1', color: '#fff',
                       fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                       whiteSpace: 'nowrap', transition: 'background 0.15s',
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#1D4ED8')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#2563EB')}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#4F46E5')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#6366F1')}
                   >
                     Voir la consultation <ArrowRight size={14} />
                   </button>
@@ -485,7 +565,7 @@ export default function MarchesPage() {
               disabled={page >= meta.pages}
               style={{
                 padding: '8px 18px', borderRadius: 8,
-                border: 'none', background: '#2563EB',
+                border: 'none', background: '#6366F1',
                 fontSize: 13, fontWeight: 600, cursor: page >= meta.pages ? 'not-allowed' : 'pointer',
                 opacity: page >= meta.pages ? 0.4 : 1, fontFamily: 'inherit', color: '#fff',
               }}

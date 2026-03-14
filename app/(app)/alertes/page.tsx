@@ -36,7 +36,43 @@ export default function AlertesPage() {
       {loading ? (
         <div className="text-center text-gray-400 py-16">Chargement...</div>
       ) : alerts.length === 0 ? (
-        <div className="card p-16 text-center text-gray-400">Aucune alerte configurée.</div>
+        <div style={{
+          background: '#fff', border: '1px solid var(--border)', borderRadius: 16,
+          padding: '56px 40px', textAlign: 'center', maxWidth: 520, margin: '0 auto',
+        }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 16, margin: '0 auto 20px',
+            background: 'var(--indigo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Mail size={28} style={{ color: 'var(--indigo)' }} />
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
+            Recevez chaque jour les marchés qui vous correspondent
+          </h2>
+          <p style={{ fontSize: 14, color: 'var(--text-sec)', marginBottom: 32, lineHeight: 1.6 }}>
+            Configurez vos critères de veille et ne ratez plus aucun appel d&apos;offres pertinent.
+          </p>
+          {/* 3 steps */}
+          <div style={{ display: 'flex', gap: 16, marginBottom: 32, textAlign: 'left' }}>
+            {[
+              { n: '1', t: 'Choisissez vos critères', d: 'Secteur, département, type de marché' },
+              { n: '2', t: 'Recevez par email', d: 'Chaque matin à 8h, les nouvelles consultations' },
+              { n: '3', t: 'Ne ratez plus rien', d: 'Répondez avant la clôture' },
+            ].map(s => (
+              <div key={s.n} style={{ flex: 1, padding: '14px', borderRadius: 10, background: 'var(--surface-sub)', border: '1px solid var(--border)' }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--indigo)', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.n}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{s.t}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+          <button className="btn-gradient" style={{
+            padding: '12px 32px', fontSize: 14, fontWeight: 600, borderRadius: 10,
+            background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+          }}>
+            <Plus size={15} /> Créer ma première alerte
+          </button>
+        </div>
       ) : (
         <div className="flex flex-col gap-2">
           {alerts.map(a => (

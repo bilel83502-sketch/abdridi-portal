@@ -30,7 +30,7 @@ const plans = [
     price: 25.90,
     period: '/mois',
     icon: Sparkles,
-    color: '#2563EB',
+    color: '#6366F1',
     popular: true,
     priceId: (() => {
       const id = process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE;
@@ -130,7 +130,7 @@ function AbonnementContent() {
               className="card"
               style={{
                 position: 'relative',
-                border: plan.popular ? '2px solid #2563EB' : '1px solid #E5E7EB',
+                border: plan.popular ? '2px solid #6366F1' : '1px solid #E5E7EB',
                 borderRadius: 12,
                 overflow: 'hidden',
               }}
@@ -138,7 +138,7 @@ function AbonnementContent() {
               {plan.popular && (
                 <div style={{
                   position: 'absolute', top: 0, left: 0, right: 0,
-                  background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+                  background: 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
                   color: '#fff', textAlign: 'center', fontSize: 11, fontWeight: 700,
                   padding: '6px 0', letterSpacing: '0.5px', textTransform: 'uppercase',
                 }}>
@@ -220,7 +220,7 @@ function AbonnementContent() {
                       style={{
                         width: '100%', padding: '12px 0', borderRadius: 8,
                         border: 'none',
-                        background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+                        background: 'linear-gradient(135deg, #6366F1 0%, #818CF8 100%)',
                         color: '#fff', fontSize: 14, fontWeight: 600,
                         cursor: loadingPlan === plan.id ? 'not-allowed' : 'pointer',
                         opacity: loadingPlan === plan.id ? 0.6 : 1,
@@ -244,6 +244,11 @@ function AbonnementContent() {
             </div>
           );
         })}
+      </div>
+
+      {/* Reassurance footer */}
+      <div style={{ textAlign: 'center', marginTop: 24, color: '#94A3B8', fontSize: 13 }}>
+        🔒 Paiement sécurisé Stripe &nbsp;·&nbsp; Annulable à tout moment &nbsp;·&nbsp; Sans engagement
       </div>
 
       {/* Responsive mobile */}

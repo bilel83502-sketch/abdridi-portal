@@ -319,7 +319,7 @@ async function fetchWithRetry(
 export async function fetchAchatPublicRecords(options?: {
   limit?: number;
 }): Promise<AchatPublicMarche[]> {
-  const limit = options?.limit ?? 200;
+  const limit = options?.limit ?? 5000;
 
   console.log(`[ACHATPUBLIC] Getting session...`);
 

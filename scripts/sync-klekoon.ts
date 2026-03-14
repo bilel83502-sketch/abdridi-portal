@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const args = process.argv.slice(2);
-  const limit = parseInt(args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '200');
+  const limit = parseInt(args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '5000');
   const maxBuyers = parseInt(args.find((a) => a.startsWith('--buyers='))?.split('=')[1] || '50');
 
   console.log(`\n🔄 Sync Klekoon — limit=${limit}, buyers=${maxBuyers}\n`);

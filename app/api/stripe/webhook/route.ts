@@ -15,11 +15,16 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
 
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('[Stripe Webhook] ⚠️  STRIPE_WEBHOOK_SECRET non configuré — webhook non vérifié');
+    return NextResponse.json({ error: 'Webhook non configuré.' }, { status: 500 });
+  }
+
   try {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET || ''
+      process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
@@ -40,6 +45,7 @@ export async function POST(req: Request) {
             where: { id: userId },
             data: {
               stripeSubscriptionId: subscription.id,
+              stripeCustomerId: subscription.customer as string,
               stripePriceId: priceId,
               stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
               plan: 'VEILLE',

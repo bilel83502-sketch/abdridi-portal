@@ -227,7 +227,7 @@ async function fetchWithRetry(
 export async function fetchMaximilienRecords(options?: {
   limit?: number;
 }): Promise<MaximilienMarche[]> {
-  const limit = options?.limit ?? 200;
+  const limit = options?.limit ?? 5000;
   const allRecords: MaximilienMarche[] = [];
   const maxPages = Math.ceil(limit / PAGE_SIZE);
   let consecutiveErrors = 0;

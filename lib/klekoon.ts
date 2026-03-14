@@ -332,7 +332,7 @@ export async function fetchKlekoonRecords(options?: {
   limit?: number;
   maxBuyers?: number;
 }): Promise<KlekoonMarche[]> {
-  const limit = options?.limit ?? 200;
+  const limit = options?.limit ?? 5000;
   const maxBuyers = options?.maxBuyers ?? 50;
   const allRecords: KlekoonMarche[] = [];
 

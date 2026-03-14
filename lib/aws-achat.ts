@@ -262,7 +262,7 @@ async function decodeResponseText(res: Response): Promise<string> {
 export async function fetchAwsAchatRecords(options?: {
   limit?: number;
 }): Promise<AwsAchatMarche[]> {
-  const limit = options?.limit ?? 200;
+  const limit = options?.limit ?? 2000;
   const allRecords: AwsAchatMarche[] = [];
 
   console.log(`[AWS] Fetching annonces from marches-publics.info...`);

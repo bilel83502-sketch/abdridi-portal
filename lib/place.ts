@@ -339,7 +339,7 @@ async function fetchWithRetry(
 export async function fetchPlaceRecords(options?: {
   limit?: number;
 }): Promise<PlaceMarche[]> {
-  const limit = options?.limit ?? 200;
+  const limit = options?.limit ?? 5000;
 
   console.log(`[PLACE] Getting initial page...`);
 

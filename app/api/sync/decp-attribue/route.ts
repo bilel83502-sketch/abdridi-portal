@@ -73,11 +73,12 @@ async function upsertRecords(records: AttribueRecord[]) {
 }
 
 export async function GET(req: Request) {
-  if (CRON_SECRET) {
-    const authHeader = req.headers.get('authorization');
-    if (authHeader !== `Bearer ${CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-    }
+  if (!CRON_SECRET) {
+    return NextResponse.json({ error: 'CRON_SECRET non configuré' }, { status: 500 });
+  }
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
   // Use ?source=boamp or ?source=decp to sync one at a time

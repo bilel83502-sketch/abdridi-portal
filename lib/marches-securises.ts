@@ -310,7 +310,7 @@ async function fetchWithRetry(
 export async function fetchMarchesSecurisesRecords(options?: {
   limit?: number;
 }): Promise<MarchesSecurisesMarche[]> {
-  const limit = options?.limit ?? 200;
+  const limit = options?.limit ?? 5000;
   const allRecords: MarchesSecurisesMarche[] = [];
 
   console.log(`[MSEC] Fetching consultations list...`);

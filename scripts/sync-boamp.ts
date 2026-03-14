@@ -9,8 +9,8 @@ const prisma = new PrismaClient();
 
 async function main() {
   const args = process.argv.slice(2);
-  const limit = parseInt(args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '200');
-  const daysBack = parseInt(args.find((a) => a.startsWith('--days='))?.split('=')[1] || '30');
+  const limit = parseInt(args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '10000');
+  const daysBack = parseInt(args.find((a) => a.startsWith('--days='))?.split('=')[1] || '90');
 
   console.log(`\n🔄 Sync BOAMP — limit=${limit}, daysBack=${daysBack}\n`);
 

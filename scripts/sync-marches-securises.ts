@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   const args = process.argv.slice(2);
-  const limit = parseInt(args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '200');
+  const limit = parseInt(args.find((a) => a.startsWith('--limit='))?.split('=')[1] || '5000');
 
   console.log(`\n🔄 Sync Marchés Sécurisés — limit=${limit}\n`);
 

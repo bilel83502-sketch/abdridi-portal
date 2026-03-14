@@ -228,7 +228,7 @@ async function fetchWithRetry(
 export async function fetchMegalisRecords(options?: {
   limit?: number;
 }): Promise<MegalisMarche[]> {
-  const limit = options?.limit ?? 200;
+  const limit = options?.limit ?? 5000;
   const allRecords: MegalisMarche[] = [];
   const maxPages = Math.ceil(limit / PAGE_SIZE);
   let consecutiveErrors = 0;
