@@ -31,19 +31,15 @@ function LoginContent() {
 
   return (
     <div className="login-page">
-      {/* Left panel - Desktop only */}
+      {/* Left panel */}
       <div className="login-left">
-        <div className="login-deco login-deco-1" />
-        <div className="login-deco login-deco-2" />
-        <div className="login-deco login-deco-3" />
-        <div className="login-deco login-deco-4" />
-
         <div className="login-left-content">
-          <Image src="/logo.png" alt="AB DRIDI" width={120} height={120} className="login-left-logo" />
+          <Image src="/logo.png" alt="AB DRIDI" width={72} height={72} className="login-left-logo" />
           <h1 className="login-left-title">AB DRIDI</h1>
           <p className="login-left-slogan">
-            Votre plateforme de veille sur les marchés publics
+            Veille et accompagnement sur les marchés publics
           </p>
+
           <div className="login-left-stats">
             {[
               { n: '6 100+', t: 'marchés surveillés' },
@@ -56,16 +52,14 @@ function LoginContent() {
               </div>
             ))}
           </div>
-          <p className="login-left-tagline">La veille marchés publics pour le transport</p>
         </div>
       </div>
 
-      {/* Right panel - Form */}
+      {/* Right panel */}
       <div className="login-right">
-        {/* Mobile header */}
         <div className="login-mobile-header">
           <div className="login-mobile-logo-wrap">
-            <Image src="/logo.png" alt="AB DRIDI" width={60} height={60} />
+            <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} />
           </div>
           <h1 className="login-mobile-title">AB DRIDI</h1>
           <p className="login-mobile-subtitle">Espace Client</p>
@@ -73,7 +67,7 @@ function LoginContent() {
 
         <div className="login-form-wrapper">
           <div className="login-form-logo">
-            <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} className="login-form-logo-img" />
+            <Image src="/logo.png" alt="AB DRIDI" width={40} height={40} className="login-form-logo-img" />
             <div>
               <div className="login-form-brand">AB DRIDI</div>
               <div className="login-form-brand-sub">Espace Client</div>
@@ -82,7 +76,6 @@ function LoginContent() {
 
           <h2 className="login-form-title">Connexion</h2>
 
-          {/* Success message after registration */}
           {registered && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
@@ -93,11 +86,10 @@ function LoginContent() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
               </svg>
-              Compte créé avec succès ! Connectez-vous.
+              Compte créé avec succès. Connectez-vous.
             </div>
           )}
 
-          {/* Google OAuth button */}
           <button
             type="button"
             onClick={() => signIn('google', { callbackUrl: '/marches' })}
@@ -205,7 +197,7 @@ function LoginContent() {
 
           <p style={{ textAlign: 'center', fontSize: '13px', color: '#6B7280', marginTop: '24px' }}>
             Pas encore de compte ?{' '}
-            <Link href="/auth/register" style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
+            <Link href="/auth/register" style={{ color: '#6366F1', fontWeight: 600, textDecoration: 'none' }}>
               Créer un compte
             </Link>
           </p>

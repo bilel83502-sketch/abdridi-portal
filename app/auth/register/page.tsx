@@ -52,24 +52,20 @@ export default function RegisterPage() {
 
   return (
     <div className="login-page">
-      {/* Left panel - Desktop only */}
+      {/* Left panel */}
       <div className="login-left">
-        <div className="login-deco login-deco-1" />
-        <div className="login-deco login-deco-2" />
-        <div className="login-deco login-deco-3" />
-        <div className="login-deco login-deco-4" />
-
         <div className="login-left-content">
-          <Image src="/logo.png" alt="AB DRIDI" width={120} height={120} className="login-left-logo" />
+          <Image src="/logo.png" alt="AB DRIDI" width={72} height={72} className="login-left-logo" />
           <h1 className="login-left-title">AB DRIDI</h1>
           <p className="login-left-slogan">
-            Votre plateforme de veille sur les marchés publics
+            Veille et accompagnement sur les marchés publics
           </p>
+
           <div className="login-left-stats">
             {[
-              { n: '500K+', t: 'consultations/an' },
+              { n: '6 100+', t: 'marchés surveillés' },
               { n: '102', t: 'sources officielles' },
-              { n: '101', t: 'départements couverts' },
+              { n: '7 000+', t: 'contrats attribués' },
             ].map((s, i) => (
               <div key={i} className="login-left-stat">
                 <div className="login-left-stat-n">{s.n}</div>
@@ -80,12 +76,11 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Right panel - Form */}
+      {/* Right panel */}
       <div className="login-right" style={{ overflowY: 'auto' }}>
-        {/* Mobile header */}
         <div className="login-mobile-header">
           <div className="login-mobile-logo-wrap">
-            <Image src="/logo.png" alt="AB DRIDI" width={60} height={60} />
+            <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} />
           </div>
           <h1 className="login-mobile-title">AB DRIDI</h1>
           <p className="login-mobile-subtitle">Espace Client</p>
@@ -93,7 +88,7 @@ export default function RegisterPage() {
 
         <div className="login-form-wrapper">
           <div className="login-form-logo">
-            <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} className="login-form-logo-img" />
+            <Image src="/logo.png" alt="AB DRIDI" width={40} height={40} className="login-form-logo-img" />
             <div>
               <div className="login-form-brand">AB DRIDI</div>
               <div className="login-form-brand-sub">Espace Client</div>
@@ -102,7 +97,6 @@ export default function RegisterPage() {
 
           <h2 className="login-form-title">Créer un compte</h2>
 
-          {/* Google OAuth */}
           <button
             type="button"
             onClick={() => signIn('google', { callbackUrl: '/marches' })}
@@ -242,7 +236,7 @@ export default function RegisterPage() {
 
           <p style={{ textAlign: 'center', fontSize: '13px', color: '#6B7280', marginTop: '24px' }}>
             Déjà un compte ?{' '}
-            <Link href="/auth/login" style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'none' }}>
+            <Link href="/auth/login" style={{ color: '#6366F1', fontWeight: 600, textDecoration: 'none' }}>
               Se connecter
             </Link>
           </p>

@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, SlidersHorizontal, Clock, Building2, MapPin, ArrowRight, Lock, Calendar, RotateCcw, Layers, Tag } from 'lucide-react';
+import { Search, SlidersHorizontal, Clock, Building2, MapPin, ArrowRight, Lock, X, Tag, Layers, RotateCcw } from 'lucide-react';
 import { formatCurrency, formatDate, daysUntil, getNatureLabel } from '@/lib/utils';
 import Link from 'next/link';
 import DepartmentSelect from '@/components/DepartmentSelect';
 
-/* ─── Nature badge with requested color mapping ─── */
+/* ─── Nature badge ─── */
 function NatureBadge({ nature }: { nature: string }) {
   const map: Record<string, { bg: string; text: string }> = {
     FOURNITURES: { bg: '#DBEAFE', text: '#4F46E5' },
@@ -25,7 +25,7 @@ function NatureBadge({ nature }: { nature: string }) {
   );
 }
 
-/* ─── Deadline badge (green / orange / red) ─── */
+/* ─── Deadline badge ─── */
 function DeadlineBadge({ days }: { days: number | null }) {
   if (days === null) return <span style={{ fontSize: 12, color: '#9CA3AF' }}>--</span>;
   let bg = '#ECFDF5'; let text = '#065F46'; let border = '#A7F3D0';
@@ -45,49 +45,45 @@ function DeadlineBadge({ days }: { days: number | null }) {
 
 export default function MarchesPage() {
   const router = useRouter();
+  const panelRef = useRef<HTMLDivElement>(null);
   const [marches, setMarches] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, page: 1, pages: 0, isPaid: true, freeLimit: 3 });
   const [q, setQ] = useState('');
   const [nature, setNature] = useState('');
   const [department, setDepartment] = useState('');
   const [page, setPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [procedure, setProcedure] = useState('');
-  const [deadlineFilter, setDeadlineFilter] = useState(''); // '7' | '30' | ''
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // Date filters
+  // Advanced filters
+  const [acheteur, setAcheteur] = useState('');
+  const [cpvCode, setCpvCode] = useState('');
   const [datePublishedFrom, setDatePublishedFrom] = useState('');
   const [datePublishedTo, setDatePublishedTo] = useState('');
   const [deadlineFrom, setDeadlineFrom] = useState('');
   const [deadlineTo, setDeadlineTo] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
 
-  const SECTOR_TAGS = [
-    { label: '🚚 Transport', q: 'transport' },
-    { label: '📦 Logistique', q: 'logistique' },
-    { label: '🧹 Nettoyage', q: 'nettoyage' },
-    { label: '🏗️ BTP', q: 'travaux construction' },
-    { label: '🍽️ Restauration', q: 'restauration' },
-    { label: '💻 Informatique', q: 'informatique' },
-    { label: '⚡ Énergie', q: 'énergie' },
-  ];
+  const hasFilters = nature || department || acheteur || cpvCode || datePublishedFrom || datePublishedTo || deadlineFrom || deadlineTo || sourceFilter;
+  const filterCount = [nature, department, acheteur, cpvCode, datePublishedFrom || datePublishedTo, deadlineFrom || deadlineTo, sourceFilter].filter(Boolean).length;
 
-  const hasDateFilters = datePublishedFrom || datePublishedTo || deadlineFrom || deadlineTo;
-
-  // Deadline quick filter → compute deadlineTo
-  function applyDeadlineFilter(val: string) {
-    setDeadlineFilter(val);
-    if (val === '7') {
-      const d = new Date(); d.setDate(d.getDate() + 7);
-      setDeadlineTo(d.toISOString().split('T')[0]); setDeadlineFrom('');
-    } else if (val === '30') {
-      const d = new Date(); d.setDate(d.getDate() + 30);
-      setDeadlineTo(d.toISOString().split('T')[0]); setDeadlineFrom('');
-    } else {
-      setDeadlineTo(''); setDeadlineFrom('');
+  // Close panel on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (filtersOpen && panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        setFiltersOpen(false);
+      }
     }
-    setPage(1);
-  }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [filtersOpen]);
+
+  // Lock scroll when panel open
+  useEffect(() => {
+    if (filtersOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [filtersOpen]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,12 +107,15 @@ export default function MarchesPage() {
   function handleSearch(e: React.FormEvent) { e.preventDefault(); setPage(1); load(); }
 
   function resetAllFilters() {
-    setNature('');
-    setDepartment('');
-    setDatePublishedFrom('');
-    setDatePublishedTo('');
-    setDeadlineFrom('');
-    setDeadlineTo('');
+    setNature(''); setDepartment(''); setAcheteur(''); setCpvCode('');
+    setDatePublishedFrom(''); setDatePublishedTo('');
+    setDeadlineFrom(''); setDeadlineTo(''); setSourceFilter('');
+  }
+
+  function applyFilters() {
+    setPage(1);
+    setFiltersOpen(false);
+    load();
   }
 
   const isPaid = meta.isPaid;
@@ -126,411 +125,202 @@ export default function MarchesPage() {
     <div>
       {/* ─── Page header ─── */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: '#0B0F1A', margin: '0 0 6px', letterSpacing: '-0.3px' }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', margin: '0 0 4px', letterSpacing: '-0.3px' }}>
           Consultations en cours
         </h1>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>
-            <strong style={{ color: '#6366F1' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts &mdash; 102 sources officielles
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#9CA3AF' }}>
-            <Clock size={13} /> Mise &agrave; jour il y a 4 min
-          </div>
-        </div>
+        <p style={{ fontSize: 14, color: '#64748B', margin: 0 }}>
+          <strong style={{ color: '#6366F1' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts — 102 sources officielles
+        </p>
       </div>
 
       {/* ─── Free user banner ─── */}
       {!isPaid && (
         <div style={{
-          marginBottom: 20, padding: '14px 20px', borderRadius: 12,
-          background: 'linear-gradient(135deg, #FEF3C7, #FFFBEB)',
-          border: '1px solid #FDE68A',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 12,
+          marginBottom: 16, padding: '12px 20px', borderRadius: 10,
+          background: '#FFFBEB', border: '1px solid #FDE68A',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#92400E', fontSize: 14 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Lock size={16} style={{ color: '#92400E' }} />
-            </div>
-            <span><strong>{freeLimit}/{freeLimit}</strong> consultations gratuites utilis&eacute;es aujourd&apos;hui</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#92400E', fontSize: 13 }}>
+            <Lock size={15} />
+            <span><strong>{freeLimit}/{freeLimit}</strong> consultations gratuites aujourd&apos;hui</span>
           </div>
-          <Link
-            href="/abonnement"
-            style={{
-              padding: '8px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-              background: 'linear-gradient(135deg, #6366F1, #3B82F6)',
-              color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
-            }}
-          >
-            D&eacute;bloquer &mdash; 25,90&euro;/mois
+          <Link href="/abonnement" style={{
+            padding: '7px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+            background: '#6366F1', color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
+          }}>
+            Passer au plan Veille
           </Link>
         </div>
       )}
 
-      {/* ─── Search bar ─── */}
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+      {/* ─── Search bar + Filter button ─── */}
+      <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         <div style={{ flex: 1, position: 'relative' }}>
-          <Search size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+          <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
           <input
             value={q}
             onChange={e => setQ(e.target.value)}
-            placeholder="Mots-cl&eacute;s, acheteur, code CPV, intitul&eacute;..."
+            placeholder="Mots-clés, acheteur, code CPV..."
             style={{
-              width: '100%', height: 48, paddingLeft: 46, paddingRight: 16,
-              borderRadius: 12, border: '1px solid #E5E7EB', fontSize: 15,
+              width: '100%', height: 44, paddingLeft: 42, paddingRight: 14,
+              borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 14,
               fontFamily: 'inherit', outline: 'none', background: '#fff',
-              boxSizing: 'border-box',
-              transition: 'border-color 0.15s',
+              boxSizing: 'border-box', transition: 'border-color 0.15s',
             }}
             onFocus={e => (e.currentTarget.style.borderColor = '#6366F1')}
-            onBlur={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
+            onBlur={e => (e.currentTarget.style.borderColor = '#E2E8F0')}
           />
         </div>
+        <button type="submit" style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '0 20px', height: 44, borderRadius: 8, border: 'none',
+          background: '#6366F1', color: '#fff', fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+        }}>
+          <Search size={15} /> Rechercher
+        </button>
         <button
-          type="submit"
+          type="button"
+          onClick={() => setFiltersOpen(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
-            padding: '0 28px', height: 48, borderRadius: 12,
-            border: 'none',
-            background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
-            color: '#fff', fontSize: 14, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-            boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
+            padding: '0 16px', height: 44, borderRadius: 8,
+            border: '1px solid #E2E8F0', background: '#fff',
+            fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+            color: hasFilters ? '#6366F1' : '#64748B',
+            position: 'relative',
           }}
         >
-          <Search size={16} /> Rechercher
+          <SlidersHorizontal size={15} /> Filtres
+          {filterCount > 0 && (
+            <span style={{
+              position: 'absolute', top: -6, right: -6,
+              width: 18, height: 18, borderRadius: '50%',
+              background: '#6366F1', color: '#fff',
+              fontSize: 10, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {filterCount}
+            </span>
+          )}
         </button>
       </form>
 
-      {/* ─── Inline filters (always visible) ─── */}
-      <div style={{
-        background: '#fff', border: '1px solid var(--border)',
-        borderRadius: 12, padding: '16px 20px', marginBottom: 12,
-        display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end',
-      }}>
-        {/* Nature toggle */}
-        <div>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Nature</label>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {[{ v: '', l: 'Tous' }, { v: 'SERVICES', l: '● Services' }, { v: 'TRAVAUX', l: '● Travaux' }, { v: 'FOURNITURES', l: '● Fournitures' }].map(n => (
-              <button key={n.v} onClick={() => { setNature(n.v); setPage(1); }} style={{
-                padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', border: 'none',
-                background: nature === n.v ? (n.v === 'SERVICES' ? '#EDE9FE' : n.v === 'TRAVAUX' ? '#FFF7ED' : n.v === 'FOURNITURES' ? '#EEF2FF' : '#6366F1') : '#F1F5F9',
-                color: nature === n.v ? (n.v === 'SERVICES' ? '#6D28D9' : n.v === 'TRAVAUX' ? '#C2410C' : n.v === 'FOURNITURES' ? '#4F46E5' : '#fff') : '#64748B',
-                transition: 'all 0.15s',
-              }}>{n.l}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Département */}
-        <div style={{ minWidth: 200 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Département</label>
-          <DepartmentSelect value={department} onChange={v => { setDepartment(v); setPage(1); }} />
-        </div>
-
-        {/* Délai */}
-        <div>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.4px' }}>Délai restant</label>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {[{ v: '', l: 'Tous' }, { v: '7', l: '< 7 jours' }, { v: '30', l: '< 30 jours' }].map(d => (
-              <button key={d.v} onClick={() => applyDeadlineFilter(d.v)} style={{
-                padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', border: 'none',
-                background: deadlineFilter === d.v ? (d.v === '7' ? '#FEF2F2' : d.v === '30' ? '#FFF7ED' : '#6366F1') : '#F1F5F9',
-                color: deadlineFilter === d.v ? (d.v === '7' ? '#991B1B' : d.v === '30' ? '#C2410C' : '#fff') : '#64748B',
-                transition: 'all 0.15s',
-              }}>{d.l}</button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reset */}
-        {(nature || department || deadlineFilter || hasDateFilters) && (
-          <button onClick={() => { resetAllFilters(); setDeadlineFilter(''); setPage(1); }} style={{
-            display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8,
-            background: 'transparent', border: '1px solid #E2E8F0', cursor: 'pointer',
-            fontSize: 12, color: '#94A3B8', fontFamily: 'inherit',
-          }}>
-            <RotateCcw size={12} /> Réinitialiser
-          </button>
-        )}
-      </div>
-
-      {/* ─── Sector tags ─── */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 20 }}>
-        {SECTOR_TAGS.map(s => (
-          <button key={s.q} onClick={() => { setQ(s.q); setPage(1); }} style={{
-            padding: '5px 14px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-            background: q === s.q ? 'var(--indigo-bg)' : '#F8FAFC',
-            color: q === s.q ? 'var(--indigo)' : '#64748B',
-            border: `1px solid ${q === s.q ? '#C7D2FE' : '#E2E8F0'}`,
-            cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
-          }}>{s.label}</button>
-        ))}
-      </div>
-
-      {/* ─── Advanced date filters (collapsible) ─── */}
-      {false && (
+      {/* ─── Active filters summary ─── */}
+      {hasFilters && (
         <div style={{
-          marginBottom: 20, padding: 24, borderRadius: 12,
-          background: '#fff', border: '1px solid #E5E7EB',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16, alignItems: 'center',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Criteres de recherche</span>
-            <button
-              onClick={resetAllFilters}
-              style={{
-                fontSize: 12, color: '#6366F1', fontWeight: 600,
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit',
-              }}
-            >
-              <RotateCcw size={11} /> Reinitialiser
-            </button>
-          </div>
-
-          {/* Row 1 */}
-          <div className="grid grid-cols-4 gap-3 mb-5 marches-filters-grid">
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nature</label>
-              <select value={nature} onChange={e => setNature(e.target.value)} className="input" style={{ height: 40, fontSize: 13 }}>
-                <option value="">Toutes</option>
-                <option value="TRAVAUX">Travaux</option>
-                <option value="FOURNITURES">Fournitures</option>
-                <option value="SERVICES">Services</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Departement</label>
-              <DepartmentSelect value={department} onChange={setDepartment} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Code CPV</label>
-              <input className="input" placeholder="Ex: 45000000" style={{ height: 40, fontSize: 13 }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Montant estime</label>
-              <select className="input" style={{ height: 40, fontSize: 13 }}>
-                <option>Tous</option>
-                <option>{'< 100 K\u20AC'}</option>
-                <option>100K &ndash; 500K&euro;</option>
-                <option>500K &ndash; 2M&euro;</option>
-                <option>{'> 2 M\u20AC'}</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Row 2: Date filters */}
-          <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-              <Calendar size={13} style={{ color: '#6B7280' }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>Filtres par date</span>
-              {hasDateFilters && (
-                <span style={{
-                  marginLeft: 8, fontSize: 10, fontWeight: 600,
-                  padding: '2px 8px', borderRadius: 4,
-                  background: '#EEF2FF', color: '#6366F1', border: '1px solid #BFDBFE',
-                }}>
-                  Actif
-                </span>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-4 marches-date-grid">
-              <div style={{ padding: '12px 14px', borderRadius: 8, background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                  Date de publication
-                </label>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Du</label>
-                    <input type="date" value={datePublishedFrom} onChange={e => setDatePublishedFrom(e.target.value)} style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit', background: '#fff', outline: 'none', boxSizing: 'border-box' }} />
-                  </div>
-                  <span style={{ fontSize: 11, color: '#D1D5DB', marginTop: 14 }}>&rarr;</span>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Au</label>
-                    <input type="date" value={datePublishedTo} onChange={e => setDatePublishedTo(e.target.value)} style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit', background: '#fff', outline: 'none', boxSizing: 'border-box' }} />
-                  </div>
-                </div>
-              </div>
-              <div style={{ padding: '12px 14px', borderRadius: 8, background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#6B7280', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                  Date limite de reponse
-                </label>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Du</label>
-                    <input type="date" value={deadlineFrom} onChange={e => setDeadlineFrom(e.target.value)} style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit', background: '#fff', outline: 'none', boxSizing: 'border-box' }} />
-                  </div>
-                  <span style={{ fontSize: 11, color: '#D1D5DB', marginTop: 14 }}>&rarr;</span>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: 10, color: '#9CA3AF', display: 'block', marginBottom: 3 }}>Au</label>
-                    <input type="date" value={deadlineTo} onChange={e => setDeadlineTo(e.target.value)} style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit', background: '#fff', outline: 'none', boxSizing: 'border-box' }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => { setPage(1); load(); }} style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: '#6366F1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Appliquer</button>
-            <span style={{ fontSize: 13, color: '#6366F1', fontWeight: 600, cursor: 'pointer' }}>Sauvegarder comme alerte &rarr;</span>
-          </div>
+          <span style={{ fontSize: 12, color: '#94A3B8', marginRight: 4 }}>Filtres :</span>
+          {nature && <FilterChip label={getNatureLabel(nature)} onRemove={() => { setNature(''); setPage(1); }} />}
+          {department && <FilterChip label={`Dept. ${department}`} onRemove={() => { setDepartment(''); setPage(1); }} />}
+          {acheteur && <FilterChip label={`Acheteur: ${acheteur}`} onRemove={() => setAcheteur('')} />}
+          {cpvCode && <FilterChip label={`CPV: ${cpvCode}`} onRemove={() => setCpvCode('')} />}
+          {(datePublishedFrom || datePublishedTo) && <FilterChip label="Date publication" onRemove={() => { setDatePublishedFrom(''); setDatePublishedTo(''); }} />}
+          {(deadlineFrom || deadlineTo) && <FilterChip label="Date clôture" onRemove={() => { setDeadlineFrom(''); setDeadlineTo(''); }} />}
+          {sourceFilter && <FilterChip label={`Source: ${sourceFilter}`} onRemove={() => setSourceFilter('')} />}
+          <button onClick={() => { resetAllFilters(); setPage(1); }} style={{
+            display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6,
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            fontSize: 12, color: '#6366F1', fontWeight: 600, fontFamily: 'inherit',
+          }}>
+            <RotateCcw size={11} /> Tout effacer
+          </button>
         </div>
       )}
 
       {/* ─── Results ─── */}
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#9CA3AF', padding: '64px 0', fontSize: 15 }}>Chargement...</div>
+        <div style={{ textAlign: 'center', color: '#94A3B8', padding: '64px 0', fontSize: 14 }}>Chargement...</div>
       ) : marches.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#9CA3AF', padding: '64px 0', fontSize: 15, background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB' }}>
-          Aucune consultation trouvee.
+        <div style={{ textAlign: 'center', color: '#94A3B8', padding: '64px 0', fontSize: 14, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+          Aucune consultation trouvée.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#E2E8F0', borderRadius: 10, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
           {marches.map((m) => {
             const dl = daysUntil(m.deadline);
             const isLocked = m.locked === true;
 
-            /* ─── Locked card ─── */
             if (isLocked) {
               return (
-                <div key={m.id} className="marche-card" style={{
-                  position: 'relative', overflow: 'hidden',
-                  background: '#fff', border: '1px solid #E5E7EB', borderRadius: 16,
-                  padding: 28, cursor: 'default',
-                }}>
+                <div key={m.id} style={{ position: 'relative', overflow: 'hidden', background: '#fff', padding: '20px 24px' }}>
                   <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>
-                    <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-                      <NatureBadge nature={m.nature} />
-                    </div>
-                    <h3 style={{ fontSize: 17, fontWeight: 600, color: '#111827', lineHeight: 1.45, margin: '0 0 10px' }}>{m.title}</h3>
-                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#6B7280' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Building2 size={14} style={{ color: '#9CA3AF' }} /> {m.buyer}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><MapPin size={14} style={{ color: '#9CA3AF' }} /> {m.departmentName || m.department}</span>
-                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: '#111827', lineHeight: 1.5 }}>{m.title}</div>
+                    <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>{m.buyer}</div>
                   </div>
-                  {/* Lock overlay */}
                   <div style={{
                     position: 'absolute', inset: 0,
-                    background: 'rgba(255,255,255,0.8)',
-                    backdropFilter: 'blur(2px)',
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', gap: 10,
+                    background: 'rgba(255,255,255,0.85)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
                   }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 12, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Lock size={20} style={{ color: '#6B7280' }} />
-                    </div>
-                    <span style={{ fontSize: 14, color: '#374151', fontWeight: 500, textAlign: 'center' }}>
-                      Passez au plan Veille pour voir ce marche
+                    <Lock size={16} style={{ color: '#6B7280' }} />
+                    <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>
+                      Passez au plan Veille pour voir ce marché
                     </span>
-                    <Link
-                      href="/abonnement"
-                      style={{
-                        padding: '9px 24px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                        background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
-                        color: '#fff', textDecoration: 'none',
-                      }}
-                    >
-                      Debloquer &mdash; 25,90&euro;/mois
+                    <Link href="/abonnement" style={{
+                      padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                      background: '#6366F1', color: '#fff', textDecoration: 'none',
+                    }}>
+                      Débloquer
                     </Link>
                   </div>
                 </div>
               );
             }
 
-            /* ─── Normal card ─── */
             return (
               <div
                 key={m.id}
                 onClick={() => router.push(`/marches/${m.id}`)}
-                className="marche-card"
                 style={{
-                  background: '#fff', border: '1px solid #E5E7EB', borderRadius: 16,
-                  padding: 28, cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease',
+                  background: '#fff', padding: '18px 24px', cursor: 'pointer',
+                  transition: 'background 0.1s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = '#D1D5DB'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; e.currentTarget.style.borderColor = '#E5E7EB'; }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
               >
-                {/* Top: badges + amount */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, gap: 12 }}>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <NatureBadge nature={m.nature} />
-                    {m.procedureType && (
-                      <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500, background: '#F3F4F6', color: '#6B7280' }}>
-                        {m.procedureType}
-                      </span>
-                    )}
-                    {m.sourceRef && (
-                      <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>
-                        {m.sourceRef}
-                      </span>
-                    )}
+                {/* Row 1: Nature + Title + Amount */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                      <NatureBadge nature={m.nature} />
+                      {m.procedureType && (
+                        <span style={{ fontSize: 11, color: '#94A3B8' }}>{m.procedureType}</span>
+                      )}
+                    </div>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0F172A', lineHeight: 1.45, margin: 0 }}>
+                      {m.title}
+                    </h3>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#0B0F1A' }}>{formatCurrency(m.value)}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {formatCurrency(m.value)}
                   </div>
                 </div>
 
-                {/* Title */}
-                <h3 style={{ fontSize: 17, fontWeight: 600, color: '#111827', lineHeight: 1.45, margin: '0 0 10px' }}>
-                  {m.title}
-                </h3>
-
-                {/* Buyer + Location */}
-                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 14, color: '#4B5563', marginBottom: 4 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Building2 size={15} style={{ color: '#9CA3AF' }} /> {m.buyer}
-                  </span>
-                </div>
-
-                {/* Publication + duration */}
-                <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 0 }}>
-                  {m.source} &middot; Publie le {formatDate(m.publicationDate)}{m.duration ? ` \u00B7 Duree ${m.duration}` : ''}
-                </div>
-
-                {/* ─── Bottom section ─── */}
+                {/* Row 2: Meta info */}
                 <div style={{
-                  borderTop: '1px solid #F3F4F6', marginTop: 16, paddingTop: 16,
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  flexWrap: 'wrap', gap: 10,
+                  display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center',
+                  marginTop: 10, fontSize: 13, color: '#64748B',
                 }}>
-                  {/* Left: location + CPV + lots + deadline */}
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap', fontSize: 13, color: '#6B7280' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Building2 size={13} style={{ color: '#94A3B8' }} /> {m.buyer}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <MapPin size={13} style={{ color: '#94A3B8' }} /> {m.departmentName || m.department} ({m.department})
+                  </span>
+                  {m.cpvCode && (
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <MapPin size={14} style={{ color: '#9CA3AF' }} />
-                      {m.departmentName || m.department} ({m.department})
+                      <Tag size={12} style={{ color: '#94A3B8' }} /> CPV {m.cpvCode}
                     </span>
-                    {m.cpvCode && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Tag size={13} style={{ color: '#9CA3AF' }} />
-                        CPV {m.cpvCode}
-                      </span>
-                    )}
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Layers size={13} style={{ color: '#9CA3AF' }} />
-                      {m.lots} lot{m.lots > 1 ? 's' : ''}
-                    </span>
-                    <DeadlineBadge days={dl} />
-                  </div>
-
-                  {/* Right: CTA button */}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); router.push(`/marches/${m.id}`); }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '8px 18px', borderRadius: 8,
-                      border: 'none', background: '#6366F1', color: '#fff',
-                      fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                      whiteSpace: 'nowrap', transition: 'background 0.15s',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#4F46E5')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#6366F1')}
-                  >
-                    Voir la consultation <ArrowRight size={14} />
-                  </button>
+                  )}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Layers size={12} style={{ color: '#94A3B8' }} /> {m.lots} lot{m.lots > 1 ? 's' : ''}
+                  </span>
+                  <DeadlineBadge days={dl} />
+                  <span style={{ fontSize: 12, color: '#CBD5E1' }}>
+                    {m.source} · {formatDate(m.publicationDate)}
+                  </span>
                 </div>
               </div>
             );
@@ -542,29 +332,29 @@ export default function MarchesPage() {
       {meta.pages > 1 && (
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          marginTop: 24, padding: '14px 0',
+          marginTop: 20, paddingTop: 16,
         }}>
-          <span style={{ fontSize: 13, color: '#9CA3AF' }}>
-            Page {meta.page} sur {meta.pages} &mdash; {meta.total.toLocaleString('fr-FR')} resultats
+          <span style={{ fontSize: 13, color: '#94A3B8' }}>
+            Page {meta.page} sur {meta.pages} — {meta.total.toLocaleString('fr-FR')} résultats
           </span>
           <div style={{ display: 'flex', gap: 6 }}>
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page <= 1}
               style={{
-                padding: '8px 18px', borderRadius: 8,
-                border: '1px solid #E5E7EB', background: '#fff',
+                padding: '7px 16px', borderRadius: 6,
+                border: '1px solid #E2E8F0', background: '#fff',
                 fontSize: 13, fontWeight: 500, cursor: page <= 1 ? 'not-allowed' : 'pointer',
                 opacity: page <= 1 ? 0.4 : 1, fontFamily: 'inherit', color: '#374151',
               }}
             >
-              Precedent
+              Précédent
             </button>
             <button
               onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
               disabled={page >= meta.pages}
               style={{
-                padding: '8px 18px', borderRadius: 8,
+                padding: '7px 16px', borderRadius: 6,
                 border: 'none', background: '#6366F1',
                 fontSize: 13, fontWeight: 600, cursor: page >= meta.pages ? 'not-allowed' : 'pointer',
                 opacity: page >= meta.pages ? 0.4 : 1, fontFamily: 'inherit', color: '#fff',
@@ -576,22 +366,223 @@ export default function MarchesPage() {
         </div>
       )}
 
-      {/* ─── Responsive ─── */}
+      {/* ═══════ FILTER SIDE PANEL ═══════ */}
+      {filtersOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', justifyContent: 'flex-end' }}>
+          {/* Backdrop */}
+          <div
+            style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)' }}
+            onClick={() => setFiltersOpen(false)}
+          />
+
+          {/* Panel */}
+          <div
+            ref={panelRef}
+            style={{
+              position: 'relative', width: 380, maxWidth: '90vw',
+              background: '#fff', height: '100%',
+              display: 'flex', flexDirection: 'column',
+              boxShadow: '-4px 0 20px rgba(0,0,0,0.1)',
+              animation: 'slideInRight 0.2s ease-out',
+            }}
+          >
+            {/* Panel header */}
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '16px 24px', borderBottom: '1px solid #E2E8F0',
+            }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>Filtres de recherche</h3>
+              <button onClick={() => setFiltersOpen(false)} style={{
+                background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8',
+                padding: 4, borderRadius: 4, display: 'flex',
+              }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Panel body */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
+              {/* Mots-clés */}
+              <FilterSection label="Mots-clés">
+                <input
+                  value={q}
+                  onChange={e => setQ(e.target.value)}
+                  placeholder="Ex: transport, nettoyage..."
+                  className="input"
+                  style={{ height: 38, fontSize: 13 }}
+                />
+              </FilterSection>
+
+              {/* Département */}
+              <FilterSection label="Localisation / Département">
+                <DepartmentSelect value={department} onChange={setDepartment} />
+              </FilterSection>
+
+              {/* Nature */}
+              <FilterSection label="Nature des prestations">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { v: 'SERVICES', l: 'Services' },
+                    { v: 'TRAVAUX', l: 'Travaux' },
+                    { v: 'FOURNITURES', l: 'Fournitures' },
+                  ].map(n => (
+                    <label key={n.v} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="nature"
+                        checked={nature === n.v}
+                        onChange={() => setNature(nature === n.v ? '' : n.v)}
+                        style={{ accentColor: '#6366F1' }}
+                      />
+                      {n.l}
+                    </label>
+                  ))}
+                </div>
+              </FilterSection>
+
+              {/* Acheteur public */}
+              <FilterSection label="Acheteur public">
+                <input
+                  value={acheteur}
+                  onChange={e => setAcheteur(e.target.value)}
+                  placeholder="Nom, code postal ou ville..."
+                  className="input"
+                  style={{ height: 38, fontSize: 13 }}
+                />
+              </FilterSection>
+
+              {/* Code CPV */}
+              <FilterSection label="Code CPV">
+                <input
+                  value={cpvCode}
+                  onChange={e => setCpvCode(e.target.value)}
+                  placeholder="Ex: 45000000"
+                  className="input"
+                  style={{ height: 38, fontSize: 13 }}
+                />
+              </FilterSection>
+
+              {/* Date de publication */}
+              <FilterSection label="Date de publication">
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: '#94A3B8', display: 'block', marginBottom: 4 }}>Du</label>
+                    <input type="date" value={datePublishedFrom} onChange={e => setDatePublishedFrom(e.target.value)}
+                      className="input" style={{ height: 36, fontSize: 12 }} />
+                  </div>
+                  <span style={{ fontSize: 12, color: '#CBD5E1', marginTop: 16 }}>→</span>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: '#94A3B8', display: 'block', marginBottom: 4 }}>Au</label>
+                    <input type="date" value={datePublishedTo} onChange={e => setDatePublishedTo(e.target.value)}
+                      className="input" style={{ height: 36, fontSize: 12 }} />
+                  </div>
+                </div>
+              </FilterSection>
+
+              {/* Date de clôture */}
+              <FilterSection label="Date limite de réponse">
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: '#94A3B8', display: 'block', marginBottom: 4 }}>Du</label>
+                    <input type="date" value={deadlineFrom} onChange={e => setDeadlineFrom(e.target.value)}
+                      className="input" style={{ height: 36, fontSize: 12 }} />
+                  </div>
+                  <span style={{ fontSize: 12, color: '#CBD5E1', marginTop: 16 }}>→</span>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: 11, color: '#94A3B8', display: 'block', marginBottom: 4 }}>Au</label>
+                    <input type="date" value={deadlineTo} onChange={e => setDeadlineTo(e.target.value)}
+                      className="input" style={{ height: 36, fontSize: 12 }} />
+                  </div>
+                </div>
+              </FilterSection>
+
+              {/* Source */}
+              <FilterSection label="Plateforme source">
+                <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
+                  className="input" style={{ height: 38, fontSize: 13 }}>
+                  <option value="">Toutes les sources</option>
+                  <option value="BOAMP">BOAMP</option>
+                  <option value="TED">TED</option>
+                  <option value="DECP">DECP</option>
+                  <option value="E-MARCHESPUBLICS">e-marchespublics</option>
+                  <option value="PLACE">PLACE</option>
+                  <option value="ACHATPUBLIC">Achatpublic</option>
+                  <option value="MAXIMILIEN">Maximilien</option>
+                  <option value="MEGALIS">Mégalis</option>
+                  <option value="MARCHES-SECURISES">Marchés Sécurisés</option>
+                  <option value="AWS-ACHAT">AWS-Achat</option>
+                  <option value="MARCHES-ONLINE">Marchés Online</option>
+                  <option value="KLEKOON">Klekoon</option>
+                </select>
+              </FilterSection>
+            </div>
+
+            {/* Panel footer */}
+            <div style={{
+              padding: '16px 24px', borderTop: '1px solid #E2E8F0',
+              display: 'flex', gap: 10,
+            }}>
+              <button onClick={() => { resetAllFilters(); }} style={{
+                flex: 1, padding: '10px 0', borderRadius: 6,
+                border: '1px solid #E2E8F0', background: '#fff',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+                color: '#64748B',
+              }}>
+                Réinitialiser
+              </button>
+              <button onClick={applyFilters} style={{
+                flex: 1, padding: '10px 0', borderRadius: 6,
+                border: 'none', background: '#6366F1',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                color: '#fff',
+              }}>
+                Rechercher
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
-        @media (max-width: 768px) {
-          .marches-filters-grid {
-            grid-template-columns: 1fr 1fr !important;
-          }
-          .marches-date-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-        @media (max-width: 480px) {
-          .marches-filters-grid {
-            grid-template-columns: 1fr !important;
-          }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
         }
       `}</style>
     </div>
+  );
+}
+
+/* ─── Filter section in side panel ─── */
+function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <label style={{
+        display: 'block', fontSize: 12, fontWeight: 600, color: '#374151',
+        marginBottom: 8, letterSpacing: '0.01em',
+      }}>
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+/* ─── Active filter chip ─── */
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+      background: '#EEF2FF', color: '#6366F1', border: '1px solid #C7D2FE',
+    }}>
+      {label}
+      <button onClick={onRemove} style={{
+        background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+        display: 'flex', color: '#6366F1',
+      }}>
+        <X size={12} />
+      </button>
+    </span>
   );
 }
