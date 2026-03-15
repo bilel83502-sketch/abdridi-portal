@@ -34,10 +34,22 @@ function LoginContent() {
       {/* Left panel */}
       <div className="login-left">
         <div className="login-left-content">
-          <Image src="/logo.png" alt="AB DRIDI" width={72} height={72} className="login-left-logo" />
-          <h1 className="login-left-title">AB DRIDI</h1>
+          {/* Logo text — no image */}
+          <div style={{ marginBottom: 32 }}>
+            <span style={{
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontSize: 28, fontWeight: 700, letterSpacing: '-0.01em',
+            }}>
+              <span style={{ color: 'var(--brand)' }}>AB</span>
+              <span style={{ color: '#fff' }}> DRIDI</span>
+            </span>
+          </div>
+
+          <h1 className="login-left-title">
+            La veille marchés publics<br />pour le transport
+          </h1>
           <p className="login-left-slogan">
-            Veille et accompagnement sur les marchés publics
+            Identifiez les appels d&apos;offres, analysez la concurrence et remportez plus de marchés.
           </p>
 
           <div className="login-left-stats">
