@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Search, Bell, Eye, Calendar, LayoutGrid, Settings, LogOut, Shield, ChevronDown, CreditCard, Menu, X } from 'lucide-react';
 
 const MAIN_TABS = [
@@ -69,11 +70,9 @@ export default function Header() {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 32px', display: 'flex', alignItems: 'center', height: 56 }}>
 
           {/* Logo */}
-          <Link href="/dashboard" style={{ marginRight: 32, textDecoration: 'none', flexShrink: 0 }}>
-            <span style={{ fontFamily: 'var(--font-serif, "Playfair Display", serif)', fontSize: 18, fontWeight: 700, lineHeight: 1 }}>
-              <span style={{ color: 'var(--brand)' }}>AB</span>
-              <span style={{ color: '#F1F5F9' }}> DRIDI</span>
-            </span>
+          <Link href="/dashboard" style={{ marginRight: 32, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} style={{ borderRadius: 0 }} />
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
           </Link>
 
           {/* Desktop nav */}
@@ -98,14 +97,6 @@ export default function Header() {
 
           {/* Desktop right */}
           <div className="header-desktop-right" style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
-            {/* 102 sources */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, background: 'rgba(16,185,129,0.1)' }}>
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10B981' }} />
-              <span style={{ fontSize: 10, fontWeight: 600, color: '#10B981', letterSpacing: '0.04em' }}>102 sources</span>
-            </div>
-
-            <div style={{ width: 1, height: 18, background: 'var(--nav-border)' }} />
-
             {/* Avatar dropdown */}
             <div ref={dropRef} style={{ position: 'relative' }}>
               <button
@@ -119,8 +110,8 @@ export default function Header() {
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <div style={{
-                  width: 28, height: 28, borderRadius: 7,
-                  background: 'linear-gradient(135deg,#6366F1,#4F46E5)',
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: '#3B82F6',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0,
                 }}>{initials}</div>
@@ -178,9 +169,7 @@ export default function Header() {
             background: 'var(--nav)', padding: '20px 0', overflowY: 'auto',
           }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px 16px', borderBottom: '1px solid var(--nav-border)', marginBottom: 8 }}>
-              <span style={{ fontFamily: 'var(--font-serif,"Playfair Display",serif)', fontSize: 17, fontWeight: 700 }}>
-                <span style={{ color: 'var(--brand)' }}>AB</span><span style={{ color: '#F1F5F9' }}> DRIDI</span>
-              </span>
+              <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
               <button onClick={() => setMobileOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
                 <X size={18} />
               </button>
@@ -212,9 +201,9 @@ function DropItem({ href, Icon, label, accent }: { href: string; Icon: any; labe
   return (
     <Link href={href} style={{ textDecoration: 'none' }}>
       <div
-        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 7, fontSize: 13, color: accent ? '#A5B4FC' : '#CBD5E1', cursor: 'pointer', transition: 'all 0.15s' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 7, fontSize: 13, color: accent ? '#93C5FD' : '#CBD5E1', cursor: 'pointer', transition: 'all 0.15s' }}
         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.color = '#F1F5F9'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = accent ? '#A5B4FC' : '#CBD5E1'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = accent ? '#93C5FD' : '#CBD5E1'; }}
       >
         <Icon size={14} style={{ color: '#475569' }} />{label}
       </div>

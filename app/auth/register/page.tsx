@@ -236,7 +236,7 @@ export default function RegisterPage() {
 
           <p style={{ textAlign: 'center', fontSize: '13px', color: '#6B7280', marginTop: '24px' }}>
             Déjà un compte ?{' '}
-            <Link href="/auth/login" style={{ color: '#6366F1', fontWeight: 600, textDecoration: 'none' }}>
+            <Link href="/auth/login" style={{ color: '#3B82F6', fontWeight: 600, textDecoration: 'none' }}>
               Se connecter
             </Link>
           </p>

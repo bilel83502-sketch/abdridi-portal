@@ -84,7 +84,7 @@ export default function DashboardPage() {
             <h3 className="text-[13px] font-semibold mb-3.5">Répartition par nature</h3>
             {data.byNature.map((n: any, i: number) => {
               const pct = Math.round((n.count / totalNature) * 100);
-              const colors: Record<string, string> = { TRAVAUX: '#D97706', SERVICES: '#2563EB', FOURNITURES: '#4F46E5' };
+              const colors: Record<string, string> = { TRAVAUX: '#D97706', SERVICES: '#2563EB', FOURNITURES: '#2563EB' };
               return (
                 <div key={i} className="mb-3">
                   <div className="flex justify-between text-xs mb-1.5">

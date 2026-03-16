@@ -68,7 +68,7 @@ export default function AlertesPage() {
           </div>
           <button className="btn-gradient" style={{
             padding: '12px 32px', fontSize: 14, fontWeight: 600, borderRadius: 10,
-            background: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+            background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
           }}>
             <Plus size={15} /> Créer ma première alerte
           </button>

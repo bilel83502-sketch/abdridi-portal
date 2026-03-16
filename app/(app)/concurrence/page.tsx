@@ -99,7 +99,7 @@ export default function ConcurrencePage() {
     if (!montant) return { bg: '#F9FAFB', color: '#9CA3AF', border: '#E5E7EB' };
     if (montant < 25000) return { bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
     if (montant < 90000) return { bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
-    if (montant < 200000) return { bg: '#FDF4FF', color: '#7C3AED', border: '#D8B4FE' };
+    if (montant < 200000) return { bg: '#EFF6FF', color: '#3B82F6', border: '#93C5FD' };
     return { bg: '#FEF2F2', color: '#991B1B', border: '#FECACA' };
   }
 
@@ -119,7 +119,7 @@ export default function ConcurrencePage() {
       </div>
 
       {/* Stats bar */}
-      <div className="card p-4 px-6 mb-5 flex items-center justify-between" style={{ borderTop: '2px solid #7C3AED' }}>
+      <div className="card p-4 px-6 mb-5 flex items-center justify-between" style={{ borderTop: '2px solid #3B82F6' }}>
         {[
           {
             label: 'Marchés attribués',
@@ -184,7 +184,7 @@ export default function ConcurrencePage() {
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               gap: '6px', padding: '9px 20px', borderRadius: '6px', border: 'none',
-              background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+              background: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
               color: '#fff', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
@@ -200,7 +200,7 @@ export default function ConcurrencePage() {
             onChange={(e) => setTitulaire(e.target.value)}
             className="input !pl-9"
             placeholder="Rechercher par entreprise attributaire (ex: Vinci, Bouygues, Eiffage...)"
-            style={{ borderColor: titulaire ? '#7C3AED' : undefined }}
+            style={{ borderColor: titulaire ? '#3B82F6' : undefined }}
           />
         </div>
 
@@ -216,8 +216,8 @@ export default function ConcurrencePage() {
                 style={{
                   padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
-                  border: amountBracket === i ? '1px solid #7C3AED' : '1px solid #E5E7EB',
-                  background: amountBracket === i ? '#7C3AED' : '#fff',
+                  border: amountBracket === i ? '1px solid #3B82F6' : '1px solid #E5E7EB',
+                  background: amountBracket === i ? '#3B82F6' : '#fff',
                   color: amountBracket === i ? '#fff' : '#6B7280',
                 }}
               >
@@ -230,7 +230,7 @@ export default function ConcurrencePage() {
 
       {/* Filters panel */}
       {showFilters && (
-        <div className="card p-5 mb-3" style={{ borderLeft: '3px solid #7C3AED' }}>
+        <div className="card p-5 mb-3" style={{ borderLeft: '3px solid #3B82F6' }}>
           <div className="flex justify-between mb-3.5">
             <span className="text-xs font-bold">Critères avancés</span>
             <button
@@ -270,7 +270,7 @@ export default function ConcurrencePage() {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 borderRadius: '6px', border: 'none',
-                background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+                background: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
                 color: '#fff', fontWeight: 600, fontSize: '13px',
                 cursor: 'pointer', fontFamily: 'inherit', padding: '7px 16px',
               }}
@@ -285,8 +285,8 @@ export default function ConcurrencePage() {
       {!meta.isPaid && !loading && data.length > 0 && (
         <div style={{
           marginBottom: 12, padding: '10px 16px', borderRadius: 8,
-          background: 'linear-gradient(135deg, #EDE9FE, #F5F3FF)',
-          border: '1px solid #C4B5FD',
+          background: 'linear-gradient(135deg, #DBEAFE, #F5F3FF)',
+          border: '1px solid #93C5FD',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           fontSize: 13,
         }}>
@@ -298,7 +298,7 @@ export default function ConcurrencePage() {
             href="/abonnement"
             style={{
               padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: 'linear-gradient(135deg, #7C3AED, #A855F7)',
+              background: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
               color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
             }}
           >
@@ -356,13 +356,13 @@ export default function ConcurrencePage() {
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Lock size={18} style={{ color: '#7C3AED' }} />
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Lock size={18} style={{ color: '#3B82F6' }} />
                     </div>
                     <span style={{ fontSize: 13, color: '#374151', fontWeight: 500, textAlign: 'center' }}>
                       Passez au plan Veille pour voir toutes les attributions
                     </span>
-                    <Link href="/abonnement" style={{ padding: '7px 18px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'linear-gradient(135deg, #7C3AED, #A855F7)', color: '#fff', textDecoration: 'none' }}>
+                    <Link href="/abonnement" style={{ padding: '7px 18px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'linear-gradient(135deg, #3B82F6, #60A5FA)', color: '#fff', textDecoration: 'none' }}>
                       D&eacute;bloquer &mdash; 25,90€/mois
                     </Link>
                   </div>

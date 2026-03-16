@@ -10,8 +10,8 @@ import DepartmentSelect from '@/components/DepartmentSelect';
 /* ─── Nature badge ─── */
 function NatureBadge({ nature }: { nature: string }) {
   const map: Record<string, { bg: string; text: string }> = {
-    FOURNITURES: { bg: '#DBEAFE', text: '#4F46E5' },
-    SERVICES: { bg: '#EDE9FE', text: '#6D28D9' },
+    FOURNITURES: { bg: '#DBEAFE', text: '#2563EB' },
+    SERVICES: { bg: '#DBEAFE', text: '#6D28D9' },
     TRAVAUX: { bg: '#FFEDD5', text: '#C2410C' },
   };
   const style = map[nature] || { bg: '#F3F4F6', text: '#6B7280' };
@@ -129,7 +129,7 @@ export default function MarchesPage() {
           Consultations en cours
         </h1>
         <p style={{ fontSize: 14, color: '#64748B', margin: 0 }}>
-          <strong style={{ color: '#6366F1' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts — 102 sources officielles
+          <strong style={{ color: '#3B82F6' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts — 102 sources officielles
         </p>
       </div>
 
@@ -146,7 +146,7 @@ export default function MarchesPage() {
           </div>
           <Link href="/abonnement" style={{
             padding: '7px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600,
-            background: '#6366F1', color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
+            background: '#3B82F6', color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
           }}>
             Passer au plan Veille
           </Link>
@@ -167,14 +167,14 @@ export default function MarchesPage() {
               fontFamily: 'inherit', outline: 'none', background: '#fff',
               boxSizing: 'border-box', transition: 'border-color 0.15s',
             }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#6366F1')}
+            onFocus={e => (e.currentTarget.style.borderColor = '#3B82F6')}
             onBlur={e => (e.currentTarget.style.borderColor = '#E2E8F0')}
           />
         </div>
         <button type="submit" style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '0 20px', height: 44, borderRadius: 8, border: 'none',
-          background: '#6366F1', color: '#fff', fontSize: 14, fontWeight: 600,
+          background: '#3B82F6', color: '#fff', fontSize: 14, fontWeight: 600,
           cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
         }}>
           <Search size={15} /> Rechercher
@@ -187,7 +187,7 @@ export default function MarchesPage() {
             padding: '0 16px', height: 44, borderRadius: 8,
             border: '1px solid #E2E8F0', background: '#fff',
             fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
-            color: hasFilters ? '#6366F1' : '#64748B',
+            color: hasFilters ? '#3B82F6' : '#64748B',
             position: 'relative',
           }}
         >
@@ -196,7 +196,7 @@ export default function MarchesPage() {
             <span style={{
               position: 'absolute', top: -6, right: -6,
               width: 18, height: 18, borderRadius: '50%',
-              background: '#6366F1', color: '#fff',
+              background: '#3B82F6', color: '#fff',
               fontSize: 10, fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
@@ -222,7 +222,7 @@ export default function MarchesPage() {
           <button onClick={() => { resetAllFilters(); setPage(1); }} style={{
             display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6,
             background: 'transparent', border: 'none', cursor: 'pointer',
-            fontSize: 12, color: '#6366F1', fontWeight: 600, fontFamily: 'inherit',
+            fontSize: 12, color: '#3B82F6', fontWeight: 600, fontFamily: 'inherit',
           }}>
             <RotateCcw size={11} /> Tout effacer
           </button>
@@ -260,7 +260,7 @@ export default function MarchesPage() {
                     </span>
                     <Link href="/abonnement" style={{
                       padding: '6px 16px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                      background: '#6366F1', color: '#fff', textDecoration: 'none',
+                      background: '#3B82F6', color: '#fff', textDecoration: 'none',
                     }}>
                       Débloquer
                     </Link>
@@ -355,7 +355,7 @@ export default function MarchesPage() {
               disabled={page >= meta.pages}
               style={{
                 padding: '7px 16px', borderRadius: 6,
-                border: 'none', background: '#6366F1',
+                border: 'none', background: '#3B82F6',
                 fontSize: 13, fontWeight: 600, cursor: page >= meta.pages ? 'not-allowed' : 'pointer',
                 opacity: page >= meta.pages ? 0.4 : 1, fontFamily: 'inherit', color: '#fff',
               }}
@@ -432,7 +432,7 @@ export default function MarchesPage() {
                         name="nature"
                         checked={nature === n.v}
                         onChange={() => setNature(nature === n.v ? '' : n.v)}
-                        style={{ accentColor: '#6366F1' }}
+                        style={{ accentColor: '#3B82F6' }}
                       />
                       {n.l}
                     </label>
@@ -532,7 +532,7 @@ export default function MarchesPage() {
               </button>
               <button onClick={applyFilters} style={{
                 flex: 1, padding: '10px 0', borderRadius: 6,
-                border: 'none', background: '#6366F1',
+                border: 'none', background: '#3B82F6',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                 color: '#fff',
               }}>
@@ -574,12 +574,12 @@ function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 4,
       padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-      background: '#EEF2FF', color: '#6366F1', border: '1px solid #C7D2FE',
+      background: '#DBEAFE', color: '#3B82F6', border: '1px solid #93C5FD',
     }}>
       {label}
       <button onClick={onRemove} style={{
         background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-        display: 'flex', color: '#6366F1',
+        display: 'flex', color: '#3B82F6',
       }}>
         <X size={12} />
       </button>

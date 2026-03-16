@@ -73,7 +73,7 @@ export default function AdminPage() {
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
-        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #7C3AED, #A855F7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #3B82F6, #60A5FA)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <Shield size={18} color="#fff" />
         </div>
         <div>
@@ -87,7 +87,7 @@ export default function AdminPage() {
         {[
           { label: 'Utilisateurs inscrits', value: data.totalUsers, icon: Users, color: '#2563EB' },
           { label: 'Abonn\u00e9s payants', value: data.paidUsers, icon: CreditCard, color: '#059669' },
-          { label: 'Revenus mensuels', value: `${data.monthlyRevenue.toFixed(2).replace('.', ',')}€`, icon: TrendingUp, color: '#7C3AED' },
+          { label: 'Revenus mensuels', value: `${data.monthlyRevenue.toFixed(2).replace('.', ',')}€`, icon: TrendingUp, color: '#3B82F6' },
         ].map((s, i) => (
           <div key={i} className={`flex items-center gap-3 flex-1 px-4 ${i < 2 ? 'border-r border-gray-100' : ''}`}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: `${s.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -242,7 +242,7 @@ export default function AdminPage() {
                   <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 500 }}>
                     {u.name}
                     {u.role === 'ADMIN' && (
-                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#7C3AED', background: '#EDE9FE', padding: '2px 6px', borderRadius: 3 }}>ADMIN</span>
+                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#3B82F6', background: '#DBEAFE', padding: '2px 6px', borderRadius: 3 }}>ADMIN</span>
                     )}
                   </td>
                   <td style={{ padding: '10px 16px', fontSize: 13, color: '#6B7280' }}>{u.email}</td>
@@ -252,7 +252,7 @@ export default function AdminPage() {
                       fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px',
                       padding: '2px 8px', borderRadius: 3,
                       ...(u.hasSub ? { color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0' }
-                        : u.role === 'ADMIN' ? { color: '#7C3AED', background: '#EDE9FE', border: '1px solid #C4B5FD' }
+                        : u.role === 'ADMIN' ? { color: '#3B82F6', background: '#DBEAFE', border: '1px solid #93C5FD' }
                         : { color: '#6B7280', background: '#F9FAFB', border: '1px solid #E5E7EB' })
                     }}>
                       {u.role === 'ADMIN' ? 'Admin' : u.plan}

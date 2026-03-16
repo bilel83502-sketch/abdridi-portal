@@ -93,7 +93,7 @@ export default function ConcurrenceDetailPage() {
       </button>
 
       {/* Header card */}
-      <div className="card p-6 mb-3" style={{ borderTop: '2px solid #7C3AED' }}>
+      <div className="card p-6 mb-3" style={{ borderTop: '2px solid #3B82F6' }}>
         <div className="flex gap-2 items-center flex-wrap mb-3">
           <span className={getNatureBadgeDetail(marche.nature)}>
             {getNatureLabel(marche.nature)}
@@ -195,7 +195,7 @@ export default function ConcurrenceDetailPage() {
             style={{
               background:
                 'linear-gradient(135deg, rgba(124,58,237,0.05), rgba(168,85,247,0.08))',
-              borderColor: '#C4B5FD',
+              borderColor: '#93C5FD',
             }}
           >
             <div className="flex items-center gap-2 mb-4">
@@ -366,7 +366,7 @@ export default function ConcurrenceDetailPage() {
 
       {/* Autres marchés remportés */}
       {autresMarches.length > 0 && (
-        <div className="card p-6" style={{ borderLeft: '3px solid #7C3AED' }}>
+        <div className="card p-6" style={{ borderLeft: '3px solid #3B82F6' }}>
           <div className="flex items-center gap-2 mb-4">
             <Trophy size={16} className="text-violet-500" />
             <h2 className="text-sm font-bold">
