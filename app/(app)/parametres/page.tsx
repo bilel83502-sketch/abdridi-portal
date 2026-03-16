@@ -2,10 +2,25 @@
 
 import { useSession } from 'next-auth/react';
 import { User } from 'lucide-react';
+import { useState } from 'react';
 
 export default function ParametresPage() {
   const { data: session } = useSession();
   const user = session?.user as any;
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  async function handleRequestReset() {
+    if (!user?.email) return;
+    setResetLoading(true);
+    await fetch('/api/auth/request-password-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email }),
+    });
+    setResetSent(true);
+    setResetLoading(false);
+  }
 
   return (
     <div className="max-w-[640px]">
@@ -60,15 +75,26 @@ export default function ParametresPage() {
       {/* Password */}
       <div className="card p-6">
         <h2 className="text-[13px] font-bold mb-3.5">Mot de passe</h2>
-        <div className="flex flex-col gap-2.5 max-w-[320px]">
-          {['Actuel', 'Nouveau', 'Confirmation'].map((l, i) => (
-            <div key={i}>
-              <label className="label">{l}</label>
-              <input type="password" placeholder="••••••••" className="input" />
-            </div>
-          ))}
-        </div>
-        <button className="btn-secondary !text-xs mt-3.5">Mettre à jour</button>
+        <p style={{ fontSize: 13, color: '#64748B', marginBottom: 12, lineHeight: 1.5 }}>
+          Pour des raisons de sécurité, le changement de mot de passe se fait par email.
+        </p>
+        {resetSent ? (
+          <div style={{ padding: '10px 14px', background: '#ECFDF5', border: '1px solid #A7F3D0', fontSize: 13, color: '#065F46' }}>
+            Un email de réinitialisation a été envoyé à {user?.email}.
+          </div>
+        ) : (
+          <button
+            onClick={handleRequestReset}
+            disabled={resetLoading}
+            style={{
+              padding: '10px 20px', background: '#3B82F6', color: '#fff',
+              border: 'none', fontWeight: 600, fontSize: 13, cursor: resetLoading ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit', opacity: resetLoading ? 0.6 : 1,
+            }}
+          >
+            {resetLoading ? 'Envoi...' : 'Modifier mon mot de passe'}
+          </button>
+        )}
       </div>
     </div>
   );

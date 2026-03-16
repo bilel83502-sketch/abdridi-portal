@@ -46,7 +46,7 @@ export const authOptions: NextAuthOptions = {
         const email = user.email.toLowerCase();
         const isAdminEmail = email === (process.env.ADMIN_EMAIL || '').toLowerCase();
 
-        // Upsert user for Google OAuth
+        // Upsert user for Google OAuth — auto-verified
         const existing = await prisma.user.findUnique({ where: { email } });
         if (!existing) {
           await prisma.user.create({
@@ -55,18 +55,31 @@ export const authOptions: NextAuthOptions = {
               name: user.name || 'Utilisateur',
               role: isAdminEmail ? 'ADMIN' : 'USER',
               plan: isAdminEmail ? 'VEILLE' : 'DECOUVERTE',
+              emailVerified: new Date(),
               lastLoginAt: new Date(),
             },
           });
         } else {
-          // Force ADMIN role for admin email on every login
           const updateData: any = { lastLoginAt: new Date() };
           if (isAdminEmail && existing.role !== 'ADMIN') {
             updateData.role = 'ADMIN';
           }
+          // Mark Google users as verified if not already
+          if (!existing.emailVerified) {
+            updateData.emailVerified = new Date();
+          }
           await prisma.user.update({ where: { id: existing.id }, data: updateData });
         }
       }
+
+      // Block credentials login if email not verified
+      if (account?.provider === 'credentials' && user.email) {
+        const dbUser = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() } });
+        if (dbUser && !dbUser.emailVerified) {
+          return '/auth/verify-notice';
+        }
+      }
+
       return true;
     },
     async jwt({ token, user, account }) {

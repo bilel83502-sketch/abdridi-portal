@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Users, CreditCard, TrendingUp, RefreshCw, Shield, Calendar, CheckCircle, Check } from 'lucide-react';
+import { Users, CreditCard, TrendingUp, RefreshCw, Shield, Calendar, CheckCircle, Check, Cookie } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
   PENDING: { label: 'En attente', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
@@ -219,6 +219,65 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Cookie consents */}
+      {data.cookieConsents && (
+        <div className="card overflow-hidden mb-5">
+          <div className="p-3.5 px-5 border-b border-gray-100 flex items-center gap-2">
+            <Cookie size={15} style={{ color: '#3B82F6' }} />
+            <span className="text-[13px] font-semibold">Consentements cookies RGPD</span>
+          </div>
+          <div className="p-5">
+            <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+              {[
+                { label: 'Total', value: data.cookieConsents.total, color: '#6B7280' },
+                { label: 'Acceptés', value: data.cookieConsents.accepted, color: '#059669' },
+                { label: 'Refusés', value: data.cookieConsents.refused, color: '#DC2626' },
+              ].map((s, i) => (
+                <div key={i}>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 2 }}>{s.label}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+            {data.cookieConsents.recent.length > 0 && (
+              <table className="w-full">
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #F3F4F6' }}>
+                    {['Date', 'Utilisateur', 'Décision'].map((h) => (
+                      <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.cookieConsents.recent.map((c: any, i: number) => (
+                    <tr key={c.id} style={{ borderBottom: i < data.cookieConsents.recent.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
+                      <td style={{ padding: '8px 12px', fontSize: 12, color: '#6B7280' }}>
+                        {new Date(c.createdAt).toLocaleDateString('fr-FR')} {new Date(c.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td style={{ padding: '8px 12px', fontSize: 12, color: '#6B7280' }}>
+                        {c.userId || 'Anonyme'}
+                      </td>
+                      <td style={{ padding: '8px 12px' }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 600, padding: '2px 8px',
+                          color: c.accepted ? '#059669' : '#DC2626',
+                          background: c.accepted ? '#ECFDF5' : '#FEF2F2',
+                          border: `1px solid ${c.accepted ? '#A7F3D0' : '#FECACA'}`,
+                        }}>
+                          {c.accepted ? 'Accepté' : 'Refusé'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Users table */}
       <div className="card overflow-hidden">

@@ -43,7 +43,7 @@ export default function RegisterPage() {
         setLoading(false);
         return;
       }
-      router.push('/auth/login?registered=1');
+      router.push('/auth/verify-notice');
     } catch {
       setError('Erreur de connexion au serveur.');
       setLoading(false);

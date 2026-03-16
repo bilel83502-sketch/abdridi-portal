@@ -14,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Accès refusé.' }, { status: 403 });
     }
 
-    const [totalUsers, users] = await Promise.all([
+    const [totalUsers, users, totalConsents, acceptedConsents, recentConsents] = await Promise.all([
       prisma.user.count(),
       prisma.user.findMany({
         select: {
@@ -32,6 +32,13 @@ export async function GET() {
         },
         orderBy: { createdAt: 'desc' },
       }),
+      prisma.cookieConsent.count(),
+      prisma.cookieConsent.count({ where: { accepted: true } }),
+      prisma.cookieConsent.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { id: true, userId: true, accepted: true, createdAt: true },
+      }),
     ]);
 
     const now = new Date();
@@ -46,6 +53,12 @@ export async function GET() {
       totalUsers,
       paidUsers: paidUsers.length,
       monthlyRevenue,
+      cookieConsents: {
+        total: totalConsents,
+        accepted: acceptedConsents,
+        refused: totalConsents - acceptedConsents,
+        recent: recentConsents,
+      },
       users: users.map((u) => ({
         id: u.id,
         email: u.email,
