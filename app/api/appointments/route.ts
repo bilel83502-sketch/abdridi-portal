@@ -60,6 +60,7 @@ export async function GET(req: Request) {
     // Any authenticated user can see their own appointments
     const appointments = await prisma.appointment.findMany({
       where: { userId: user.id },
+      include: { relances: { orderBy: { date: 'desc' } } },
       orderBy: { requestedDate: 'desc' },
     });
 

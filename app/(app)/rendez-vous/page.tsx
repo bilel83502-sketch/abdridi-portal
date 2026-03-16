@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Calendar, Clock, FileText, CheckCircle2, Hourglass, CircleDot, Search, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, Hourglass, CircleDot, Search, RefreshCw, Send, X } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
   PENDING: { label: 'En attente', bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
@@ -20,6 +20,11 @@ export default function RendezVousPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Relance modal state
+  const [relanceAptId, setRelanceAptId] = useState<string | null>(null);
+  const [relanceNote, setRelanceNote] = useState('');
+  const [relanceSaving, setRelanceSaving] = useState(false);
+
   function fetchAppointments() {
     setLoading(true);
     fetch('/api/appointments')
@@ -33,6 +38,34 @@ export default function RendezVousPage() {
     if (sessionStatus === 'authenticated') fetchAppointments();
   }, [sessionStatus]);
 
+  async function handleRelance(e: React.FormEvent) {
+    e.preventDefault();
+    if (!relanceAptId || !relanceNote.trim()) return;
+    setRelanceSaving(true);
+    try {
+      const res = await fetch('/api/appointments/relance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId: relanceAptId, note: relanceNote.trim() }),
+      });
+      if (res.ok) {
+        const { relance } = await res.json();
+        // Update local state
+        setAppointments(prev => prev.map(a => {
+          if (a.id === relanceAptId) {
+            return { ...a, relances: [relance, ...(a.relances || [])] };
+          }
+          return a;
+        }));
+        setRelanceAptId(null);
+        setRelanceNote('');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setRelanceSaving(false);
+  }
+
   if (sessionStatus === 'loading') {
     return <div className="flex items-center justify-center h-64 text-gray-400">Chargement...</div>;
   }
@@ -42,7 +75,7 @@ export default function RendezVousPage() {
       {/* Page header */}
       <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg, #059669, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Calendar size={18} color="#fff" />
           </div>
           <div>
@@ -52,7 +85,7 @@ export default function RendezVousPage() {
         </div>
         <button
           onClick={fetchAppointments}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', fontSize: 13, fontWeight: 500, color: '#374151', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', border: '1px solid #E5E7EB', background: '#fff', fontSize: 13, fontWeight: 500, color: '#374151', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           <RefreshCw size={14} />
           Actualiser
@@ -62,8 +95,8 @@ export default function RendezVousPage() {
       {/* Info banner */}
       <div className="card p-4 mb-5" style={{ background: 'linear-gradient(135deg, #F0FDF4, #ECFDF5)', border: '1px solid #A7F3D0' }}>
         <p style={{ fontSize: 13, color: '#065F46', lineHeight: 1.5, margin: 0 }}>
-          Demandez un rendez-vous depuis n&apos;importe quelle page de d&eacute;tail d&apos;une consultation.
-          Nos experts vous accompagnent de A &agrave; Z dans le montage de votre dossier.
+          Demandez un rendez-vous depuis n&apos;importe quelle page de détail d&apos;une consultation.
+          Nos experts vous accompagnent de A à Z dans le montage de votre dossier.
         </p>
       </div>
 
@@ -89,129 +122,168 @@ export default function RendezVousPage() {
         </div>
       </div>
 
+      {/* Relance modal */}
+      {relanceAptId && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.5)' }} onClick={() => setRelanceAptId(null)} />
+          <div style={{ position: 'relative', width: 440, maxWidth: '90vw', background: '#fff', padding: 28, boxShadow: '0 8px 40px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>Relancer ce rendez-vous</h2>
+              <button onClick={() => setRelanceAptId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 4, display: 'flex' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleRelance}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                  Note de relance <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <textarea
+                  value={relanceNote}
+                  onChange={e => setRelanceNote(e.target.value)}
+                  placeholder="Précisez le motif de la relance..."
+                  rows={3}
+                  required
+                  style={{
+                    width: '100%', padding: '10px 14px', border: '1px solid #E2E8F0',
+                    fontSize: 13, fontFamily: 'inherit', resize: 'vertical',
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Date de relance</label>
+                <div style={{ fontSize: 13, color: '#64748B', padding: '8px 12px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                  {formatDateFr(new Date().toISOString())}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setRelanceAptId(null)}
+                  style={{ flex: 1, padding: '10px 0', border: '1px solid #E2E8F0', background: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', color: '#64748B' }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={relanceSaving || !relanceNote.trim()}
+                  style={{ flex: 1, padding: '10px 0', border: 'none', background: '#3B82F6', fontSize: 13, fontWeight: 600, cursor: relanceSaving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', color: '#fff', opacity: relanceSaving ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                >
+                  <Send size={13} />
+                  {relanceSaving ? 'Envoi...' : 'Enregistrer la relance'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Appointments list */}
       {loading ? (
         <div className="card p-16 text-center text-gray-400">Chargement des rendez-vous...</div>
       ) : appointments.length === 0 ? (
         <div className="card p-16 text-center">
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <div style={{ width: 56, height: 56, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Calendar size={24} style={{ color: '#9CA3AF' }} />
           </div>
           <p style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Aucun rendez-vous</p>
           <p style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 16 }}>
-            Vous n&apos;avez pas encore demand&eacute; de rendez-vous.
+            Vous n&apos;avez pas encore demandé de rendez-vous.
           </p>
           <Link
             href="/marches"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg, #059669, #10B981)', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: 'linear-gradient(135deg, #059669, #10B981)', color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
           >
             <Search size={14} />
             Parcourir les consultations
           </Link>
         </div>
       ) : (
-        <div className="card" style={{ overflow: 'hidden' }}>
-          {/* Desktop table */}
-          <div className="rdv-table-wrapper">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Objet</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Créneau</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Statut</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#6B7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Demandé le</th>
-                </tr>
-              </thead>
-              <tbody>
-                {appointments.map((apt) => {
-                  const sc = STATUS_CONFIG[apt.status] || STATUS_CONFIG.PENDING;
-                  return (
-                    <tr key={apt.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                      <td style={{ padding: '14px 16px', maxWidth: 320 }}>
-                        <div style={{ fontWeight: 600, color: '#111827', lineHeight: 1.3, marginBottom: 2 }} className="line-clamp-2">
-                          {apt.subject}
-                        </div>
-                        {apt.marketReference && (
-                          <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>{apt.marketReference}</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#374151' }}>
-                          <Calendar size={13} style={{ color: '#9CA3AF' }} />
-                          {formatDateFr(apt.requestedDate)}
-                        </div>
-                      </td>
-                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#374151' }}>
-                          <Clock size={13} style={{ color: '#9CA3AF' }} />
-                          {apt.timeSlot}
-                        </div>
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {appointments.map((apt) => {
+            const sc = STATUS_CONFIG[apt.status] || STATUS_CONFIG.PENDING;
+            const latestRelance = apt.relances?.[0];
+            return (
+              <div key={apt.id} className="card" style={{ padding: '16px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        padding: '3px 10px', fontSize: 11, fontWeight: 600,
+                        background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
+                      }}>
+                        {apt.status === 'PENDING' && <Hourglass size={11} />}
+                        {apt.status === 'CONFIRMED' && <CheckCircle2 size={11} />}
+                        {apt.status === 'DONE' && <CircleDot size={11} />}
+                        {sc.label}
+                      </span>
+                      {latestRelance && (
                         <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          padding: '4px 10px', borderRadius: 6,
-                          fontSize: 11, fontWeight: 600,
-                          background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
+                          padding: '3px 8px', fontSize: 10, fontWeight: 600,
+                          background: '#DBEAFE', color: '#2563EB',
                         }}>
-                          {apt.status === 'PENDING' && <Hourglass size={11} />}
-                          {apt.status === 'CONFIRMED' && <CheckCircle2 size={11} />}
-                          {apt.status === 'DONE' && <CircleDot size={11} />}
-                          {sc.label}
+                          Relancé le {formatDateFr(latestRelance.date)}
                         </span>
-                      </td>
-                      <td style={{ padding: '14px 16px', color: '#9CA3AF', fontSize: 12, whiteSpace: 'nowrap' }}>
-                        {formatDateFr(apt.createdAt)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards (hidden on desktop) */}
-          <div className="rdv-mobile-cards">
-            {appointments.map((apt) => {
-              const sc = STATUS_CONFIG[apt.status] || STATUS_CONFIG.PENDING;
-              return (
-                <div key={apt.id} style={{ padding: 16, borderBottom: '1px solid #F3F4F6' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                    <div style={{ fontWeight: 600, color: '#111827', fontSize: 13, lineHeight: 1.3, flex: 1 }}>
-                      {apt.subject}
+                      )}
                     </div>
-                    <span style={{
-                      padding: '3px 8px', borderRadius: 6,
-                      fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap',
-                      background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
-                    }}>
-                      {sc.label}
-                    </span>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, color: '#111827', lineHeight: 1.3, margin: '0 0 4px' }}>
+                      {apt.subject}
+                    </h3>
+                    {apt.marketReference && (
+                      <div style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace', marginBottom: 4 }}>{apt.marketReference}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6B7280' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Calendar size={12} style={{ color: '#9CA3AF' }} /> {formatDateFr(apt.requestedDate)}
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Clock size={12} style={{ color: '#9CA3AF' }} /> {apt.timeSlot}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#CBD5E1' }}>
+                        Demandé le {formatDateFr(apt.createdAt)}
+                      </span>
+                    </div>
+
+                    {/* Relance history */}
+                    {apt.relances && apt.relances.length > 0 && (
+                      <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #F1F5F9' }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Historique des relances</div>
+                        {apt.relances.map((r: any) => (
+                          <div key={r.id} style={{ fontSize: 12, color: '#64748B', marginBottom: 2 }}>
+                            <span style={{ color: '#94A3B8' }}>{formatDateFr(r.date)}</span> — {r.note}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#6B7280' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Calendar size={12} /> {formatDateFr(apt.requestedDate)}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Clock size={12} /> {apt.timeSlot}
-                    </span>
+
+                  {/* Actions */}
+                  <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <button
+                      onClick={() => { setRelanceAptId(apt.id); setRelanceNote(''); }}
+                      style={{
+                        padding: '8px 16px', background: 'rgba(59,130,246,0.1)',
+                        color: '#3B82F6', border: '1px solid rgba(59,130,246,0.2)',
+                        fontWeight: 600, fontSize: 12, cursor: 'pointer',
+                        fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 6,
+                      }}
+                    >
+                      <Send size={12} /> Relancer
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* Responsive */}
       <style jsx>{`
-        .rdv-table-wrapper { display: block; }
-        .rdv-mobile-cards { display: none; }
         @media (max-width: 768px) {
           .rdv-stats-grid { grid-template-columns: 1fr 1fr 1fr !important; }
-          .rdv-table-wrapper { display: none !important; }
-          .rdv-mobile-cards { display: block !important; }
         }
       `}</style>
     </div>

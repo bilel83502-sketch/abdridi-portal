@@ -20,6 +20,7 @@ import {
 import { formatCurrency, formatDate, getNatureLabel } from '@/lib/utils';
 import Link from 'next/link';
 import DepartmentSelect from '@/components/DepartmentSelect';
+import EntrepriseSearch from '@/components/EntrepriseSearch';
 
 const AMOUNT_BRACKETS = [
   { label: 'Tous', min: '', max: '' },
@@ -29,8 +30,11 @@ const AMOUNT_BRACKETS = [
   { label: '> 200K€', min: '200000', max: '' },
 ];
 
+type TabMode = 'entreprise' | 'marche';
+
 export default function ConcurrencePage() {
   const router = useRouter();
+  const [tab, setTab] = useState<TabMode>('entreprise');
   const [data, setData] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, page: 1, pages: 0 });
   const [stats, setStats] = useState<any>({
@@ -38,8 +42,14 @@ export default function ConcurrencePage() {
     montantCumule: 0,
     topTitulaire: null,
   });
+
+  // Entreprise tab state
+  const [selectedEntreprise, setSelectedEntreprise] = useState<any>(null);
+
+  // Marche tab state
   const [q, setQ] = useState('');
-  const [titulaire, setTitulaire] = useState('');
+
+  // Shared filters
   const [nature, setNature] = useState('');
   const [department, setDepartment] = useState('');
   const [amountBracket, setAmountBracket] = useState(0);
@@ -50,12 +60,14 @@ export default function ConcurrencePage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: '20',
-    });
-    if (q) params.set('q', q);
-    if (titulaire) params.set('titulaire', titulaire);
+    const params = new URLSearchParams({ page: page.toString(), limit: '20' });
+
+    if (tab === 'entreprise' && selectedEntreprise) {
+      params.set('titulaire', selectedEntreprise.raisonSociale);
+    } else if (tab === 'marche' && q) {
+      params.set('q', q);
+    }
+
     if (nature) params.set('nature', nature);
     if (department) params.set('department', department);
     const bracket = AMOUNT_BRACKETS[amountBracket];
@@ -67,15 +79,11 @@ export default function ConcurrencePage() {
     const json = await res.json();
     setData(json.data || []);
     setMeta(json.meta || { total: 0, page: 1, pages: 0 });
-    setStats(
-      json.stats || { totalAll: 0, montantCumule: 0, topTitulaire: null }
-    );
+    setStats(json.stats || { totalAll: 0, montantCumule: 0, topTitulaire: null });
     setLoading(false);
-  }, [q, titulaire, nature, department, amountBracket, periode, page]);
+  }, [tab, selectedEntreprise, q, nature, department, amountBracket, periode, page]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -83,16 +91,9 @@ export default function ConcurrencePage() {
     load();
   }
 
-  function getNatureBadgeConcurrence(n: string) {
-    const map: Record<string, string> = {
-      TRAVAUX:
-        'px-[7px] py-[2px] rounded text-[10px] font-bold uppercase tracking-wide bg-amber-50 text-amber-700 border border-amber-200',
-      FOURNITURES:
-        'px-[7px] py-[2px] rounded text-[10px] font-bold uppercase tracking-wide bg-violet-50 text-violet-700 border border-violet-200',
-      SERVICES:
-        'px-[7px] py-[2px] rounded text-[10px] font-bold uppercase tracking-wide bg-indigo-50 text-indigo-700 border border-indigo-200',
-    };
-    return map[n] || '';
+  function handleEntrepriseSelect(ent: any) {
+    setSelectedEntreprise(ent);
+    setPage(1);
   }
 
   function getMontantBadge(montant: number | null) {
@@ -109,7 +110,7 @@ export default function ConcurrencePage() {
       <div className="flex justify-between items-end mb-5">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
-            <Eye size={22} className="text-violet-500" />
+            <Eye size={22} style={{ color: '#3B82F6' }} />
             <h1 className="text-xl font-bold">Veille Concurrentielle</h1>
           </div>
           <p className="text-[13px] text-gray-500">
@@ -121,100 +122,102 @@ export default function ConcurrencePage() {
       {/* Stats bar */}
       <div className="card p-4 px-6 mb-5 flex items-center justify-between" style={{ borderTop: '2px solid #3B82F6' }}>
         {[
-          {
-            label: 'Marchés attribués',
-            value: stats.totalAll.toLocaleString('fr-FR'),
-            icon: <Trophy size={16} className="text-violet-500" />,
-          },
-          {
-            label: 'Montant cumulé',
-            value: formatCurrency(stats.montantCumule),
-            icon: <Banknote size={16} className="text-violet-500" />,
-          },
-          {
-            label: 'Top titulaire',
-            value: stats.topTitulaire
-              ? `${stats.topTitulaire.nom.slice(0, 25)} (${stats.topTitulaire.count})`
-              : '—',
-            icon: <TrendingUp size={16} className="text-violet-500" />,
-          },
-          {
-            label: 'Résultats filtrés',
-            value: meta.total.toLocaleString('fr-FR'),
-            icon: <Search size={16} className="text-violet-500" />,
-          },
+          { label: 'Marchés attribués', value: stats.totalAll.toLocaleString('fr-FR'), icon: <Trophy size={16} style={{ color: '#3B82F6' }} /> },
+          { label: 'Montant cumulé', value: formatCurrency(stats.montantCumule), icon: <Banknote size={16} style={{ color: '#3B82F6' }} /> },
+          { label: 'Top titulaire', value: stats.topTitulaire ? `${stats.topTitulaire.nom.slice(0, 25)} (${stats.topTitulaire.count})` : '—', icon: <TrendingUp size={16} style={{ color: '#3B82F6' }} /> },
+          { label: 'Résultats filtrés', value: meta.total.toLocaleString('fr-FR'), icon: <Search size={16} style={{ color: '#3B82F6' }} /> },
         ].map((s, i) => (
-          <div
-            key={i}
-            className={`flex items-center gap-3 flex-1 px-4 ${i < 3 ? 'border-r border-gray-100' : ''}`}
-          >
+          <div key={i} className={`flex items-center gap-3 flex-1 px-4 ${i < 3 ? 'border-r border-gray-100' : ''}`}>
             <div className="shrink-0">{s.icon}</div>
             <div>
               <div className="text-[11px] text-gray-400 mb-0.5">{s.label}</div>
-              <div className="text-sm font-bold text-gray-900 truncate max-w-[180px]">
-                {s.value}
-              </div>
+              <div className="text-sm font-bold text-gray-900 truncate max-w-[180px]">{s.value}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Search bars */}
-      <form onSubmit={handleSearch} className="flex flex-col gap-2 mb-3">
-        <div className="flex gap-2">
-          <div className="flex-1 relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="input !pl-9"
-              placeholder="Rechercher un marché attribué, un acheteur..."
-            />
-          </div>
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 16, borderBottom: '1px solid #E2E8F0' }}>
+        {([
+          { key: 'entreprise' as TabMode, label: 'Par entreprise', icon: <Building2 size={14} /> },
+          { key: 'marche' as TabMode, label: 'Par marché / émetteur', icon: <Search size={14} /> },
+        ]).map(t => (
           <button
-            type="button"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`btn-secondary !text-xs !px-3.5 !gap-[5px] ${showFilters ? '!bg-violet-50 !text-violet-600 !border-violet-600' : ''}`}
-          >
-            <SlidersHorizontal size={15} /> Filtres
-          </button>
-          <button
-            type="submit"
-            className="!text-xs"
+            key={t.key}
+            onClick={() => { setTab(t.key); setPage(1); }}
             style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              gap: '6px', padding: '9px 20px', borderRadius: '6px', border: 'none',
-              background: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
-              color: '#fff', fontWeight: 600, fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '10px 20px', fontSize: 13, fontWeight: tab === t.key ? 600 : 400,
+              color: tab === t.key ? '#3B82F6' : '#64748B',
+              background: 'transparent', border: 'none',
+              borderBottom: tab === t.key ? '2px solid #3B82F6' : '2px solid transparent',
+              cursor: 'pointer', fontFamily: 'inherit',
+              marginBottom: -1, transition: 'all 0.15s',
             }}
           >
-            Rechercher
+            {t.icon} {t.label}
           </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Attributaire search */}
-        <div className="relative">
-          <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-violet-400" />
-          <input
-            value={titulaire}
-            onChange={(e) => setTitulaire(e.target.value)}
-            className="input !pl-9"
-            placeholder="Rechercher par entreprise attributaire (ex: Vinci, Bouygues, Eiffage...)"
-            style={{ borderColor: titulaire ? '#3B82F6' : undefined }}
-          />
-        </div>
+      {/* Search area */}
+      <form onSubmit={handleSearch} style={{ marginBottom: 12 }}>
+        {tab === 'entreprise' ? (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1 }}>
+              <EntrepriseSearch onSelect={handleEntrepriseSelect} />
+            </div>
+            <button type="button" onClick={() => setShowFilters(!showFilters)} className={`btn-secondary !text-xs !px-3.5 !gap-[5px]`} style={{ height: 44 }}>
+              <SlidersHorizontal size={15} /> Filtres
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <Search size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Rechercher un marché attribué, un acheteur..."
+                style={{
+                  width: '100%', height: 44, paddingLeft: 42, paddingRight: 14,
+                  border: '1px solid #E2E8F0', fontSize: 14,
+                  fontFamily: 'inherit', outline: 'none', background: '#fff',
+                  boxSizing: 'border-box', transition: 'border-color 0.15s',
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = '#3B82F6')}
+                onBlur={e => (e.currentTarget.style.borderColor = '#E2E8F0')}
+              />
+            </div>
+            <button
+              type="submit"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '0 20px', height: 44, border: 'none',
+                background: '#3B82F6', color: '#fff', fontSize: 13,
+                fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Rechercher
+            </button>
+            <button type="button" onClick={() => setShowFilters(!showFilters)} className={`btn-secondary !text-xs !px-3.5 !gap-[5px]`} style={{ height: 44 }}>
+              <SlidersHorizontal size={15} /> Filtres
+            </button>
+          </div>
+        )}
 
         {/* Amount brackets */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-gray-400 font-semibold shrink-0">Montant :</span>
-          <div className="flex gap-1">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+          <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, flexShrink: 0 }}>Montant :</span>
+          <div style={{ display: 'flex', gap: 4 }}>
             {AMOUNT_BRACKETS.map((b, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => { setAmountBracket(i); setPage(1); }}
                 style={{
-                  padding: '4px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                  padding: '4px 12px', fontSize: 11, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
                   border: amountBracket === i ? '1px solid #3B82F6' : '1px solid #E5E7EB',
                   background: amountBracket === i ? '#3B82F6' : '#fff',
@@ -231,16 +234,16 @@ export default function ConcurrencePage() {
       {/* Filters panel */}
       {showFilters && (
         <div className="card p-5 mb-3" style={{ borderLeft: '3px solid #3B82F6' }}>
-          <div className="flex justify-between mb-3.5">
-            <span className="text-xs font-bold">Critères avancés</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+            <span style={{ fontSize: 12, fontWeight: 700 }}>Critères avancés</span>
             <button
               onClick={() => { setNature(''); setDepartment(''); setPeriode(''); }}
-              className="text-[11px] text-violet-600 font-semibold bg-transparent border-none cursor-pointer"
+              style={{ fontSize: 11, color: '#3B82F6', fontWeight: 600, background: 'transparent', border: 'none', cursor: 'pointer' }}
             >
               Réinitialiser
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             <div>
               <label className="label">Nature</label>
               <select value={nature} onChange={(e) => setNature(e.target.value)} className="input">
@@ -264,14 +267,13 @@ export default function ConcurrencePage() {
               </select>
             </div>
           </div>
-          <div className="mt-3">
+          <div style={{ marginTop: 12 }}>
             <button
               onClick={() => { setPage(1); load(); }}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                borderRadius: '6px', border: 'none',
-                background: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
-                color: '#fff', fontWeight: 600, fontSize: '13px',
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                border: 'none', background: '#3B82F6',
+                color: '#fff', fontWeight: 600, fontSize: 13,
                 cursor: 'pointer', fontFamily: 'inherit', padding: '7px 16px',
               }}
             >
@@ -281,89 +283,73 @@ export default function ConcurrencePage() {
         </div>
       )}
 
+      {/* Selected entreprise info */}
+      {tab === 'entreprise' && selectedEntreprise && (
+        <div className="card p-4 mb-3" style={{ borderLeft: '3px solid #3B82F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{selectedEntreprise.raisonSociale}</div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+              SIREN {selectedEntreprise.siren}
+              {selectedEntreprise.activite && <span> · {selectedEntreprise.activite}</span>}
+              {selectedEntreprise.effectifs && <span> · {selectedEntreprise.effectifs}</span>}
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedEntreprise(null)}
+            style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            Effacer
+          </button>
+        </div>
+      )}
+
       {/* Free user banner */}
       {!meta.isPaid && !loading && data.length > 0 && (
         <div style={{
-          marginBottom: 12, padding: '10px 16px', borderRadius: 8,
-          background: 'linear-gradient(135deg, #DBEAFE, #F5F3FF)',
-          border: '1px solid #93C5FD',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontSize: 13,
+          marginBottom: 12, padding: '10px 16px',
+          background: '#DBEAFE', border: '1px solid #93C5FD',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5B21B6' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1E40AF' }}>
             <Lock size={14} />
-            <span>Version gratuite &mdash; <strong>3 r&eacute;sultats visibles</strong> sur {meta.total.toLocaleString('fr-FR')}</span>
+            <span>Version gratuite — <strong>3 résultats visibles</strong> sur {meta.total.toLocaleString('fr-FR')}</span>
           </div>
-          <Link
-            href="/abonnement"
-            style={{
-              padding: '5px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: 'linear-gradient(135deg, #3B82F6, #60A5FA)',
-              color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap',
-            }}
-          >
-            D&eacute;bloquer &mdash; 25,90€/mois
+          <Link href="/abonnement" style={{ padding: '5px 14px', fontSize: 12, fontWeight: 600, background: '#3B82F6', color: '#fff', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Débloquer — 25,90€/mois
           </Link>
         </div>
       )}
 
       {/* Results */}
       {loading ? (
-        <div className="text-center text-gray-400 py-16">Chargement...</div>
+        <div style={{ textAlign: 'center', color: '#94A3B8', padding: '64px 0', fontSize: 14 }}>Chargement...</div>
       ) : data.length === 0 ? (
-        <div className="card p-16 text-center text-gray-400">
-          Aucun contrat attribu&eacute; trouv&eacute;.
+        <div className="card" style={{ padding: '64px 40px', textAlign: 'center', color: '#94A3B8', fontSize: 14 }}>
+          {tab === 'entreprise' && !selectedEntreprise
+            ? 'Recherchez une entreprise pour voir ses marchés attribués.'
+            : 'Aucun contrat attribué trouvé.'}
         </div>
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {data.map((m, idx) => {
             const badge = getMontantBadge(m.montant);
             const isLocked = !meta.isPaid && idx >= 3;
 
             if (isLocked) {
               return (
-                <div
-                  key={m.id}
-                  className="card p-4 px-5"
-                  style={{ position: 'relative', overflow: 'hidden', cursor: 'default' }}
-                >
+                <div key={m.id} className="card" style={{ padding: '16px 20px', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>
-                    <div className="flex justify-between gap-5">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex gap-[5px] mb-1.5 items-center flex-wrap">
-                          <span className={getNatureBadgeConcurrence(m.nature)}>{getNatureLabel(m.nature)}</span>
-                        </div>
-                        <h3 className="text-sm font-semibold leading-snug mb-1.5">{m.objet}</h3>
-                        <div className="flex gap-3.5 text-xs text-gray-500 flex-wrap mb-1">
-                          <span className="flex items-center gap-1"><Building2 size={13} className="text-gray-400" /> {m.acheteurNom}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1.5 px-2.5 py-1.5 bg-violet-50 rounded border border-violet-100 w-fit">
-                          <Trophy size={13} className="text-violet-500 shrink-0" />
-                          <span className="text-[12px] font-bold text-violet-700">{m.titulaireNom}</span>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0 min-w-[130px]">
-                        <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 6, background: badge.bg, border: `1px solid ${badge.border}`, color: badge.color, fontSize: 15, fontWeight: 700 }}>
-                          {formatCurrency(m.montant)}
-                        </div>
-                      </div>
-                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{m.objet}</div>
+                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>{m.acheteurNom}</div>
                   </div>
                   <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'rgba(255,255,255,0.75)',
-                    backdropFilter: 'blur(2px)',
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', gap: 8,
+                    position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
                   }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Lock size={18} style={{ color: '#3B82F6' }} />
-                    </div>
-                    <span style={{ fontSize: 13, color: '#374151', fontWeight: 500, textAlign: 'center' }}>
-                      Passez au plan Veille pour voir toutes les attributions
-                    </span>
-                    <Link href="/abonnement" style={{ padding: '7px 18px', borderRadius: 8, fontSize: 12, fontWeight: 600, background: 'linear-gradient(135deg, #3B82F6, #60A5FA)', color: '#fff', textDecoration: 'none' }}>
-                      D&eacute;bloquer &mdash; 25,90€/mois
+                    <Lock size={16} style={{ color: '#6B7280' }} />
+                    <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>Passez au plan Veille</span>
+                    <Link href="/abonnement" style={{ padding: '6px 16px', fontSize: 12, fontWeight: 600, background: '#3B82F6', color: '#fff', textDecoration: 'none' }}>
+                      Débloquer
                     </Link>
                   </div>
                 </div>
@@ -374,106 +360,79 @@ export default function ConcurrencePage() {
               <div
                 key={m.id}
                 onClick={() => router.push(`/concurrence/${m.id}`)}
-                className="card p-4 px-5 cursor-pointer hover:border-violet-300 transition-colors"
+                className="card"
+                style={{ padding: '16px 20px', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#93C5FD')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '')}
               >
-                <div className="flex justify-between gap-5">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex gap-[5px] mb-1.5 items-center flex-wrap">
-                      <span className={getNatureBadgeConcurrence(m.nature)}>
-                        {getNatureLabel(m.nature)}
-                      </span>
-                      {m.procedure && (
-                        <span className="px-[7px] py-[2px] rounded text-[10px] bg-gray-100 text-gray-500">
-                          {m.procedure}
-                        </span>
-                      )}
-                      {m.codeCPV && (
-                        <span className="px-[7px] py-[2px] rounded text-[10px] bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1">
-                          <Tag size={9} /> CPV {m.codeCPV}
-                        </span>
-                      )}
-                      <span className="text-[10px] text-gray-400 font-mono">
-                        {m.source}
-                      </span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Badges */}
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <NatureBadge nature={m.nature} />
+                      {m.procedure && <span style={{ padding: '2px 7px', fontSize: 10, background: '#F3F4F6', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>{m.procedure}</span>}
+                      {m.codeCPV && <span style={{ padding: '2px 7px', fontSize: 10, background: '#DBEAFE', color: '#2563EB', fontWeight: 600 }}>CPV {m.codeCPV}</span>}
+                      <span style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'monospace' }}>{m.source}</span>
                     </div>
-                    <h3 className="text-sm font-semibold leading-snug mb-1.5 line-clamp-2">
-                      {m.objet}
-                    </h3>
-                    <div className="flex gap-3.5 text-xs text-gray-500 flex-wrap mb-1">
-                      <span className="flex items-center gap-1">
-                        <Building2 size={13} className="text-gray-400" />
-                        {m.acheteurNom}
+
+                    {/* Title */}
+                    <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', lineHeight: 1.4, margin: '0 0 6px' }}>{m.objet}</h3>
+
+                    {/* Meta */}
+                    <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#64748B', flexWrap: 'wrap', marginBottom: 6 }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Building2 size={12} style={{ color: '#94A3B8' }} /> {m.acheteurNom}
                       </span>
                       {m.departementNom && (
-                        <span className="flex items-center gap-1">
-                          <MapPin size={13} className="text-gray-400" />
-                          {m.departementNom} ({m.departement})
-                        </span>
-                      )}
-                      {m.labelCPV && (
-                        <span className="text-gray-400">{m.labelCPV}</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1.5 px-2.5 py-1.5 bg-violet-50 rounded border border-violet-100 w-fit">
-                      <Trophy size={13} className="text-violet-500 shrink-0" />
-                      <span className="text-[12px] font-bold text-violet-700">
-                        {m.titulaireNom}
-                      </span>
-                      {m.titulaireSiret && (
-                        <span className="text-[10px] text-violet-400 font-mono ml-1">
-                          SIRET {m.titulaireSiret}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <MapPin size={12} style={{ color: '#94A3B8' }} /> {m.departementNom} ({m.departement})
                         </span>
                       )}
                     </div>
+
+                    {/* Winner */}
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '4px 10px', background: '#DBEAFE', marginBottom: 4,
+                    }}>
+                      <Trophy size={12} style={{ color: '#2563EB' }} />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1E40AF' }}>{m.titulaireNom}</span>
+                      {m.titulaireSiret && <span style={{ fontSize: 10, color: '#3B82F6', fontFamily: 'monospace' }}>SIRET {m.titulaireSiret}</span>}
+                    </div>
+
+                    {/* Enterprise info */}
                     {m.entreprise && (
-                      <div className="flex gap-2 mt-1 flex-wrap">
-                        {m.entreprise.formeJuridique && (
-                          <span className="px-[6px] py-[1px] rounded text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            {m.entreprise.formeJuridique}
-                          </span>
-                        )}
-                        {m.entreprise.effectifs && (
-                          <span className="px-[6px] py-[1px] rounded text-[9px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                            {m.entreprise.effectifs}
-                          </span>
-                        )}
-                        {m.entreprise.activite && (
-                          <span className="px-[6px] py-[1px] rounded text-[9px] text-gray-500 bg-gray-50 border border-gray-200 truncate max-w-[200px]">
-                            {m.entreprise.activite}
-                          </span>
-                        )}
+                      <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                        {m.entreprise.formeJuridique && <span style={{ padding: '1px 6px', fontSize: 9, fontWeight: 600, background: '#ECFDF5', color: '#065F46' }}>{m.entreprise.formeJuridique}</span>}
+                        {m.entreprise.effectifs && <span style={{ padding: '1px 6px', fontSize: 9, fontWeight: 600, background: '#F0F9FF', color: '#0369A1' }}>{m.entreprise.effectifs}</span>}
+                        {m.entreprise.activite && <span style={{ padding: '1px 6px', fontSize: 9, color: '#6B7280', background: '#F9FAFB', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.entreprise.activite}</span>}
                       </div>
                     )}
-                    <div className="flex gap-2.5 mt-1.5 text-[11px] text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={11} />
-                        Notifi&eacute; le {formatDate(m.dateNotification)}
-                      </span>
-                      {m.dureeMois && <span>Dur&eacute;e {m.dureeMois} mois</span>}
+
+                    {/* Date */}
+                    <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: 11, color: '#94A3B8' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={11} /> Notifié le {formatDate(m.dateNotification)}</span>
+                      {m.dureeMois && <span>Durée {m.dureeMois} mois</span>}
                     </div>
                   </div>
-                  <div className="text-right shrink-0 min-w-[130px] flex flex-col justify-between">
+
+                  {/* Amount */}
+                  <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 130, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
-                      <div
-                        style={{
-                          display: 'inline-block', padding: '4px 10px', borderRadius: 6,
-                          background: badge.bg, border: `1px solid ${badge.border}`,
-                          color: badge.color, fontSize: 15, fontWeight: 700,
-                        }}
-                      >
+                      <div style={{
+                        display: 'inline-block', padding: '4px 10px',
+                        background: badge.bg, border: `1px solid ${badge.border}`,
+                        color: badge.color, fontSize: 15, fontWeight: 700,
+                      }}>
                         {formatCurrency(m.montant)}
                       </div>
-                      {m.formePrix && (
-                        <div className="text-[10px] text-gray-400 mt-1">
-                          Prix {m.formePrix.toLowerCase()}
-                        </div>
-                      )}
+                      {m.formePrix && <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4 }}>Prix {m.formePrix.toLowerCase()}</div>}
                     </div>
                     <span
                       onClick={(e) => { e.stopPropagation(); router.push(`/concurrence/${m.id}`); }}
-                      className="text-xs text-violet-600 font-medium flex items-center gap-1 justify-end mt-2 cursor-pointer hover:text-violet-800"
+                      style={{ fontSize: 12, color: '#3B82F6', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', marginTop: 8, cursor: 'pointer' }}
                     >
-                      Voir les d&eacute;tails <ExternalLink size={11} />
+                      Voir les détails <ExternalLink size={11} />
                     </span>
                   </div>
                 </div>
@@ -485,23 +444,30 @@ export default function ConcurrencePage() {
 
       {/* Pagination */}
       {meta.pages > 1 && (
-        <div className="flex justify-between items-center mt-5">
-          <span className="text-xs text-gray-400">
-            Page {meta.page} sur {meta.pages} —{' '}
-            {meta.total.toLocaleString('fr-FR')} résultats
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+          <span style={{ fontSize: 12, color: '#94A3B8' }}>
+            Page {meta.page} sur {meta.pages} — {meta.total.toLocaleString('fr-FR')} résultats
           </span>
-          <div className="flex gap-1">
+          <div style={{ display: 'flex', gap: 6 }}>
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="btn-secondary !py-1.5 !px-3 !text-xs disabled:opacity-40"
+              style={{
+                padding: '7px 16px', border: '1px solid #E2E8F0', background: '#fff',
+                fontSize: 13, fontWeight: 500, cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                opacity: page <= 1 ? 0.4 : 1, fontFamily: 'inherit', color: '#374151',
+              }}
             >
               Précédent
             </button>
             <button
-              onClick={() => setPage((p) => Math.min(meta.pages, p + 1))}
+              onClick={() => setPage(p => Math.min(meta.pages, p + 1))}
               disabled={page >= meta.pages}
-              className="btn-secondary !py-1.5 !px-3 !text-xs disabled:opacity-40"
+              style={{
+                padding: '7px 16px', border: 'none', background: '#3B82F6',
+                fontSize: 13, fontWeight: 600, cursor: page >= meta.pages ? 'not-allowed' : 'pointer',
+                opacity: page >= meta.pages ? 0.4 : 1, fontFamily: 'inherit', color: '#fff',
+              }}
             >
               Suivant
             </button>
@@ -509,5 +475,23 @@ export default function ConcurrencePage() {
         </div>
       )}
     </div>
+  );
+}
+
+function NatureBadge({ nature }: { nature: string }) {
+  const map: Record<string, { bg: string; text: string }> = {
+    TRAVAUX: { bg: '#FFFBEB', text: '#B45309' },
+    FOURNITURES: { bg: '#DBEAFE', text: '#2563EB' },
+    SERVICES: { bg: '#DBEAFE', text: '#1E40AF' },
+  };
+  const style = map[nature] || { bg: '#F3F4F6', text: '#6B7280' };
+  return (
+    <span style={{
+      padding: '2px 7px', fontSize: 10, fontWeight: 700,
+      background: style.bg, color: style.text, textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+    }}>
+      {getNatureLabel(nature)}
+    </span>
   );
 }

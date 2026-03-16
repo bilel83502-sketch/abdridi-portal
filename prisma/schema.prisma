@@ -123,18 +123,30 @@ model Alert {
 }
 
 model Appointment {
-  id              String   @id @default(cuid())
+  id              String     @id @default(cuid())
   userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   subject         String
   marketReference String?
   requestedDate   DateTime
   timeSlot        String
   message         String?
-  status          String   @default("PENDING")
-  createdAt       DateTime @default(now())
+  status          String     @default("PENDING")
+  createdAt       DateTime   @default(now())
+  relances        Relance[]
 
   @@index([userId])
   @@index([status])
   @@index([requestedDate])
+}
+
+model Relance {
+  id            String      @id @default(cuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  note          String
+  date          DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+
+  @@index([appointmentId])
 }
