@@ -38,7 +38,7 @@ function LoginContent() {
           {/* Logo text — no image */}
           <div style={{ marginBottom: 32 }}>
             <span style={{
-              fontFamily: '"Playfair Display", Georgia, serif',
+              fontFamily: '"Instrument Serif", Georgia, serif',
               fontSize: 28, fontWeight: 700, letterSpacing: '-0.01em',
             }}>
               <span style={{ color: 'var(--brand)' }}>AB</span>

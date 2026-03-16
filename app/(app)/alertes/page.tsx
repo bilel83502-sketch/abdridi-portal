@@ -313,7 +313,7 @@ export default function AlertesPage() {
                       <span key={j} className="px-2 py-[2px] rounded text-[10px] font-semibold bg-amber-50 text-amber-600">{n === 'TRAVAUX' ? 'Travaux' : n === 'SERVICES' ? 'Services' : 'Fournitures'}</span>
                     ))}
                     {a.departments?.map((d: string, j: number) => (
-                      <span key={j} className="px-2 py-[2px] rounded text-[10px] font-semibold bg-indigo-50 text-indigo-600">Dép. {d}</span>
+                      <span key={j} className="px-2 py-[2px] rounded text-[10px] font-semibold bg-blue-50 text-blue-600">Dép. {d}</span>
                     ))}
                   </div>
                 </div>

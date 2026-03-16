@@ -72,7 +72,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/dashboard" style={{ marginRight: 32, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
             <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} style={{ borderRadius: 0 }} />
-            <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
           </Link>
 
           {/* Desktop nav */}
@@ -169,7 +169,7 @@ export default function Header() {
             background: 'var(--nav)', padding: '20px 0', overflowY: 'auto',
           }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px 16px', borderBottom: '1px solid var(--nav-border)', marginBottom: 8 }}>
-              <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
+              <span style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
               <button onClick={() => setMobileOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
                 <X size={18} />
               </button>

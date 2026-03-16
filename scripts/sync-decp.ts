@@ -12,7 +12,7 @@ async function main() {
   const limitArg = args.find((a) => a.startsWith('--limit='));
   const monthsArg = args.find((a) => a.startsWith('--months='));
 
-  const limit = limitArg ? parseInt(limitArg.split('=')[1]) : 500;
+  const limit = limitArg ? parseInt(limitArg.split('=')[1]) : 5000;
   const monthsBack = monthsArg ? parseInt(monthsArg.split('=')[1]) : 6;
 
   console.log(`\n🔄 Sync DECP — limit=${limit}, monthsBack=${monthsBack}\n`);

@@ -59,7 +59,7 @@ export default function ConcurrenceDetailPage() {
         <p className="text-gray-400 mb-4">Marché attribué introuvable.</p>
         <Link
           href="/concurrence"
-          className="text-violet-600 text-sm font-semibold no-underline"
+          className="text-blue-600 text-sm font-semibold no-underline"
         >
           &larr; Retour à la veille concurrentielle
         </Link>
@@ -72,9 +72,9 @@ export default function ConcurrenceDetailPage() {
       TRAVAUX:
         'px-2 py-[2px] rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200',
       FOURNITURES:
-        'px-2 py-[2px] rounded text-[10px] font-bold uppercase bg-violet-50 text-violet-700 border border-violet-200',
+        'px-2 py-[2px] rounded text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200',
       SERVICES:
-        'px-2 py-[2px] rounded text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200',
+        'px-2 py-[2px] rounded text-[10px] font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200',
     };
     return map[n] || '';
   }
@@ -103,7 +103,7 @@ export default function ConcurrenceDetailPage() {
               {marche.procedure}
             </span>
           )}
-          <span className="px-2 py-[2px] rounded text-[10px] bg-violet-50 text-violet-600 border border-violet-200 font-semibold">
+          <span className="px-2 py-[2px] rounded text-[10px] bg-blue-50 text-blue-600 border border-blue-200 font-semibold">
             ATTRIBUÉ
           </span>
           <span className="text-[10px] text-gray-400 font-mono ml-auto">
@@ -137,7 +137,7 @@ export default function ConcurrenceDetailPage() {
           <h2 className="text-sm font-bold mb-4">Informations du marché</h2>
           <div className="grid grid-cols-2 gap-x-8 gap-y-5">
             <Detail
-              icon={<Banknote size={15} className="text-violet-400" />}
+              icon={<Banknote size={15} className="text-blue-400" />}
               label="Montant attribué"
               value={marche.montant ? formatCurrency(marche.montant) : null}
               placeholder="Non communiqué"
@@ -194,51 +194,51 @@ export default function ConcurrenceDetailPage() {
             className="card p-6"
             style={{
               background:
-                'linear-gradient(135deg, rgba(124,58,237,0.05), rgba(168,85,247,0.08))',
+                'linear-gradient(135deg, rgba(59,130,246,0.05), rgba(96,165,250,0.08))',
               borderColor: '#93C5FD',
             }}
           >
             <div className="flex items-center gap-2 mb-4">
-              <Trophy size={16} className="text-violet-500" />
-              <h2 className="text-sm font-bold text-violet-700">
+              <Trophy size={16} className="text-blue-500" />
+              <h2 className="text-sm font-bold text-blue-700">
                 Titulaire (Gagnant)
               </h2>
             </div>
             <div className="space-y-3">
               <div>
-                <div className="text-[11px] text-violet-400 mb-0.5">
+                <div className="text-[11px] text-blue-400 mb-0.5">
                   Entreprise
                 </div>
-                <div className="text-sm font-bold text-violet-800">
+                <div className="text-sm font-bold text-blue-800">
                   {marche.titulaireNom}
                 </div>
               </div>
               {marche.titulaireSiret && (
                 <div>
-                  <div className="text-[11px] text-violet-400 mb-0.5">
+                  <div className="text-[11px] text-blue-400 mb-0.5">
                     SIRET
                   </div>
-                  <div className="text-xs font-mono text-violet-600">
+                  <div className="text-xs font-mono text-blue-600">
                     {marche.titulaireSiret}
                   </div>
                 </div>
               )}
               {marche.titulaireCommune && (
                 <div>
-                  <div className="text-[11px] text-violet-400 mb-0.5">
+                  <div className="text-[11px] text-blue-400 mb-0.5">
                     Commune
                   </div>
-                  <div className="text-xs text-violet-600">
+                  <div className="text-xs text-blue-600">
                     {marche.titulaireCommune}
                   </div>
                 </div>
               )}
               {marche.montant && (
-                <div className="pt-2 border-t border-violet-200">
-                  <div className="text-[11px] text-violet-400 mb-0.5">
+                <div className="pt-2 border-t border-blue-200">
+                  <div className="text-[11px] text-blue-400 mb-0.5">
                     Montant remporté
                   </div>
-                  <div className="text-lg font-extrabold text-violet-700">
+                  <div className="text-lg font-extrabold text-blue-700">
                     {formatCurrency(marche.montant)}
                   </div>
                 </div>
@@ -252,7 +252,7 @@ export default function ConcurrenceDetailPage() {
                   `/concurrence?q=${encodeURIComponent(marche.titulaireNom)}`
                 )
               }
-              className="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-violet-300 bg-white text-violet-700 text-xs font-semibold cursor-pointer hover:bg-violet-50 transition-colors"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-3 py-2 border border-blue-300 bg-white text-blue-700 text-xs font-semibold cursor-pointer hover:bg-blue-50 transition-colors"
               style={{ fontFamily: 'inherit' }}
             >
               <Search size={13} />
@@ -368,7 +368,7 @@ export default function ConcurrenceDetailPage() {
       {autresMarches.length > 0 && (
         <div className="card p-6" style={{ borderLeft: '3px solid #3B82F6' }}>
           <div className="flex items-center gap-2 mb-4">
-            <Trophy size={16} className="text-violet-500" />
+            <Trophy size={16} className="text-blue-500" />
             <h2 className="text-sm font-bold">
               Autres marchés remportés par {marche.titulaireNom}
             </h2>
@@ -381,14 +381,14 @@ export default function ConcurrenceDetailPage() {
               <div
                 key={am.id}
                 onClick={() => router.push(`/concurrence/${am.id}`)}
-                className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-violet-200 hover:bg-violet-50/30 cursor-pointer transition-colors"
+                className="flex items-center justify-between p-3 border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 cursor-pointer transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className={`px-[5px] py-[1px] rounded text-[9px] font-bold uppercase ${
                       am.nature === 'TRAVAUX' ? 'bg-amber-50 text-amber-700' :
-                      am.nature === 'SERVICES' ? 'bg-indigo-50 text-indigo-700' :
-                      'bg-violet-50 text-violet-700'
+                      am.nature === 'SERVICES' ? 'bg-blue-50 text-blue-700' :
+                      'bg-blue-50 text-blue-700'
                     }`}>
                       {getNatureLabel(am.nature)}
                     </span>
@@ -402,7 +402,7 @@ export default function ConcurrenceDetailPage() {
                   <div className="text-xs font-medium text-gray-700 truncate">{am.objet}</div>
                   <div className="text-[11px] text-gray-400 mt-0.5">{am.acheteurNom}</div>
                 </div>
-                <div className="text-sm font-bold text-violet-700 ml-4 shrink-0">
+                <div className="text-sm font-bold text-blue-700 ml-4 shrink-0">
                   {formatCurrency(am.montant)}
                 </div>
               </div>
@@ -442,7 +442,7 @@ function Detail({
         <div className="text-[11px] text-gray-400 mb-0.5">{label}</div>
         {value ? (
           <div
-            className={`text-sm font-semibold ${highlight ? 'text-violet-700' : 'text-gray-700'}`}
+            className={`text-sm font-semibold ${highlight ? 'text-blue-700' : 'text-gray-700'}`}
           >
             {value}
           </div>

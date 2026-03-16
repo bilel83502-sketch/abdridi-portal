@@ -12,7 +12,7 @@ import TagInput from '@/components/TagInput';
 function NatureBadge({ nature }: { nature: string }) {
   const map: Record<string, { bg: string; text: string }> = {
     FOURNITURES: { bg: '#DBEAFE', text: '#2563EB' },
-    SERVICES: { bg: '#DBEAFE', text: '#6D28D9' },
+    SERVICES: { bg: '#DBEAFE', text: '#2563EB' },
     TRAVAUX: { bg: '#FFEDD5', text: '#C2410C' },
   };
   const style = map[nature] || { bg: '#F3F4F6', text: '#6B7280' };

@@ -12,7 +12,7 @@ async function main() {
   const limitArg = args.find((a) => a.startsWith('--limit='));
   const daysArg = args.find((a) => a.startsWith('--days='));
 
-  const limit = limitArg ? parseInt(limitArg.split('=')[1]) : 500;
+  const limit = limitArg ? parseInt(limitArg.split('=')[1]) : 5000;
   const daysBack = daysArg ? parseInt(daysArg.split('=')[1]) : 30;
 
   console.log(`[TED Sync] Fetching up to ${limit} records from the last ${daysBack} days...`);
