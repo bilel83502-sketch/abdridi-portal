@@ -6,6 +6,7 @@ import { Search, SlidersHorizontal, Clock, Building2, MapPin, ArrowRight, Lock, 
 import { formatCurrency, formatDate, daysUntil, getNatureLabel } from '@/lib/utils';
 import Link from 'next/link';
 import DepartmentSelect from '@/components/DepartmentSelect';
+import TagInput from '@/components/TagInput';
 
 /* ─── Nature badge ─── */
 function NatureBadge({ nature }: { nature: string }) {
@@ -48,7 +49,7 @@ export default function MarchesPage() {
   const panelRef = useRef<HTMLDivElement>(null);
   const [marches, setMarches] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, page: 1, pages: 0, isPaid: true, freeLimit: 3 });
-  const [q, setQ] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [nature, setNature] = useState('');
   const [department, setDepartment] = useState('');
   const [page, setPage] = useState(1);
@@ -88,7 +89,7 @@ export default function MarchesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams({ page: page.toString(), limit: '20' });
-    if (q) params.set('q', q);
+    if (tags.length > 0) params.set('q', tags.join(','));
     if (nature) params.set('nature', nature);
     if (department) params.set('department', department);
     if (datePublishedFrom) params.set('datePublishedFrom', datePublishedFrom);
@@ -100,14 +101,14 @@ export default function MarchesPage() {
     setMarches(data.data);
     setMeta(data.meta);
     setLoading(false);
-  }, [q, nature, department, page, datePublishedFrom, datePublishedTo, deadlineFrom, deadlineTo]);
+  }, [tags, nature, department, page, datePublishedFrom, datePublishedTo, deadlineFrom, deadlineTo]);
 
   useEffect(() => { load(); }, [load]);
 
   function handleSearch(e: React.FormEvent) { e.preventDefault(); setPage(1); load(); }
 
   function resetAllFilters() {
-    setNature(''); setDepartment(''); setAcheteur(''); setCpvCode('');
+    setTags([]); setNature(''); setDepartment(''); setAcheteur(''); setCpvCode('');
     setDatePublishedFrom(''); setDatePublishedTo('');
     setDeadlineFrom(''); setDeadlineTo(''); setSourceFilter('');
   }
@@ -129,7 +130,7 @@ export default function MarchesPage() {
           Consultations en cours
         </h1>
         <p style={{ fontSize: 14, color: '#64748B', margin: 0 }}>
-          <strong style={{ color: '#3B82F6' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts — 102 sources officielles
+          <strong style={{ color: '#3B82F6' }}>{meta.total.toLocaleString('fr-FR')}</strong> appels d&apos;offres ouverts
         </p>
       </div>
 
@@ -155,25 +156,16 @@ export default function MarchesPage() {
 
       {/* ─── Search bar + Filter button ─── */}
       <form onSubmit={handleSearch} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <div style={{ flex: 1, position: 'relative' }}>
-          <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
-          <input
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            placeholder="Mots-clés, acheteur, code CPV..."
-            style={{
-              width: '100%', height: 44, paddingLeft: 42, paddingRight: 14,
-              borderRadius: 8, border: '1px solid #E2E8F0', fontSize: 14,
-              fontFamily: 'inherit', outline: 'none', background: '#fff',
-              boxSizing: 'border-box', transition: 'border-color 0.15s',
-            }}
-            onFocus={e => (e.currentTarget.style.borderColor = '#3B82F6')}
-            onBlur={e => (e.currentTarget.style.borderColor = '#E2E8F0')}
+        <div style={{ flex: 1 }}>
+          <TagInput
+            tags={tags}
+            onChange={(newTags) => { setTags(newTags); setPage(1); }}
+            placeholder="Mots-clés : transport, nettoyage, BTP..."
           />
         </div>
         <button type="submit" style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          padding: '0 20px', height: 44, borderRadius: 8, border: 'none',
+          padding: '0 20px', height: 44, border: 'none',
           background: '#3B82F6', color: '#fff', fontSize: 14, fontWeight: 600,
           cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
         }}>
@@ -404,12 +396,10 @@ export default function MarchesPage() {
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
               {/* Mots-clés */}
               <FilterSection label="Mots-clés">
-                <input
-                  value={q}
-                  onChange={e => setQ(e.target.value)}
+                <TagInput
+                  tags={tags}
+                  onChange={setTags}
                   placeholder="Ex: transport, nettoyage..."
-                  className="input"
-                  style={{ height: 38, fontSize: 13 }}
                 />
               </FilterSection>
 
@@ -496,25 +486,6 @@ export default function MarchesPage() {
                 </div>
               </FilterSection>
 
-              {/* Source */}
-              <FilterSection label="Plateforme source">
-                <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
-                  className="input" style={{ height: 38, fontSize: 13 }}>
-                  <option value="">Toutes les sources</option>
-                  <option value="BOAMP">BOAMP</option>
-                  <option value="TED">TED</option>
-                  <option value="DECP">DECP</option>
-                  <option value="E-MARCHESPUBLICS">e-marchespublics</option>
-                  <option value="PLACE">PLACE</option>
-                  <option value="ACHATPUBLIC">Achatpublic</option>
-                  <option value="MAXIMILIEN">Maximilien</option>
-                  <option value="MEGALIS">Mégalis</option>
-                  <option value="MARCHES-SECURISES">Marchés Sécurisés</option>
-                  <option value="AWS-ACHAT">AWS-Achat</option>
-                  <option value="MARCHES-ONLINE">Marchés Online</option>
-                  <option value="KLEKOON">Klekoon</option>
-                </select>
-              </FilterSection>
             </div>
 
             {/* Panel footer */}

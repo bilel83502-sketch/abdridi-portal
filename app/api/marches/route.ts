@@ -50,7 +50,16 @@ export async function GET(req: Request) {
   if (source) {
     where.source = source;
   }
-  if (q) where.OR = [{ title: { contains: q, mode: 'insensitive' } }, { buyer: { contains: q, mode: 'insensitive' } }, { cpvCode: { contains: q } }, { cpvLabel: { contains: q, mode: 'insensitive' } }];
+  if (q) {
+    const keywords = q.split(',').map(k => k.trim()).filter(Boolean);
+    if (keywords.length === 1) {
+      where.OR = [{ title: { contains: keywords[0], mode: 'insensitive' } }, { buyer: { contains: keywords[0], mode: 'insensitive' } }, { cpvCode: { contains: keywords[0] } }, { cpvLabel: { contains: keywords[0], mode: 'insensitive' } }];
+    } else if (keywords.length > 1) {
+      where.AND = keywords.map(kw => ({
+        OR: [{ title: { contains: kw, mode: 'insensitive' } }, { buyer: { contains: kw, mode: 'insensitive' } }, { cpvCode: { contains: kw } }, { cpvLabel: { contains: kw, mode: 'insensitive' } }],
+      }));
+    }
+  }
   if (nature) where.nature = nature;
   if (department) where.department = department;
 
