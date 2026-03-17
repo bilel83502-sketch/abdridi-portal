@@ -16,3 +16,14 @@ export function getNatureLabel(n: string) {
 export function getNatureBadge(n: string) {
   return { TRAVAUX: 'badge-travaux', FOURNITURES: 'badge-fournitures', SERVICES: 'badge-services' }[n] || '';
 }
+
+/**
+ * Supprime les codes de référence préfixés dans les titres de marchés.
+ * Ex : "2025-0154-00-00-MPF — Système d'acquisition..." → "Système d'acquisition..."
+ * Ex : "110-26-01-RPPM — SAD 1 : ..." → "SAD 1 : ..."
+ */
+export function cleanTitle(title: string): string {
+  if (!title) return title;
+  // Pattern : code sans espaces (≥4 chars alphanum+tirets) suivi de " — " ou " – "
+  return title.replace(/^[A-Z0-9][A-Z0-9\-\.\/]{3,}\s+[—–]\s+/i, '').trim();
+}

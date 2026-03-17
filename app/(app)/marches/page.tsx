@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, SlidersHorizontal, Clock, Building2, MapPin, ArrowRight, Lock, X, Tag, Layers, RotateCcw } from 'lucide-react';
-import { formatCurrency, formatDate, daysUntil, getNatureLabel } from '@/lib/utils';
+import { formatCurrency, formatDate, daysUntil, getNatureLabel, cleanTitle } from '@/lib/utils';
 import Link from 'next/link';
 import DepartmentSelect from '@/components/DepartmentSelect';
 import TagInput from '@/components/TagInput';
@@ -229,14 +229,14 @@ export default function MarchesPage() {
           Aucune consultation trouvée.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#E2E8F0', borderRadius: 10, overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {marches.map((m) => {
             const dl = daysUntil(m.deadline);
             const isLocked = m.locked === true;
 
             if (isLocked) {
               return (
-                <div key={m.id} style={{ position: 'relative', overflow: 'hidden', background: '#fff', padding: '20px 24px' }}>
+                <div key={m.id} className="card" style={{ position: 'relative', overflow: 'hidden', padding: '20px 24px' }}>
                   <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>
                     <div style={{ fontSize: 15, fontWeight: 600, color: '#111827', lineHeight: 1.5 }}>{m.title}</div>
                     <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>{m.buyer}</div>
@@ -265,12 +265,10 @@ export default function MarchesPage() {
               <div
                 key={m.id}
                 onClick={() => router.push(`/marches/${m.id}`)}
-                style={{
-                  background: '#fff', padding: '18px 24px', cursor: 'pointer',
-                  transition: 'background 0.1s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                className="card"
+                style={{ padding: '18px 24px', cursor: 'pointer', transition: 'border-color 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#93C5FD')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '')}
               >
                 {/* Row 1: Nature + Title + Amount */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
@@ -282,7 +280,7 @@ export default function MarchesPage() {
                       )}
                     </div>
                     <h3 style={{ fontSize: 15, fontWeight: 600, color: '#0F172A', lineHeight: 1.45, margin: 0 }}>
-                      {m.title}
+                      {cleanTitle(m.title)}
                     </h3>
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', flexShrink: 0 }}>

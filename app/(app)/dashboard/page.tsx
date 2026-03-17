@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { formatCurrency, formatDate, daysUntil, getNatureLabel, getNatureBadge } from '@/lib/utils';
+import { formatCurrency, formatDate, daysUntil, getNatureLabel, getNatureBadge, cleanTitle } from '@/lib/utils';
 import { Clock } from 'lucide-react';
 import Image from 'next/image';
 import { DEPARTMENTS } from '@/components/DepartmentSelect';
@@ -86,7 +86,7 @@ export default function DashboardPage() {
                       <span className={getNatureBadge(m.nature)}>{getNatureLabel(m.nature)}</span>
                       <span className="text-[10px] text-gray-400 font-mono">{m.sourceRef || m.source}</span>
                     </div>
-                    <p className="text-[13px] font-semibold text-gray-900 truncate mt-0.5">{m.title}</p>
+                    <p className="text-[13px] font-semibold text-gray-900 truncate mt-0.5">{cleanTitle(m.title)}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">{m.buyer} — {m.departmentName || m.department}</p>
                   </div>
                   <div className="text-right shrink-0">

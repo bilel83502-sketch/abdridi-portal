@@ -287,7 +287,7 @@ select.input { cursor: pointer; }
   .login-left { display: none; }
   .login-right { width: 100%; min-height: 100vh; padding: 24px 20px; justify-content: flex-start; }
   .login-mobile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 28px; padding-top: 20px; }
-  .login-mobile-logo-wrap { background: var(--nav); padding: 8px; margin-bottom: 12px; }
+  .login-mobile-logo-wrap { background: transparent; padding: 0; margin-bottom: 12px; }
   .login-mobile-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
   .login-mobile-subtitle { font-size: 13px; color: var(--text-muted); }
   .login-form-logo { display: none; }

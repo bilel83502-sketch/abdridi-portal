@@ -101,25 +101,26 @@ export default function Chatbot() {
     <>
       {/* ─── Floating bubble ─── */}
       {!open && (
-        <button
+        <div
           onClick={() => setOpen(true)}
+          role="button"
           aria-label="Ouvrir le chat"
           style={{
             position: 'fixed', bottom: 20, right: 20, zIndex: 9999,
             width: 60, height: 60, borderRadius: '50%',
             background: 'transparent',
-            border: 'none', cursor: 'pointer',
+            cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 20px rgba(37, 99, 235, 0.35)',
             transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             padding: 0,
             overflow: 'hidden',
           }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(37, 99, 235, 0.45)'; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(37, 99, 235, 0.35)'; }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.06)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 28px rgba(37, 99, 235, 0.45)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(37, 99, 235, 0.35)'; }}
         >
           <AssistantMascot size={60} />
-        </button>
+        </div>
       )}
 
       {/* ─── Close button when open ─── */}

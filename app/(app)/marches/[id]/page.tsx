@@ -29,6 +29,7 @@ import {
   daysUntil,
   getNatureLabel,
   getNatureBadge,
+  cleanTitle,
 } from '@/lib/utils';
 
 function buildSourceUrl(sourceRef: string | null): string | null {
@@ -189,7 +190,7 @@ export default function MarcheDetailPage() {
           </span>
         </div>
 
-        <h1 className="text-lg font-bold leading-snug mb-4">{marche.title}</h1>
+        <h1 className="text-lg font-bold leading-snug mb-4">{cleanTitle(marche.title)}</h1>
 
         <div className="flex gap-5 flex-wrap text-sm text-gray-600">
           <span className="flex items-center gap-1.5">
