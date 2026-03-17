@@ -333,9 +333,7 @@ export default function MarcheDetailPage() {
                 className="btn-gradient !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"
               >
                 <ExternalLink size={14} />
-                {sourceInfo.direct
-                  ? "Voir l'annonce originale"
-                  : `Accéder à ${marche.source}`}
+                Accéder aux documents
               </a>
             ) : (
               <div className="text-[11px] text-gray-400 italic text-center mb-2.5 py-2">
