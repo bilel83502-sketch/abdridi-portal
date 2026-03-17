@@ -24,6 +24,6 @@ export function getNatureBadge(n: string) {
  */
 export function cleanTitle(title: string): string {
   if (!title) return title;
-  // Pattern : code sans espaces (≥4 chars alphanum+tirets) suivi de " — " ou " – "
-  return title.replace(/^[A-Z0-9][A-Z0-9\-\.\/]{3,}\s+[—–]\s+/i, '').trim();
+  // Pattern : code de référence (alphanum + tirets + underscores + points) suivi de " — " ou " – "
+  return title.replace(/^[A-Z0-9][A-Z0-9\-\._\/]{3,}\s+[—–]\s+/i, '').trim();
 }
