@@ -59,6 +59,22 @@
     {
       "path": "/api/cron/alerts?secret=${CRON_SECRET}",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/sync/decp-v3",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/sync/ted-attribue",
+      "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/sync/grandlyon-attribue",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/sync/paris-attribue",
+      "schedule": "30 3 * * *"
     }
   ]
 }
