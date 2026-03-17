@@ -75,6 +75,34 @@
     {
       "path": "/api/sync/paris-attribue",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/sync/toulouse-attribue",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/sync/bordeaux-attribue",
+      "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/sync/nantes-attribue",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/sync/rennes-attribue",
+      "schedule": "30 1 * * *"
+    },
+    {
+      "path": "/api/sync/strasbourg-attribue",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/sync/marseille-attribue",
+      "schedule": "30 0 * * *"
+    },
+    {
+      "path": "/api/enrich/sirene",
+      "schedule": "0 16 * * *"
     }
   ]
 }
