@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const FROM_EMAIL = 'AB DRIDI <onboarding@resend.dev>';
+const FROM_EMAIL = 'AB DRIDI <noreply@abdridi.com>';
 const ADMIN_EMAIL = 'bilel83502@gmail.com';
 
 // ─── Types ───

@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 export const dynamic = 'force-dynamic';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AB DRIDI <onboarding@resend.dev>';
+const FROM_EMAIL = 'AB DRIDI <noreply@abdridi.com>';
 
 function formatDate(d: Date | null | undefined): string {
   if (!d) return '—';

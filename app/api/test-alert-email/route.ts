@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 
 export const dynamic = 'force-dynamic';
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AB DRIDI <onboarding@resend.dev>';
+const FROM_EMAIL = 'AB DRIDI <noreply@abdridi.com>';
 
 function formatDate(d: Date): string {
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });

@@ -6,7 +6,7 @@ import { Resend } from 'resend';
 
 export const dynamic = 'force-dynamic';
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'AB DRIDI <onboarding@resend.dev>';
+const FROM_EMAIL = 'AB DRIDI <noreply@abdridi.com>';
 
 export async function GET() {
   const session = await getServerSession(authOptions);
