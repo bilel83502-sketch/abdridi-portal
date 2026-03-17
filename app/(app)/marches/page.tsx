@@ -358,7 +358,7 @@ export default function MarchesPage() {
 
       {/* ═══════ FILTER SIDE PANEL ═══════ */}
       {filtersOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10001, display: 'flex', justifyContent: 'flex-end' }}>
           {/* Backdrop */}
           <div
             style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.4)' }}
