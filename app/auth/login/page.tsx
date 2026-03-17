@@ -35,15 +35,8 @@ function LoginContent() {
       {/* Left panel */}
       <div className="login-left">
         <div className="login-left-content">
-          {/* Logo text — no image */}
           <div style={{ marginBottom: 32 }}>
-            <span style={{
-              fontFamily: '"Instrument Serif", Georgia, serif',
-              fontSize: 28, fontWeight: 700, letterSpacing: '-0.01em',
-            }}>
-              <span style={{ color: 'var(--brand)' }}>AB</span>
-              <span style={{ color: '#fff' }}> DRIDI</span>
-            </span>
+            <Image src="/logo.png" alt="AB DRIDI" width={72} height={72} />
           </div>
 
           <h1 className="login-left-title">

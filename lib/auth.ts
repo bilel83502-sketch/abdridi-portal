@@ -17,6 +17,7 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authorization: { params: { prompt: 'select_account' } },
     }),
     CredentialsProvider({
       name: 'credentials',
@@ -72,10 +73,10 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // Block credentials login if email not verified
+      // Block credentials login if email not verified (admins bypass)
       if (account?.provider === 'credentials' && user.email) {
         const dbUser = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() } });
-        if (dbUser && !dbUser.emailVerified) {
+        if (dbUser && !dbUser.emailVerified && dbUser.role !== 'ADMIN') {
           return '/auth/verify-notice';
         }
       }
