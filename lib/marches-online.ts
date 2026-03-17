@@ -1,20 +1,19 @@
 /**
  * Marchés Online — marchesonline.com
  *
- * Le site est un SPA Nuxt (serverRendered:false) → le HTML côté serveur est vide.
- * On cherche leur API backend dans cet ordre :
- *   1. /api/avis?page=1&limit=20
- *   2. /api/v1/avis?page=1&limit=20
- *   3. /api/annonces?page=1&limit=20
- *   4. Flux RSS : /rss ou /feed.xml
- *
- * // TODO: Endpoint qui a fonctionné : à renseigner après test
+ * Le site est un SPA Nuxt, mais le sitemap /sitemap/appel_offres-01.xml
+ * contient ~5000 URLs de détail server-rendered.
+ * Stratégie : lire le sitemap, scraper les N premières pages de détail,
+ * parser le HTML pour extraire les données de chaque avis.
  */
 
+import * as cheerio from 'cheerio';
+
 const BASE_URL = 'https://www.marchesonline.com';
-const PAGE_SIZE = 20;
+const SITEMAP_URL = `${BASE_URL}/sitemap/appel_offres-01.xml`;
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+const CONCURRENCY = 3;
 
 /* ───── Mapping département → nom + région ───── */
 const DEPT_MAP: Record<string, { name: string; region: string }> = {
@@ -151,22 +150,6 @@ export interface MarchesOnlineMarche {
   status: string;
 }
 
-/* ───── API endpoints to try ───── */
-const API_ENDPOINTS = [
-  `${BASE_URL}/api/avis`,
-  `${BASE_URL}/api/v1/avis`,
-  `${BASE_URL}/api/annonces`,
-  `${BASE_URL}/api/v1/annonces`,
-  `${BASE_URL}/api/consultations`,
-];
-
-const RSS_ENDPOINTS = [
-  `${BASE_URL}/rss`,
-  `${BASE_URL}/feed.xml`,
-  `${BASE_URL}/rss.xml`,
-  `${BASE_URL}/flux-rss`,
-];
-
 /* ───── Fetch avec retry ───── */
 async function fetchWithRetry(
   url: string,
@@ -186,167 +169,170 @@ async function fetchWithRetry(
   return null;
 }
 
-/* ───── Map un item JSON vers notre format ───── */
-function mapJsonItem(item: any): MarchesOnlineMarche | null {
-  const id = item.id || item._id || item.reference || item.numero;
-  if (!id) return null;
+/* ───── Fetch sitemap et extraire les URLs ───── */
+async function fetchSitemapUrls(): Promise<{ url: string; id: string }[]> {
+  const res = await fetchWithRetry(SITEMAP_URL, {
+    headers: { 'User-Agent': UA, Accept: 'text/xml,application/xml' },
+  });
+  if (!res) return [];
+  const xml = await res.text();
 
-  const title = (item.objet || item.title || item.titre || item.intitule || '').trim();
+  const results: { url: string; id: string }[] = [];
+  const locMatches = xml.match(/<loc>([^<]+)<\/loc>/g) || [];
+  for (const loc of locMatches) {
+    const url = loc.replace(/<\/?loc>/g, '').trim();
+    // URL format: .../ao-{id}-{num}
+    const idMatch = url.match(/ao-(\d+)-\d+$/);
+    if (idMatch) {
+      results.push({ url, id: idMatch[1] });
+    }
+  }
+  return results;
+}
+
+/* ───── Parser une page de détail MO ───── */
+function parseDetailPage(html: string, id: string, pageUrl: string): MarchesOnlineMarche | null {
+  const $ = cheerio.load(html);
+
+  // Title from h1
+  const title = $('h1').first().text().replace(/\s+/g, ' ').trim().replace(/\.$/, '');
   if (!title) return null;
 
-  const buyer = (item.acheteur || item.organisme || item.buyer || item.collectivite || '').trim();
+  // The main content is in a div with class "limit-descript-height" or "descript-line"
+  const contentDiv = $('[class*="limit-descript-height"], [class*="descript-line"]').first();
+  const text = contentDiv.length
+    ? contentDiv.text().replace(/\s+/g, ' ')
+    : $('body').text().replace(/\s+/g, ' ');
 
-  // Department extraction
+  // Buyer: "Nom officiel : ..."
+  const buyerMatch = text.match(/Nom officiel\s*:\s*([^§]+?)(?:\s*Forme juridique|\s*Numéro d'enregistrement|\s*Section)/);
+  const buyer = buyerMatch ? buyerMatch[1].trim().slice(0, 300) : 'Marchés Online';
+
+  // Department: "Département(s) de publication :XX, YY"
   let dept = '00';
-  const deptField = item.departement || item.department || item.codeDepartement || '';
-  const deptMatch = String(deptField).match(/^(\d{2,3}|2[AB])/);
-  if (deptMatch) dept = deptMatch[1];
+  const deptMatch = text.match(/D[ée]partement\(?s?\)?\s*de publication\s*:\s*([^A-Z§]+)/i);
+  if (deptMatch) {
+    const firstDept = deptMatch[1].trim().split(/[,\s]+/)[0];
+    if (firstDept && /^\d{2,3}$/.test(firstDept)) dept = firstDept;
+  }
+  // Fallback: Code postal from "Code postal : XXXXX"
+  if (dept === '00') {
+    const cpMatch = text.match(/Code postal\s*:\s*(\d{5})/);
+    if (cpMatch) {
+      const cp = cpMatch[1];
+      dept = cp.startsWith('97') ? cp.slice(0, 3) : cp.slice(0, 2);
+    }
+  }
   const deptInfo = DEPT_MAP[dept];
 
-  // Deadline
+  // Nature: "Nature du marché : Services/Travaux/Fournitures"
+  let nature = 'SERVICES';
+  const natureMatch = text.match(/Nature du march[ée]\s*:\s*(\w+)/i);
+  if (natureMatch) nature = mapNature(natureMatch[1]);
+
+  // Deadline: "Date limite de réception des offres : DD/MM/YYYY"
   let deadline: Date | null = null;
-  const deadlineRaw = item.dateLimite || item.dateRemise || item.deadline || item.dateCloture;
-  if (deadlineRaw) {
-    const d = new Date(deadlineRaw);
+  // Search in raw HTML to handle span tags
+  const deadlineHtmlMatch = html.match(/[Rr][ée]ception des offres\s*(?:<[^>]*>)?\s*:?\s*(?:<[^>]*>)?\s*(\d{2})\/(\d{2})\/(\d{4})/);
+  if (deadlineHtmlMatch) {
+    const d = new Date(`${deadlineHtmlMatch[3]}-${deadlineHtmlMatch[2]}-${deadlineHtmlMatch[1]}T12:00:00+01:00`);
     if (!isNaN(d.getTime())) deadline = d;
   }
 
-  // Publication date
-  let publicationDate: Date | null = null;
-  const pubRaw = item.datePublication || item.dateParution || item.createdAt || item.date;
-  if (pubRaw) {
-    const d = new Date(pubRaw);
-    if (!isNaN(d.getTime())) publicationDate = d;
+  // CPV: "cpv ): XXXXXXXX Label"
+  let cpvCode: string | null = null;
+  let cpvLabel: string | null = null;
+  const cpvMatch = text.match(/Nomenclature principale\s*\(\s*cpv\s*\)\s*:\s*(\d{8})\s+([^§]+?)(?:\s*Nomenclature|\s*\d\.\d)/);
+  if (cpvMatch) {
+    cpvCode = cpvMatch[1];
+    cpvLabel = cpvMatch[2].trim().slice(0, 200);
   }
 
-  const nature = mapNature(item.nature || item.type || item.typeMarche || '');
+  // Value: "Valeur estimée hors TVA : XXX Euro"
+  let value: number | null = null;
+  const valMatch = text.match(/Valeur estim[ée]e[^:]*:\s*([\d\s,.]+)\s*Euro/i);
+  if (valMatch) {
+    let raw = valMatch[1].replace(/\s/g, '');
+    // Handle "136,000,000" (thousand-separator commas) vs "1234,56" (decimal comma)
+    const commaCount = (raw.match(/,/g) || []).length;
+    if (commaCount > 1) {
+      // Multiple commas = thousand separators
+      raw = raw.replace(/,/g, '');
+    } else if (commaCount === 1) {
+      // Single comma: check if it's a decimal (e.g. "1234,56") or thousand separator (e.g. "1,000")
+      const afterComma = raw.split(',')[1];
+      if (afterComma.length === 3) {
+        raw = raw.replace(',', ''); // thousand separator
+      } else {
+        raw = raw.replace(',', '.'); // decimal
+      }
+    }
+    const v = parseFloat(raw);
+    if (!isNaN(v) && v > 0) value = v;
+  }
+
+  // Procedure type: "Type de procédure : Ouverte"
+  let procedureType: string | null = null;
+  const procMatch = text.match(/Type de proc[ée]dure\s*:\s*(\w[\w\s]*?)(?:\s*La proc|$)/i);
+  if (procMatch) procedureType = procMatch[1].trim().slice(0, 100);
+
+  // Duration: "Durée : XX Mois"
+  let duration: string | null = null;
+  const durMatch = text.match(/Dur[ée]e\s*:\s*(\d+\s*\w+)/i);
+  if (durMatch) duration = durMatch[1].trim();
+
+  // Lots: count "Identifiant technique du lot"
+  const lotsCount = (text.match(/Identifiant technique du lot/g) || []).length;
 
   return {
     title: title.slice(0, 500),
-    buyer: buyer.slice(0, 300) || 'Marchés Online',
+    buyer,
     nature,
     department: dept,
     departmentName: deptInfo?.name || null,
     region: deptInfo?.region || null,
-    value: item.montant ? parseFloat(item.montant) : null,
+    value,
     deadline,
-    publicationDate,
+    publicationDate: null,
     source: 'MARCHES-ONLINE',
-    sourceRef: `MONL-${id}`,
-    procedureType: item.procedure || item.typeProcedure || null,
-    cpvCode: item.cpv || item.codeCpv || null,
-    cpvLabel: item.cpvLabel || item.libelleCpv || null,
-    lots: item.nbLots || item.lots || 1,
-    duration: item.duree || item.duration || null,
+    sourceRef: `MO-${id}`,
+    procedureType,
+    cpvCode,
+    cpvLabel,
+    lots: lotsCount || 1,
+    duration,
     status: 'OUVERT',
   };
 }
 
-/* ───── Parse RSS/Atom feed ───── */
-function parseRssFeed(xml: string): MarchesOnlineMarche[] {
+/* ───── Fetch un batch d'URLs en parallèle avec concurrence limitée ───── */
+async function fetchBatch(
+  urls: { url: string; id: string }[],
+): Promise<MarchesOnlineMarche[]> {
   const results: MarchesOnlineMarche[] = [];
-  // Simple regex-based RSS parsing
-  const items = xml.split(/<item[\s>]/);
+  const headers = { 'User-Agent': UA, Accept: 'text/html' };
 
-  for (let i = 1; i < items.length; i++) {
-    const item = items[i];
+  for (let i = 0; i < urls.length; i += CONCURRENCY) {
+    const batch = urls.slice(i, i + CONCURRENCY);
+    const promises = batch.map(async ({ url, id }) => {
+      const res = await fetchWithRetry(url, { headers }, 2);
+      if (!res) return null;
+      const html = await res.text();
+      return parseDetailPage(html, id, url);
+    });
 
-    const titleMatch = item.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
-    const linkMatch = item.match(/<link[^>]*>([\s\S]*?)<\/link>/);
-    const descMatch = item.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/);
-    const pubDateMatch = item.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/);
-    const guidMatch = item.match(/<guid[^>]*>([\s\S]*?)<\/guid>/);
-
-    const title = (titleMatch?.[1] || '').replace(/<[^>]+>/g, '').trim();
-    if (!title) continue;
-
-    const link = (linkMatch?.[1] || '').trim();
-    const guid = (guidMatch?.[1] || link || '').trim();
-    const idMatch = guid.match(/(\d{5,})/);
-    const id = idMatch ? idMatch[1] : String(i);
-
-    const desc = (descMatch?.[1] || '').replace(/<[^>]+>/g, '').trim();
-
-    let publicationDate: Date | null = null;
-    if (pubDateMatch) {
-      const d = new Date(pubDateMatch[1].trim());
-      if (!isNaN(d.getTime())) publicationDate = d;
+    const batchResults = await Promise.all(promises);
+    for (const r of batchResults) {
+      if (r) results.push(r);
     }
 
-    // Try to extract department from description or title
-    let dept = '00';
-    const deptMatch = (desc + ' ' + title).match(/\b(97[1-6]|0[1-9]|[1-8]\d|9[0-5]|2[AB])\b/);
-    if (deptMatch) dept = deptMatch[1];
-    const deptInfo = DEPT_MAP[dept];
-
-    const nature = mapNature(desc + ' ' + title);
-
-    results.push({
-      title: title.slice(0, 500),
-      buyer: 'Marchés Online',
-      nature,
-      department: dept,
-      departmentName: deptInfo?.name || null,
-      region: deptInfo?.region || null,
-      value: null,
-      deadline: null,
-      publicationDate,
-      source: 'MARCHES-ONLINE',
-      sourceRef: `MONL-${id}`,
-      procedureType: null,
-      cpvCode: null,
-      cpvLabel: null,
-      lots: 1,
-      duration: null,
-      status: 'OUVERT',
-    });
+    // Throttle between batches
+    if (i + CONCURRENCY < urls.length) {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
 
   return results;
-}
-
-/* ───── Discover working endpoint ───── */
-async function discoverEndpoint(): Promise<{ type: 'json' | 'rss'; url: string } | null> {
-  const headers: Record<string, string> = {
-    'User-Agent': UA,
-    Accept: 'application/json',
-    Referer: `${BASE_URL}/`,
-  };
-
-  // Try JSON API endpoints first
-  for (const endpoint of API_ENDPOINTS) {
-    console.log(`[MONL] Trying API: ${endpoint}`);
-    const res = await fetchWithRetry(`${endpoint}?page=1&limit=5`, { headers }, 1);
-    if (res) {
-      const text = await res.text();
-      try {
-        const json = JSON.parse(text);
-        if (json && (Array.isArray(json) || json.data || json.results || json.items || json.avis)) {
-          console.log(`[MONL] Found working JSON API: ${endpoint}`);
-          return { type: 'json', url: endpoint };
-        }
-      } catch {
-        // Not JSON, continue
-      }
-    }
-  }
-
-  // Try RSS endpoints
-  for (const endpoint of RSS_ENDPOINTS) {
-    console.log(`[MONL] Trying RSS: ${endpoint}`);
-    const res = await fetchWithRetry(endpoint, {
-      headers: { 'User-Agent': UA, Accept: 'application/xml, text/xml, application/rss+xml' },
-    }, 1);
-    if (res) {
-      const text = await res.text();
-      if (text.includes('<rss') || text.includes('<feed') || text.includes('<item')) {
-        console.log(`[MONL] Found working RSS: ${endpoint}`);
-        return { type: 'rss', url: endpoint };
-      }
-    }
-  }
-
-  return null;
 }
 
 /* ───── Fonction principale ───── */
@@ -354,74 +340,31 @@ export async function fetchMarchesOnlineRecords(options?: {
   limit?: number;
 }): Promise<MarchesOnlineMarche[]> {
   const limit = options?.limit ?? 200;
-  const allRecords: MarchesOnlineMarche[] = [];
 
-  console.log(`[MONL] Discovering marchesonline.com endpoint...`);
+  console.log(`[MONL] Fetching sitemap from marchesonline.com...`);
+  const sitemapUrls = await fetchSitemapUrls();
+  console.log(`[MONL] Sitemap: ${sitemapUrls.length} URLs found`);
 
-  const endpoint = await discoverEndpoint();
-
-  if (!endpoint) {
-    console.error('[MONL] No working API or RSS endpoint found');
-    // TODO: Si aucun endpoint ne fonctionne, investiguer les requêtes réseau du SPA Nuxt
-    // pour découvrir le vrai endpoint API backend
+  if (sitemapUrls.length === 0) {
+    console.error('[MONL] No URLs found in sitemap');
     return [];
   }
 
-  if (endpoint.type === 'rss') {
-    // RSS mode — single fetch, limited data
-    const res = await fetchWithRetry(endpoint.url, {
-      headers: { 'User-Agent': UA, Accept: 'application/xml, text/xml' },
-    });
-    if (!res) return [];
-    const xml = await res.text();
-    const records = parseRssFeed(xml);
-    allRecords.push(...records);
-    console.log(`[MONL] RSS: ${records.length} items`);
-  } else {
-    // JSON API mode — paginate
-    const headers: Record<string, string> = {
-      'User-Agent': UA,
-      Accept: 'application/json',
-      Referer: `${BASE_URL}/`,
-    };
+  // Take the first N URLs (they're the most recent in the sitemap)
+  const urlsToFetch = sitemapUrls.slice(0, limit);
+  console.log(`[MONL] Fetching ${urlsToFetch.length} detail pages...`);
 
-    const maxPages = Math.ceil(limit / PAGE_SIZE);
-
-    for (let page = 1; page <= maxPages && allRecords.length < limit; page++) {
-      if (page > 1) await new Promise((r) => setTimeout(r, 1500));
-
-      const url = `${endpoint.url}?page=${page}&limit=${PAGE_SIZE}`;
-      const res = await fetchWithRetry(url, { headers });
-      if (!res) {
-        console.warn(`[MONL] Page ${page} failed, stopping`);
-        break;
-      }
-
-      const json = await res.json();
-      const items = Array.isArray(json) ? json : (json.data || json.results || json.items || json.avis || []);
-
-      if (items.length === 0) {
-        console.log(`[MONL] No more results at page ${page}`);
-        break;
-      }
-
-      for (const item of items) {
-        const mapped = mapJsonItem(item);
-        if (mapped) allRecords.push(mapped);
-      }
-
-      console.log(`[MONL] Page ${page}: ${items.length} items (total: ${allRecords.length})`);
-    }
-  }
+  const records = await fetchBatch(urlsToFetch);
+  console.log(`[MONL] Parsed ${records.length} records from ${urlsToFetch.length} pages`);
 
   // Deduplicate by sourceRef
   const seen = new Set<string>();
-  const unique = allRecords.filter((r) => {
+  const unique = records.filter((r) => {
     if (seen.has(r.sourceRef)) return false;
     seen.add(r.sourceRef);
     return true;
   });
 
-  console.log(`[MONL] Total records mapped: ${unique.length}`);
-  return unique.slice(0, limit);
+  console.log(`[MONL] Total unique records: ${unique.length}`);
+  return unique;
 }

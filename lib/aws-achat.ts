@@ -3,16 +3,18 @@
  * https://www.marches-publics.info
  *
  * Méthode : scraping HTML via POST sur /Annonces/lister
- * Body : IDE=EC&IDN=X&IDR=X&motsCles=
- * Pagination : liens "page=" dans le HTML
- * Site ColdFusion — encodage potentiellement ISO-8859-1
+ * Le site refuse d'afficher les résultats si la recherche est trop large.
+ * Stratégie : itérer par nature (T, S, F) × plage de date pour rester
+ * sous le seuil d'affichage du serveur.
+ * Chaque annonce est dans un div.container-fluid#entity.
+ * Le lien de détail est de la forme /Annonces/MPI-pub-{id}.htm
  */
 
 import * as cheerio from 'cheerio';
+import { writeFileSync } from 'fs';
 
 const BASE_URL = 'https://www.marches-publics.info';
 const LIST_URL = `${BASE_URL}/Annonces/lister`;
-const PAGE_SIZE = 20;
 const UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
@@ -121,14 +123,21 @@ const DEPT_MAP: Record<string, { name: string; region: string }> = {
   '976': { name: 'Mayotte', region: 'Outre-Mer' },
 };
 
-/* ───── Mapping nature ───── */
-function mapNature(raw: string): string {
-  const t = raw.toUpperCase();
-  if (t.includes('TRAVAUX')) return 'TRAVAUX';
-  if (t.includes('FOURNITURE')) return 'FOURNITURES';
-  if (t.includes('SERVICE')) return 'SERVICES';
-  return 'SERVICES';
-}
+/* ───── Nature codes sur le site ───── */
+const NATURE_CODES: { code: string; label: string }[] = [
+  { code: 'T', label: 'TRAVAUX' },
+  { code: 'S', label: 'SERVICES' },
+  { code: 'F', label: 'FOURNITURES' },
+];
+
+/* ───── Date filter values from the site's <select> ───── */
+const DATE_PARUTION_FILTERS = [
+  ' = 0',  // Aujourd'hui
+  ' = 1',  // Hier
+  ' < 2',  // 2 derniers jours
+  ' < 8',  // 8 derniers jours
+  ' < 30', // 30 derniers jours
+];
 
 /* ───── Type retour ───── */
 export interface AwsAchatMarche {
@@ -151,57 +160,93 @@ export interface AwsAchatMarche {
   status: string;
 }
 
-/* ───── Parser le HTML avec cheerio ───── */
-function parseResultsHtml(html: string): AwsAchatMarche[] {
+/* ───── Parse une date DD/MM/YY ou DD/MM/YYYY ───── */
+function parseDate(raw: string): Date | null {
+  // DD/MM/YY or DD/MM/YYYY, optionally followed by " à HHhMM"
+  const m = raw.match(/(\d{2})\/(\d{2})\/(\d{2,4})/);
+  if (!m) return null;
+  let year = parseInt(m[3]);
+  if (year < 100) year += 2000;
+  const d = new Date(`${year}-${m[2]}-${m[1]}T12:00:00+01:00`);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/* ───── Extraire le nombre total de pages ───── */
+function extractTotalPages(html: string): number {
+  const $ = cheerio.load(html);
+  let max = 1;
+  $('nav a[href*="pager_t="]').each((_, el) => {
+    const href = $(el).attr('href') || '';
+    const m = href.match(/pager_t=(\d+)/);
+    if (m) {
+      const p = parseInt(m[1]);
+      if (p > max) max = p;
+    }
+  });
+  return max;
+}
+
+/* ───── Parser le HTML des résultats avec cheerio ───── */
+function parseResultsHtml(html: string, natureLabel: string): AwsAchatMarche[] {
   const results: AwsAchatMarche[] = [];
+
+  // Check if server refused (too many results)
+  if (html.includes('Veuillez préciser votre recherche')) return [];
+
   const $ = cheerio.load(html);
 
-  // The site lists announcements in table rows or divs
-  // Look for announcement blocks — adapt selectors based on actual structure
-  $('table.resultats tr, table.listeAnnonces tr, .annonce, tr.pair, tr.impair, table tr[class]').each((_, el) => {
-    const row = $(el);
-    const cells = row.find('td');
-    if (cells.length < 3) return;
+  // Each result is a div.container-fluid#entity
+  $('div.container-fluid#entity').each((_, el) => {
+    const entity = $(el);
 
-    // Try to extract a detail link with reference
-    const link = row.find('a[href*="Annonces"]').first();
-    const href = link.attr('href') || '';
-    const refMatch = href.match(/idAnnonce=(\d+)/i) || href.match(/(\d{6,})/);
+    // Detail link: a[href*="MPI-pub-"]
+    const detailLink = entity.find('a[href*="MPI-pub-"]').first();
+    const href = detailLink.attr('href') || '';
+    const refMatch = href.match(/MPI-pub-(\d+)\.htm/);
     if (!refMatch) return;
     const ref = refMatch[1];
 
-    const title = (link.text() || cells.eq(1).text() || '').trim();
-    if (!title) return;
-
-    const buyer = (cells.eq(0).text() || cells.eq(2).text() || '').trim();
-
-    // Try to find date (DD/MM/YYYY)
-    let deadline: Date | null = null;
-    const fullText = row.text();
-    const dateMatch = fullText.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-    if (dateMatch) {
-      deadline = new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T12:00:00+01:00`);
-    }
-
-    // Try to find department code
+    // Buyer + department from h2.h2-avis: "Buyer Name (75013)" or "Buyer (56009 )"
+    const h2Text = entity.find('h2.h2-avis').text().trim();
+    const buyerMatch = h2Text.match(/^(.+?)\s*\((\d{2,5})\s*\)\s*$/);
+    const buyer = (buyerMatch ? buyerMatch[1] : h2Text).replace(/\s+/g, ' ').trim();
+    const postalCode = buyerMatch ? buyerMatch[2].trim() : '';
+    // Extract department from postal code (first 2 or 3 digits for DOM)
     let dept = '00';
-    const deptMatch = fullText.match(/\b(97[1-6]|0[1-9]|[1-8]\d|9[0-5]|2[AB])\b/);
-    if (deptMatch) dept = deptMatch[1];
+    if (postalCode.startsWith('97') && postalCode.length >= 3) {
+      dept = postalCode.slice(0, 3);
+    } else if (postalCode.length >= 2) {
+      dept = postalCode.slice(0, 2);
+    }
     const deptInfo = DEPT_MAP[dept];
 
-    // Try to find nature
-    const nature = mapNature(fullText);
+    // Title from #titre_box text content (after ref-acheteur div)
+    const titreBox = entity.find('#titre_box');
+    // Remove the ref-acheteur div to get clean title
+    const refDiv = titreBox.find('.ref-acheteur').remove();
+    const title = titreBox.text().replace(/\s+/g, ' ').trim();
+    if (!title) return;
+
+    // Dates from .affiche_date_avis
+    const dateRow = entity.find('.affiche_date_avis');
+    const dateText = dateRow.text();
+    // "Publié le 17/03/26"
+    const pubMatch = dateText.match(/Publi[ée]\s+le\s+(\d{2}\/\d{2}\/\d{2,4})/i);
+    const publicationDate = pubMatch ? parseDate(pubMatch[1]) : null;
+    // "Date limite : le 13/04/26 à 12h00"
+    const deadlineMatch = dateText.match(/Date\s+limite\s*:\s*le\s+(\d{2}\/\d{2}\/\d{2,4})/i);
+    const deadline = deadlineMatch ? parseDate(deadlineMatch[1]) : null;
 
     results.push({
       title: title.slice(0, 500),
       buyer: buyer.slice(0, 300) || 'AWS-Achat',
-      nature,
+      nature: natureLabel,
       department: dept,
       departmentName: deptInfo?.name || null,
       region: deptInfo?.region || null,
       value: null,
       deadline,
-      publicationDate: null,
+      publicationDate,
       source: 'AWS-ACHAT',
       sourceRef: `AWS-${ref}`,
       procedureType: null,
@@ -214,18 +259,6 @@ function parseResultsHtml(html: string): AwsAchatMarche[] {
   });
 
   return results;
-}
-
-/* ───── Extract total pages from pagination ───── */
-function extractTotalPages(html: string): number {
-  const matches = html.match(/page=(\d+)/g);
-  if (!matches) return 1;
-  let max = 1;
-  for (const m of matches) {
-    const n = parseInt(m.replace('page=', ''));
-    if (n > max) max = n;
-  }
-  return max;
 }
 
 /* ───── Fetch avec retry ───── */
@@ -247,94 +280,134 @@ async function fetchWithRetry(
   return null;
 }
 
-/* ───── Décoder le body ISO-8859-1 si nécessaire ───── */
-async function decodeResponseText(res: Response): Promise<string> {
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('iso-8859-1') || contentType.includes('latin1') || contentType.includes('windows-1252')) {
-    const buf = await res.arrayBuffer();
-    const decoder = new TextDecoder('iso-8859-1');
-    return decoder.decode(buf);
+/* ───── Gestion session (cookie) ───── */
+let sessionCookie = '';
+
+async function ensureSession(): Promise<void> {
+  if (sessionCookie) return;
+  const res = await fetchWithRetry(LIST_URL, {
+    headers: { 'User-Agent': UA, Accept: 'text/html' },
+  });
+  if (!res) return;
+  // Extract Set-Cookie header(s)
+  const setCookies = res.headers.getSetCookie?.() ?? [];
+  sessionCookie = setCookies
+    .map((c) => c.split(';')[0])
+    .join('; ');
+  await res.text(); // consume body
+}
+
+/* ───── POST une recherche et parser les résultats (toutes pages) ───── */
+async function fetchNatureDateSlice(
+  natureCode: string,
+  natureLabel: string,
+  dateFilter: string,
+  maxPages = 10,
+): Promise<AwsAchatMarche[]> {
+  await ensureSession();
+
+  const formBody = new URLSearchParams({
+    IDE: 'EC',
+    IDN: natureCode,
+    listeCPV: '',
+    IDP: 'X',
+    IDR: 'X',
+    txtLibre: '',
+    txtLibreLieuExec: '',
+    dateNotifDebut: '',
+    dateNotifFin: '',
+    txtAcheteurNom: '',
+    txtAcheteurSiret: '',
+    txtTitulaireNom: '',
+    txtTitulaireSiret: '',
+    txtLibreAcheteur: '',
+    txtLibreVille: '',
+    txtLibreRef: '',
+    txtLibreObjet: '',
+    dateParution: dateFilter,
+    dateExpiration: '',
+    annee: 'X',
+    Rechercher: 'Rechercher',
+  }).toString();
+
+  const headers: Record<string, string> = {
+    'User-Agent': UA,
+    'Content-Type': 'application/x-www-form-urlencoded',
+    Accept: 'text/html,application/xhtml+xml',
+    Referer: `${BASE_URL}/Annonces/lister`,
+    ...(sessionCookie ? { Cookie: sessionCookie } : {}),
+  };
+
+  // Page 1: POST
+  const res = await fetchWithRetry(LIST_URL, {
+    method: 'POST',
+    headers,
+    body: formBody,
+  });
+
+  if (!res) return [];
+  const setCookies = res.headers.getSetCookie?.() ?? [];
+  if (setCookies.length) {
+    sessionCookie = setCookies.map((c) => c.split(';')[0]).join('; ');
   }
-  return res.text();
+  const html = await res.text();
+
+  // Debug: save first response to /tmp for inspection
+  try { writeFileSync('/tmp/aws-debug.html', html); } catch { /* ignore */ }
+
+  const allRecords = parseResultsHtml(html, natureLabel);
+  const totalPages = Math.min(extractTotalPages(html), maxPages);
+
+  // Pages 2..N: GET with pager_t
+  for (let page = 2; page <= totalPages; page++) {
+    await new Promise((r) => setTimeout(r, 600));
+    const pageRes = await fetchWithRetry(`${LIST_URL}?pager_t=${page}`, {
+      headers: {
+        'User-Agent': UA,
+        Accept: 'text/html,application/xhtml+xml',
+        Referer: LIST_URL,
+        ...(sessionCookie ? { Cookie: sessionCookie } : {}),
+      },
+    });
+    if (!pageRes) break;
+    const pageHtml = await pageRes.text();
+    const pageRecords = parseResultsHtml(pageHtml, natureLabel);
+    if (pageRecords.length === 0) break;
+    allRecords.push(...pageRecords);
+  }
+
+  return allRecords;
 }
 
 /* ───── Fonction principale ───── */
 export async function fetchAwsAchatRecords(options?: {
   limit?: number;
+  dateFilter?: string;
 }): Promise<AwsAchatMarche[]> {
   const limit = options?.limit ?? 2000;
+  const dateFilter = options?.dateFilter ?? ' = 0'; // Default: today
   const allRecords: AwsAchatMarche[] = [];
 
-  console.log(`[AWS] Fetching annonces from marches-publics.info...`);
+  console.log(`[AWS] Fetching annonces from marches-publics.info (dateFilter: "${dateFilter.trim()}")...`);
 
-  // Step 1: POST to get first page
-  const body = 'IDE=EC&IDN=X&IDR=X&motsCles=';
-  const headers: Record<string, string> = {
-    'User-Agent': UA,
-    'Content-Type': 'application/x-www-form-urlencoded',
-    Accept: 'text/html,application/xhtml+xml',
-    Referer: `${BASE_URL}/`,
-  };
+  // Iterate by nature to stay under the server's result display threshold
+  for (const { code, label } of NATURE_CODES) {
+    if (allRecords.length >= limit) break;
+    await new Promise((r) => setTimeout(r, 800));
 
-  const firstRes = await fetchWithRetry(LIST_URL, {
-    method: 'POST',
-    headers,
-    body,
-  });
-
-  if (!firstRes) {
-    console.error('[AWS] Failed to fetch first page');
-    // TODO: Si bot-detection bloque, investiguer les cookies/captcha ColdFusion
-    return [];
-  }
-
-  const firstHtml = await decodeResponseText(firstRes);
-  const firstRecords = parseResultsHtml(firstHtml);
-  allRecords.push(...firstRecords);
-
-  const totalPages = extractTotalPages(firstHtml);
-  console.log(`[AWS] Page 1: ${firstRecords.length} items, ${totalPages} pages total`);
-
-  // Step 2: Paginate
-  const maxPagesNeeded = Math.ceil(limit / PAGE_SIZE);
-  const pagesToFetch = Math.min(totalPages, maxPagesNeeded);
-
-  for (let page = 2; page <= pagesToFetch && allRecords.length < limit; page++) {
-    await new Promise((r) => setTimeout(r, 1500));
-
-    const pageBody = `${body}&page=${page}`;
-    const res = await fetchWithRetry(LIST_URL, {
-      method: 'POST',
-      headers,
-      body: pageBody,
-    });
-
-    if (!res) {
-      // Try GET with page param as fallback
-      const getRes = await fetchWithRetry(`${LIST_URL}?page=${page}&IDE=EC&IDN=X&IDR=X`, {
-        headers: { 'User-Agent': UA },
-      });
-      if (!getRes) {
-        console.warn(`[AWS] Page ${page} failed, skipping`);
-        continue;
-      }
-      const html = await decodeResponseText(getRes);
-      const records = parseResultsHtml(html);
-      allRecords.push(...records);
-      console.log(`[AWS] Page ${page} (GET): ${records.length} items (total: ${allRecords.length})`);
-      continue;
-    }
-
-    const html = await decodeResponseText(res);
-    const records = parseResultsHtml(html);
-
-    if (records.length === 0) {
-      console.log(`[AWS] No results on page ${page}, stopping`);
-      break;
-    }
-
+    const records = await fetchNatureDateSlice(code, label, dateFilter);
     allRecords.push(...records);
-    console.log(`[AWS] Page ${page}: ${records.length} items (total: ${allRecords.length})`);
+    console.log(`[AWS] Nature ${label}: ${records.length} items (total: ${allRecords.length})`);
+
+    // If a single nature still returns 0 (server refused), try splitting further
+    // by iterating individual date filters
+    if (records.length === 0 && dateFilter !== ' = 0') {
+      console.log(`[AWS] Nature ${label} returned 0 with "${dateFilter.trim()}", trying today only...`);
+      await new Promise((r) => setTimeout(r, 800));
+      const fallback = await fetchNatureDateSlice(code, label, ' = 0');
+      allRecords.push(...fallback);
+      console.log(`[AWS] Nature ${label} (today fallback): ${fallback.length} items`);
+    }
   }
 
   // Deduplicate by sourceRef
@@ -345,6 +418,6 @@ export async function fetchAwsAchatRecords(options?: {
     return true;
   });
 
-  console.log(`[AWS] Total records mapped: ${unique.length}`);
+  console.log(`[AWS] Total unique records: ${unique.length}`);
   return unique.slice(0, limit);
 }

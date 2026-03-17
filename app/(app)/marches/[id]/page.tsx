@@ -44,6 +44,8 @@ function buildSourceUrl(sourceRef: string | null, source?: string | null): { url
     'MAXIMILIEN': 'https://www.maximilien.fr',
     'KLEKOON': 'https://www.klekoon.com',
     'E-MARCHESPUBLICS': 'https://www.e-marchespublics.com',
+    'AWS-ACHAT': 'https://www.marches-publics.info',
+    'MARCHES-ONLINE': 'https://www.marchesonline.com',
   };
 
   if (!sourceRef) {
@@ -94,6 +96,16 @@ function buildSourceUrl(sourceRef: string | null, source?: string | null): { url
   }
   if (sourceRef.startsWith('EMP-')) {
     return { url: homepages['E-MARCHESPUBLICS'], direct: false };
+  }
+  if (sourceRef.startsWith('AWS-')) {
+    const id = sourceRef.replace('AWS-', '');
+    if (!id) return { url: 'https://www.marches-publics.info', direct: false };
+    return { url: `https://www.marches-publics.info/Annonces/MPI-pub-${id}.htm`, direct: true };
+  }
+  if (sourceRef.startsWith('MO-')) {
+    const id = sourceRef.replace('MO-', '');
+    if (!id) return { url: 'https://www.marchesonline.com', direct: false };
+    return { url: `https://www.marchesonline.com/appels-offres/avis/ao-${id}-1`, direct: true };
   }
 
   // Fallback source homepage
