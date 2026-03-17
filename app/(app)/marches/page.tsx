@@ -63,10 +63,9 @@ export default function MarchesPage() {
   const [datePublishedTo, setDatePublishedTo] = useState('');
   const [deadlineFrom, setDeadlineFrom] = useState('');
   const [deadlineTo, setDeadlineTo] = useState('');
-  const [sourceFilter, setSourceFilter] = useState('');
 
-  const hasFilters = nature || department || acheteur || cpvCode || datePublishedFrom || datePublishedTo || deadlineFrom || deadlineTo || sourceFilter;
-  const filterCount = [nature, department, acheteur, cpvCode, datePublishedFrom || datePublishedTo, deadlineFrom || deadlineTo, sourceFilter].filter(Boolean).length;
+  const hasFilters = nature || department || acheteur || cpvCode || datePublishedFrom || datePublishedTo || deadlineFrom || deadlineTo;
+  const filterCount = [nature, department, acheteur, cpvCode, datePublishedFrom || datePublishedTo, deadlineFrom || deadlineTo].filter(Boolean).length;
 
   // Close panel on outside click
   useEffect(() => {
@@ -92,6 +91,8 @@ export default function MarchesPage() {
     if (tags.length > 0) params.set('q', tags.join(','));
     if (nature) params.set('nature', nature);
     if (department) params.set('department', department);
+    if (acheteur) params.set('buyer', acheteur);
+    if (cpvCode) params.set('cpvCode', cpvCode);
     if (datePublishedFrom) params.set('datePublishedFrom', datePublishedFrom);
     if (datePublishedTo) params.set('datePublishedTo', datePublishedTo);
     if (deadlineFrom) params.set('deadlineFrom', deadlineFrom);
@@ -101,7 +102,7 @@ export default function MarchesPage() {
     setMarches(data.data);
     setMeta(data.meta);
     setLoading(false);
-  }, [tags, nature, department, page, datePublishedFrom, datePublishedTo, deadlineFrom, deadlineTo]);
+  }, [tags, nature, department, acheteur, cpvCode, page, datePublishedFrom, datePublishedTo, deadlineFrom, deadlineTo]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -110,7 +111,7 @@ export default function MarchesPage() {
   function resetAllFilters() {
     setTags([]); setNature(''); setDepartment(''); setAcheteur(''); setCpvCode('');
     setDatePublishedFrom(''); setDatePublishedTo('');
-    setDeadlineFrom(''); setDeadlineTo(''); setSourceFilter('');
+    setDeadlineFrom(''); setDeadlineTo('');
   }
 
   function applyFilters() {
@@ -206,11 +207,10 @@ export default function MarchesPage() {
           <span style={{ fontSize: 12, color: '#94A3B8', marginRight: 4 }}>Filtres :</span>
           {nature && <FilterChip label={getNatureLabel(nature)} onRemove={() => { setNature(''); setPage(1); }} />}
           {department && <FilterChip label={`Dept. ${department}`} onRemove={() => { setDepartment(''); setPage(1); }} />}
-          {acheteur && <FilterChip label={`Acheteur: ${acheteur}`} onRemove={() => setAcheteur('')} />}
-          {cpvCode && <FilterChip label={`CPV: ${cpvCode}`} onRemove={() => setCpvCode('')} />}
-          {(datePublishedFrom || datePublishedTo) && <FilterChip label="Date publication" onRemove={() => { setDatePublishedFrom(''); setDatePublishedTo(''); }} />}
-          {(deadlineFrom || deadlineTo) && <FilterChip label="Date clôture" onRemove={() => { setDeadlineFrom(''); setDeadlineTo(''); }} />}
-          {sourceFilter && <FilterChip label={`Source: ${sourceFilter}`} onRemove={() => setSourceFilter('')} />}
+          {acheteur && <FilterChip label={`Acheteur: ${acheteur}`} onRemove={() => { setAcheteur(''); setPage(1); }} />}
+          {cpvCode && <FilterChip label={`CPV: ${cpvCode}`} onRemove={() => { setCpvCode(''); setPage(1); }} />}
+          {(datePublishedFrom || datePublishedTo) && <FilterChip label="Date publication" onRemove={() => { setDatePublishedFrom(''); setDatePublishedTo(''); setPage(1); }} />}
+          {(deadlineFrom || deadlineTo) && <FilterChip label="Date clôture" onRemove={() => { setDeadlineFrom(''); setDeadlineTo(''); setPage(1); }} />}
           <button onClick={() => { resetAllFilters(); setPage(1); }} style={{
             display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6,
             background: 'transparent', border: 'none', cursor: 'pointer',

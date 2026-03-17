@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Search, Bell, Eye, Calendar, LayoutGrid, Settings, LogOut, Shield, ChevronDown, CreditCard, Menu, X } from 'lucide-react';
+import { Settings, LogOut, Shield, ChevronDown, CreditCard, Menu, X } from 'lucide-react';
 
 const MAIN_TABS = [
   { href: '/marches', label: 'Consultations' },
@@ -70,7 +70,7 @@ export default function Header() {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 32px', display: 'flex', alignItems: 'center', height: 56 }}>
 
           {/* Logo */}
-          <Link href="/dashboard" style={{ marginRight: 32, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link href="/marches" style={{ marginRight: 32, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
             <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} style={{ borderRadius: 0 }} />
             <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
           </Link>

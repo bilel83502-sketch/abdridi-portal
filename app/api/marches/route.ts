@@ -18,6 +18,8 @@ export async function GET(req: Request) {
   const order = searchParams.get('order') || 'desc';
   const status = searchParams.get('status') || '';
   const source = searchParams.get('source') || '';
+  const buyer = searchParams.get('buyer') || '';
+  const cpvCode = searchParams.get('cpvCode') || '';
 
   // Date filters
   const datePublishedFrom = searchParams.get('datePublishedFrom') || '';
@@ -62,6 +64,8 @@ export async function GET(req: Request) {
   }
   if (nature) where.nature = nature;
   if (department) where.department = department;
+  if (buyer) where.buyer = { contains: buyer, mode: 'insensitive' };
+  if (cpvCode) where.cpvCode = { contains: cpvCode };
 
   // Date filters for publication date
   if (datePublishedFrom || datePublishedTo) {

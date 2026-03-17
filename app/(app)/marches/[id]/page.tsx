@@ -273,7 +273,7 @@ export default function MarcheDetailPage() {
           {/* Actions */}
           <div className="card p-6">
             <h2 className="text-sm font-bold mb-4">Actions</h2>
-            {sourceUrl && (
+            {sourceUrl ? (
               <a
                 href={sourceUrl}
                 target="_blank"
@@ -281,24 +281,17 @@ export default function MarcheDetailPage() {
                 className="btn-gradient !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"
               >
                 <ExternalLink size={14} />
-                Voir l'annonce originale
-              </a>
-            )}
-            {sourceUrl ? (
-              <a
-                href={sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-secondary !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"
-              >
-                <Download size={14} />
-                Télécharger le DCE
+                Voir l&apos;annonce originale
               </a>
             ) : (
               <div className="text-[11px] text-gray-400 italic text-center mb-2.5 py-2">
-                DCE disponible sur la plateforme de l'acheteur
+                Annonce non disponible en ligne
               </div>
             )}
+            <div className="text-[11px] text-gray-400 italic text-center mb-2.5 py-2" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '8px 12px' }}>
+              <Download size={11} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+              DCE disponible sur la plateforme de l&apos;acheteur
+            </div>
             <button
               onClick={() => {
                 const params = new URLSearchParams();

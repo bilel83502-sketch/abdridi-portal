@@ -47,7 +47,7 @@ function LoginContent() {
           </div>
 
           <h1 className="login-left-title">
-            La veille marchés publics<br />pour le transport
+            La veille marchés publics<br />en temps réel
           </h1>
           <p className="login-left-slogan">
             Identifiez les appels d&apos;offres, analysez la concurrence et remportez plus de marchés.
@@ -55,9 +55,9 @@ function LoginContent() {
 
           <div className="login-left-stats">
             {[
-              { n: '6 100+', t: 'marchés surveillés' },
-              { n: '102', t: 'sources officielles' },
-              { n: '7 000+', t: 'contrats attribués' },
+              { n: '10+', t: 'sources officielles' },
+              { n: '100%', t: 'données publiques' },
+              { n: '24/7', t: 'mise à jour' },
             ].map((s, i) => (
               <div key={i} className="login-left-stat">
                 <div className="login-left-stat-n">{s.n}</div>

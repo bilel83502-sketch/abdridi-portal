@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { Check, X, Zap, Sparkles } from 'lucide-react';
 
+const STRIPE_PRICE_VEILLE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || '';
+
 const plans = [
   {
     id: 'DECOUVERTE',
@@ -32,11 +34,6 @@ const plans = [
     icon: Sparkles,
     color: '#3B82F6',
     popular: true,
-    priceId: (() => {
-      const id = process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE;
-      if (!id) throw new Error('NEXT_PUBLIC_STRIPE_PRICE_VEILLE is not defined');
-      return id;
-    })(),
     features: [
       { text: 'Appels d\'offres illimit\u00e9s', included: true },
       { text: 'R\u00e9sultats en temps r\u00e9el', included: true },
@@ -62,19 +59,17 @@ function AbonnementContent() {
   const currentPlan = user?.role === 'ADMIN' ? 'ADMIN' : (user?.plan || 'DECOUVERTE');
 
   async function handleSubscribe() {
+    if (!STRIPE_PRICE_VEILLE_ID) {
+      setError('Configuration de paiement indisponible. Contactez le support.');
+      return;
+    }
     setLoadingPlan('VEILLE');
     setError(null);
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceId: (() => {
-            const id = process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE;
-            if (!id) throw new Error('NEXT_PUBLIC_STRIPE_PRICE_VEILLE is not defined');
-            return id;
-          })(),
-        }),
+        body: JSON.stringify({ priceId: STRIPE_PRICE_VEILLE_ID }),
       });
       const data = await res.json();
       if (data.url) {
