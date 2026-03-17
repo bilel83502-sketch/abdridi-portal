@@ -32,23 +32,74 @@ import {
   cleanTitle,
 } from '@/lib/utils';
 
-function buildSourceUrl(sourceRef: string | null): string | null {
-  if (!sourceRef) return null;
+function buildSourceUrl(sourceRef: string | null, source?: string | null): { url: string; direct: boolean } | null {
+  const homepages: Record<string, string> = {
+    'BOAMP': 'https://www.boamp.fr',
+    'TED': 'https://ted.europa.eu/fr/search/result',
+    'DECP': 'https://data.economie.gouv.fr/explore/dataset/decp_augmente/table/',
+    'PLACE': 'https://www.marches-publics.gouv.fr',
+    'MARCHES-SECURISES': 'https://www.marches-securises.fr',
+    'ACHATPUBLIC': 'https://www.achatpublic.com',
+    'MEGALIS': 'https://www.megalisbretagne.org',
+    'MAXIMILIEN': 'https://www.maximilien.fr',
+    'KLEKOON': 'https://www.klekoon.com',
+    'E-MARCHESPUBLICS': 'https://www.e-marchespublics.com',
+  };
+
+  if (!sourceRef) {
+    // Pas de référence : au moins rediriger vers la plateforme source
+    const src = source?.toUpperCase() || '';
+    const hp = homepages[src];
+    return hp ? { url: hp, direct: false } : null;
+  }
+
   if (sourceRef.startsWith('BOAMP-')) {
     const idweb = sourceRef.replace('BOAMP-', '');
-    if (!idweb) return null;
-    return `https://www.boamp.fr/pages/avis/?q=idweb:${idweb}`;
+    if (!idweb) return { url: homepages['BOAMP'], direct: false };
+    return { url: `https://www.boamp.fr/pages/avis/?q=idweb:${idweb}`, direct: true };
   }
   if (sourceRef.startsWith('TED-')) {
     const pubNumber = sourceRef.replace('TED-', '');
-    if (!pubNumber) return null;
-    return `https://ted.europa.eu/fr/notice/-/detail/${pubNumber}`;
+    if (!pubNumber) return { url: homepages['TED'], direct: false };
+    return { url: `https://ted.europa.eu/fr/notice/-/detail/${pubNumber}`, direct: true };
   }
   if (sourceRef.startsWith('DECP-')) {
-    // Les DECP n'ont pas de page individuelle publique, lien vers le dataset
-    return `https://data.economie.gouv.fr/explore/dataset/decp_augmente/table/`;
+    return { url: homepages['DECP'], direct: false };
   }
-  return null;
+  if (sourceRef.startsWith('PLACE-')) {
+    const ref = sourceRef.replace('PLACE-', '');
+    if (!ref) return { url: homepages['PLACE'], direct: false };
+    return { url: `https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseDetailConsultation&reference=${ref}`, direct: true };
+  }
+  if (sourceRef.startsWith('MSEC-')) {
+    const ref = sourceRef.replace('MSEC-', '');
+    if (!ref) return { url: homepages['MARCHES-SECURISES'], direct: false };
+    return { url: `https://www.marches-securises.fr/entreprise/?page=entreprise.EntrepriseDetailConsultation&login_marche=${ref}`, direct: true };
+  }
+  if (sourceRef.startsWith('ACHATPUBLIC-')) {
+    const ref = sourceRef.replace('ACHATPUBLIC-', '');
+    if (!ref) return { url: homepages['ACHATPUBLIC'], direct: false };
+    return { url: `https://www.achatpublic.com/sdm/ent/gen/ent_detail.do?PCSLID=${ref}`, direct: true };
+  }
+  if (sourceRef.startsWith('MEGALIS-')) {
+    return { url: homepages['MEGALIS'], direct: false };
+  }
+  if (sourceRef.startsWith('MAXIMILIEN-')) {
+    const ref = sourceRef.replace('MAXIMILIEN-', '');
+    if (!ref) return { url: homepages['MAXIMILIEN'], direct: false };
+    return { url: `https://www.maximilien.fr/gestion/index.php?page=entreprise.EntrepriseDetailConsultation&reference=${ref}`, direct: true };
+  }
+  if (sourceRef.startsWith('KLEKOON-')) {
+    return { url: homepages['KLEKOON'], direct: false };
+  }
+  if (sourceRef.startsWith('EMP-')) {
+    return { url: homepages['E-MARCHESPUBLICS'], direct: false };
+  }
+
+  // Fallback source homepage
+  const src = source?.toUpperCase() || '';
+  const hp = homepages[src];
+  return hp ? { url: hp, direct: false } : null;
 }
 
 const TIME_SLOTS = [
@@ -104,7 +155,7 @@ export default function MarcheDetailPage() {
   }
 
   const dl = daysUntil(marche.deadline);
-  const sourceUrl = buildSourceUrl(marche.sourceRef);
+  const sourceInfo = buildSourceUrl(marche.sourceRef, marche.source);
 
   // Minimum date = tomorrow, exclude Sundays
   const tomorrow = new Date();
@@ -274,15 +325,17 @@ export default function MarcheDetailPage() {
           {/* Actions */}
           <div className="card p-6">
             <h2 className="text-sm font-bold mb-4">Actions</h2>
-            {sourceUrl ? (
+            {sourceInfo ? (
               <a
-                href={sourceUrl}
+                href={sourceInfo.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-gradient !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"
               >
                 <ExternalLink size={14} />
-                Voir l&apos;annonce originale
+                {sourceInfo.direct
+                  ? "Voir l'annonce originale"
+                  : `Accéder à ${marche.source}`}
               </a>
             ) : (
               <div className="text-[11px] text-gray-400 italic text-center mb-2.5 py-2">
