@@ -106,7 +106,7 @@
     },
     {
       "path": "/api/cron/close-expired",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 22 * * *"
     },
     {
       "path": "/api/sync/synapse",
