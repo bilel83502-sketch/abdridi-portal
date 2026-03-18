@@ -80,9 +80,17 @@ export default function MarchesPage() {
 
   // Lock scroll when panel open
   useEffect(() => {
-    if (filtersOpen) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
+    if (filtersOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.classList.add('filters-open');
+    } else {
+      document.body.style.overflow = '';
+      document.body.classList.remove('filters-open');
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.classList.remove('filters-open');
+    };
   }, [filtersOpen]);
 
   const load = useCallback(async () => {

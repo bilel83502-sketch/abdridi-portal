@@ -320,3 +320,12 @@ select,
 textarea {
   border-radius: 0 !important;
 }
+
+/* ── Cacher le chatbot quand le panneau filtres est ouvert ── */
+body.filters-open [aria-label="Ouvrir le chat"],
+body.filters-open [aria-label="Fermer le chat"] {
+  display: none !important;
+}
+body.filters-open .chatbot-panel {
+  display: none !important;
+}
