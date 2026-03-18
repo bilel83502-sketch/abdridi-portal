@@ -107,6 +107,58 @@
     {
       "path": "/api/cron/close-expired",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/sync/synapse",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/sync/ternum-bfc",
+      "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/sync/alsace",
+      "schedule": "30 5 * * *"
+    },
+    {
+      "path": "/api/sync/normands-achats",
+      "schedule": "45 5 * * *"
+    },
+    {
+      "path": "/api/sync/grand-est",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/sync/auvergne-rhone-alpes",
+      "schedule": "15 6 * * *"
+    },
+    {
+      "path": "/api/sync/occitanie",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/sync/hauts-de-france",
+      "schedule": "45 6 * * *"
+    },
+    {
+      "path": "/api/sync/paca",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/sync/centre-val-de-loire",
+      "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/sync/pays-de-la-loire",
+      "schedule": "30 7 * * *"
+    },
+    {
+      "path": "/api/sync/nouvelle-aquitaine",
+      "schedule": "45 7 * * *"
+    },
+    {
+      "path": "/api/sync/intendre",
+      "schedule": "0 8 * * *"
     }
   ]
 }
