@@ -71,7 +71,17 @@ export default function Chatbot() {
   const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Masquer le chatbot quand le panneau filtres est ouvert
+  useEffect(() => {
+    const update = () => setFiltersOpen(document.body.classList.contains('filters-open'));
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    update();
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -96,6 +106,8 @@ export default function Chatbot() {
       setThinking(false);
     }, delay);
   }
+
+  if (filtersOpen) return null;
 
   return (
     <>
