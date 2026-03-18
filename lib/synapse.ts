@@ -240,7 +240,7 @@ function parsePage($: cheerio.CheerioAPI): SynapseMarche[] {
     '.search-result',
   ];
 
-  let $items: cheerio.Cheerio<cheerio.Element> | null = null;
+  let $items: cheerio.Cheerio<any> | null = null;
 
   for (const selector of selectors) {
     const found = $(selector);

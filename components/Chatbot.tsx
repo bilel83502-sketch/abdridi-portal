@@ -107,10 +107,12 @@ export default function Chatbot() {
     }, delay);
   }
 
-  if (filtersOpen) return null;
-
   return (
-    <>
+    <div style={{
+      opacity: filtersOpen ? 0 : 1,
+      pointerEvents: filtersOpen ? 'none' : 'auto',
+      transition: 'opacity 0.25s ease',
+    }}>
       {/* ─── Floating bubble ─── */}
       {!open && (
         <div
@@ -309,7 +311,6 @@ export default function Chatbot() {
         </div>
       )}
 
-      {/* ─── CSS ─── */}
       <style jsx>{`
         @keyframes dotBounce {
           0%, 80%, 100% { transform: translateY(0); }
@@ -343,6 +344,6 @@ export default function Chatbot() {
           }
         }
       `}</style>
-    </>
+    </div>
   );
 }
