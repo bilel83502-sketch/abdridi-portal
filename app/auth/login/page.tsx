@@ -48,7 +48,7 @@ function LoginContent() {
 
           <div className="login-left-stats">
             {[
-              { n: '10+', t: 'sources officielles' },
+              { n: '17+', t: 'sources officielles' },
               { n: '100%', t: 'données publiques' },
               { n: '24/7', t: 'mise à jour' },
             ].map((s, i) => (
