@@ -1,12 +1,19 @@
 /**
  * Scraper Open Data Paris — marchés publics attribués
- * API : https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/marches-publics-paris/records
+ * API : https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/liste-des-marches-de-la-collectivite-parisienne/records
+ * Total : ~17 639 records
+ *
+ * Champs réels (vérifié 2026-03) :
+ * annee_de_notification, num_marche, objet_du_marche, nature_du_marche,
+ * fournisseur_nom, fournisseur_siret, fournisseur_code_postal, fournisseur_ville,
+ * montant_min, montant_max, date_de_notification, date_de_debut, date_de_fin,
+ * duree_du_marche_en_jours, perimetre_financier, categorie_d_achat_cle, categorie_d_achat_texte
  */
 
 import { type AttribueRecord } from './decp-attribue';
 
 const PARIS_API =
-  'https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/marches-publics-paris/records';
+  'https://opendata.paris.fr/api/explore/v2.1/catalog/datasets/liste-des-marches-de-la-collectivite-parisienne/records';
 
 function mapNature(raw: string | null | undefined): string {
   if (!raw) return 'SERVICES';
@@ -17,44 +24,55 @@ function mapNature(raw: string | null | undefined): string {
 }
 
 function mapRecord(r: any): AttribueRecord | null {
-  const id = r.id || r.numero_marche || r.identifiant;
+  const id = r.num_marche;
   if (!id) return null;
 
-  const objet = r.objet || r.libelle || r.intitule || '';
-  const titulaire =
-    r.titulaire || r.attributaire || r.nom_attributaire ||
-    r.titulaire_nom || r.denominationsociale || '';
+  const objet = r.objet_du_marche || '';
+  const titulaireNom = r.fournisseur_nom || null;
+  if (!objet && !titulaireNom) return null;
 
-  if (!objet && !titulaire) return null;
+  // Montant : on prend montant_max en priorité, sinon montant_min
+  const montant = r.montant_max
+    ? parseFloat(String(r.montant_max))
+    : r.montant_min
+      ? parseFloat(String(r.montant_min))
+      : null;
+
+  // Durée en jours → mois
+  const dureeMois = r.duree_du_marche_en_jours
+    ? Math.round(parseInt(String(r.duree_du_marche_en_jours)) / 30)
+    : null;
+
+  // Département depuis le code postal du fournisseur
+  const cp = r.fournisseur_code_postal ? String(r.fournisseur_code_postal) : '';
+  const dept = cp.startsWith('97') ? cp.slice(0, 3) : cp.slice(0, 2) || '75';
 
   return {
     objet: (objet || 'Marché Paris').slice(0, 500),
-    acheteurNom: r.acheteur || r.acheteur_nom || r.collectivite || 'Ville de Paris',
-    acheteurSiret: r.siret_acheteur || r.acheteur_id || null,
-    titulaireNom: titulaire || 'Non renseigné',
-    titulaireSiret: r.siret_titulaire || r.titulaire_id || null,
-    titulaireCommune: r.commune || null,
-    montant: r.montant ? parseFloat(String(r.montant)) : null,
-    dateNotification: r.date_notification
-      ? new Date(r.date_notification)
-      : r.datenotification
-        ? new Date(r.datenotification)
-        : null,
-    datePublicationDonnees: r.date_publication
-      ? new Date(r.date_publication)
+    acheteurNom: r.perimetre_financier || 'Collectivité Parisienne',
+    acheteurSiret: null,
+    titulaireNom: titulaireNom || 'Non renseigné',
+    titulaireSiret: r.fournisseur_siret ? String(r.fournisseur_siret) : null,
+    titulaireCommune: r.fournisseur_ville || null,
+    montant: isNaN(montant!) ? null : montant,
+    dateNotification: r.date_de_notification
+      ? new Date(r.date_de_notification)
       : null,
-    nature: mapNature(r.nature || r.type_marche),
-    procedure: r.procedure || null,
-    lieuExecution: r.lieu_execution || 'Paris',
-    departement: '75',
+    datePublicationDonnees: r.date_de_debut
+      ? new Date(r.date_de_debut)
+      : null,
+    nature: mapNature(r.nature_du_marche),
+    procedure: null,
+    lieuExecution: 'Paris',
+    departement: dept || '75',
     departementNom: 'Paris',
     region: 'Île-de-France',
-    codeCPV: r.code_cpv || r.codecpv || null,
-    labelCPV: r.libelle_cpv || null,
+    codeCPV: r.categorie_d_achat_cle || null,
+    labelCPV: r.categorie_d_achat_texte || null,
     source: 'PARIS',
     sourceRef: `PARIS-${id}`.slice(0, 250),
-    dureeMois: r.duree_mois ? parseInt(String(r.duree_mois)) : null,
-    formePrix: r.forme_prix || null,
+    dureeMois,
+    formePrix: null,
   };
 }
 
@@ -75,6 +93,7 @@ export async function fetchParisBatch(options: {
     const params = new URLSearchParams({
       limit: take.toString(),
       offset: offset.toString(),
+      order_by: 'date_de_notification desc',
     });
 
     const url = `${PARIS_API}?${params}`;

@@ -27,7 +27,9 @@ function mapRecord(r: any): AttribueRecord | null {
 
   const objet = r.objet || '';
   const titulaireNom =
-    r.titulaires_denominationsociale || r.titulaire || null;
+    r.titulaires_denominationsociale ||   // dataset 2024
+    r.titulaires_titulaire_denominationsociale || // dataset 2019
+    r.titulaire || null;
   if (!objet && !titulaireNom) return null;
 
   const titulaireSiret = r.titulaires_id || null;
