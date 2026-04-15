@@ -1,26 +1,24 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Search,
   SlidersHorizontal,
   Building2,
-  MapPin,
   Trophy,
-  Banknote,
   Eye,
-  Calendar,
   TrendingUp,
-  ExternalLink,
-  Tag,
-  User,
   Lock,
+  Download,
+  Info,
 } from 'lucide-react';
-import { formatCurrency, formatDate, getNatureLabel } from '@/lib/utils';
+import EmptyState from '@/components/EmptyState';
+import { SkeletonCards } from '@/components/Skeleton';
+import { Award } from 'lucide-react';
 import Link from 'next/link';
 import DepartmentSelect from '@/components/DepartmentSelect';
 import EntrepriseSearch from '@/components/EntrepriseSearch';
+import { MarcheCard, MarcheCardLocked } from './MarcheCard';
 
 const AMOUNT_BRACKETS = [
   { label: 'Tous', min: '', max: '' },
@@ -33,13 +31,11 @@ const AMOUNT_BRACKETS = [
 type TabMode = 'entreprise' | 'marche';
 
 export default function ConcurrencePage() {
-  const router = useRouter();
   const [tab, setTab] = useState<TabMode>('entreprise');
   const [data, setData] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ total: 0, page: 1, pages: 0 });
   const [stats, setStats] = useState<any>({
     totalAll: 0,
-    montantCumule: 0,
     topTitulaire: null,
   });
 
@@ -79,9 +75,35 @@ export default function ConcurrencePage() {
     const json = await res.json();
     setData(json.data || []);
     setMeta(json.meta || { total: 0, page: 1, pages: 0 });
-    setStats(json.stats || { totalAll: 0, montantCumule: 0, topTitulaire: null });
+    setStats(json.stats || { totalAll: 0, topTitulaire: null });
     setLoading(false);
   }, [tab, selectedEntreprise, q, nature, department, amountBracket, periode, page]);
+
+  async function exportCSV() {
+    const params = new URLSearchParams({ limit: '1000' });
+    if (q) params.set('q', q);
+    if (nature) params.set('nature', nature);
+    if (department) params.set('department', department);
+    const bracket = AMOUNT_BRACKETS[amountBracket];
+    if (bracket.min) params.set('montantMin', bracket.min);
+    if (bracket.max) params.set('montantMax', bracket.max);
+    if (periode) params.set('periode', periode);
+    const res = await fetch(`/api/marches-attribues?${params}`);
+    const json = await res.json();
+    const rows = (json.data || []).filter((m: any) => !m.locked);
+    const header = 'Attributaire;Acheteur;Objet;Montant;Date notification;Département;Source';
+    const lines = rows.map((m: any) =>
+      [m.titulaireNom, m.acheteurNom, m.objet, m.montant || '', m.dateNotification?.split('T')[0] || '', m.departement || '', m.source]
+        .map(v => `"${(String(v || '')).replace(/"/g, '""')}"`)
+        .join(';')
+    );
+    const csv = '\uFEFF' + header + '\n' + lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `concurrence-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -94,14 +116,6 @@ export default function ConcurrencePage() {
   function handleEntrepriseSelect(ent: any) {
     setSelectedEntreprise(ent);
     setPage(1);
-  }
-
-  function getMontantBadge(montant: number | null) {
-    if (!montant) return { bg: '#F9FAFB', color: '#9CA3AF', border: '#E5E7EB' };
-    if (montant < 25000) return { bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
-    if (montant < 90000) return { bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
-    if (montant < 200000) return { bg: '#EFF6FF', color: '#3B82F6', border: '#93C5FD' };
-    return { bg: '#FEF2F2', color: '#991B1B', border: '#FECACA' };
   }
 
   return (
@@ -119,15 +133,26 @@ export default function ConcurrencePage() {
         </div>
       </div>
 
+      {/* Explanation block */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: 12,
+        padding: '14px 20px', marginBottom: 16,
+        background: '#1E293B', borderRadius: 8,
+      }}>
+        <Info size={18} style={{ color: '#60A5FA', flexShrink: 0, marginTop: 1 }} />
+        <p style={{ fontSize: 13, color: '#CBD5E1', lineHeight: 1.6, margin: 0 }}>
+          Analysez les marches deja attribues dans votre secteur. Identifiez vos concurrents, les montants pratiques et les acheteurs publics actifs. Utilisez ces donnees pour mieux positionner vos futures offres.
+        </p>
+      </div>
+
       {/* Stats bar */}
       <div className="card p-4 px-6 mb-5 flex items-center justify-between" style={{ borderTop: '2px solid #3B82F6' }}>
         {[
           { label: 'Marchés attribués', value: stats.totalAll.toLocaleString('fr-FR'), icon: <Trophy size={16} style={{ color: '#3B82F6' }} /> },
-          { label: 'Montant cumulé', value: formatCurrency(stats.montantCumule), icon: <Banknote size={16} style={{ color: '#3B82F6' }} /> },
           { label: 'Top titulaire', value: stats.topTitulaire ? `${stats.topTitulaire.nom.slice(0, 25)} (${stats.topTitulaire.count})` : '—', icon: <TrendingUp size={16} style={{ color: '#3B82F6' }} /> },
           { label: 'Résultats filtrés', value: meta.total.toLocaleString('fr-FR'), icon: <Search size={16} style={{ color: '#3B82F6' }} /> },
         ].map((s, i) => (
-          <div key={i} className={`flex items-center gap-3 flex-1 px-4 ${i < 3 ? 'border-r border-gray-100' : ''}`}>
+          <div key={i} className={`flex items-center gap-3 flex-1 px-4 ${i < 2 ? 'border-r border-gray-100' : ''}`}>
             <div className="shrink-0">{s.icon}</div>
             <div>
               <div className="text-[11px] text-gray-400 mb-0.5">{s.label}</div>
@@ -201,6 +226,15 @@ export default function ConcurrencePage() {
             >
               Rechercher
             </button>
+            <button type="button" onClick={exportCSV} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '0 14px', height: 44, borderRadius: 8,
+              border: '1px solid #E2E8F0', background: '#fff',
+              fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
+              color: '#64748B', whiteSpace: 'nowrap',
+            }}>
+              <Download size={15} /> CSV
+            </button>
             <button type="button" onClick={() => setShowFilters(!showFilters)} className={`btn-secondary !text-xs !px-3.5 !gap-[5px]`} style={{ height: 44 }}>
               <SlidersHorizontal size={15} /> Filtres
             </button>
@@ -243,7 +277,7 @@ export default function ConcurrencePage() {
               Réinitialiser
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          <div className="concurrence-filters">
             <div>
               <label className="label">Nature</label>
               <select value={nature} onChange={(e) => setNature(e.target.value)} className="input">
@@ -288,7 +322,7 @@ export default function ConcurrencePage() {
         <div className="card p-4 mb-3" style={{ borderLeft: '3px solid #3B82F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0F172A' }}>{selectedEntreprise.raisonSociale}</div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>
               SIREN {selectedEntreprise.siren}
               {selectedEntreprise.activite && <span> · {selectedEntreprise.activite}</span>}
               {selectedEntreprise.effectifs && <span> · {selectedEntreprise.effectifs}</span>}
@@ -322,122 +356,16 @@ export default function ConcurrencePage() {
 
       {/* Results */}
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#94A3B8', padding: '64px 0', fontSize: 14 }}>Chargement...</div>
+        <SkeletonCards count={4} />
       ) : data.length === 0 ? (
-        <div className="card" style={{ padding: '64px 40px', textAlign: 'center', color: '#94A3B8', fontSize: 14 }}>
-          {tab === 'entreprise' && !selectedEntreprise
-            ? 'Recherchez une entreprise pour voir ses marchés attribués.'
-            : 'Aucun contrat attribué trouvé.'}
-        </div>
+        <EmptyState icon={Award} title={tab === 'entreprise' && !selectedEntreprise ? 'Recherchez une entreprise' : 'Aucun contrat trouvé'} description={tab === 'entreprise' && !selectedEntreprise ? 'Saisissez un nom d\'entreprise pour voir ses marchés attribués.' : 'Ajustez vos filtres pour voir les marchés attribués dans votre secteur.'} />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {data.map((m, idx) => {
-            const badge = getMontantBadge(m.montant);
             const isLocked = !meta.isPaid && idx >= 3;
-
-            if (isLocked) {
-              return (
-                <div key={m.id} className="card" style={{ padding: '16px 20px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none' }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{m.objet}</div>
-                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>{m.acheteurNom}</div>
-                  </div>
-                  <div style={{
-                    position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-                  }}>
-                    <Lock size={16} style={{ color: '#6B7280' }} />
-                    <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>Passez au plan Veille</span>
-                    <Link href="/abonnement" style={{ padding: '6px 16px', fontSize: 12, fontWeight: 600, background: '#3B82F6', color: '#fff', textDecoration: 'none' }}>
-                      Débloquer
-                    </Link>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={m.id}
-                onClick={() => router.push(`/concurrence/${m.id}`)}
-                className="card"
-                style={{ padding: '16px 20px', cursor: 'pointer', transition: 'border-color 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#93C5FD')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = '')}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Badges */}
-                    <div style={{ display: 'flex', gap: 4, marginBottom: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <NatureBadge nature={m.nature} />
-                      {m.procedure && <span style={{ padding: '2px 7px', fontSize: 10, background: '#F3F4F6', color: '#6B7280', fontWeight: 600, textTransform: 'uppercase' }}>{m.procedure}</span>}
-                      {m.codeCPV && <span style={{ padding: '2px 7px', fontSize: 10, background: '#DBEAFE', color: '#2563EB', fontWeight: 600 }}>CPV {m.codeCPV}</span>}
-                      <span style={{ fontSize: 10, color: '#94A3B8', fontFamily: 'monospace' }}>{m.source}</span>
-                    </div>
-
-                    {/* Title */}
-                    <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', lineHeight: 1.4, margin: '0 0 6px' }}>{m.objet}</h3>
-
-                    {/* Meta */}
-                    <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#64748B', flexWrap: 'wrap', marginBottom: 6 }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Building2 size={12} style={{ color: '#94A3B8' }} /> {m.acheteurNom}
-                      </span>
-                      {m.departementNom && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <MapPin size={12} style={{ color: '#94A3B8' }} /> {m.departementNom} ({m.departement})
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Winner */}
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '4px 10px', background: '#DBEAFE', marginBottom: 4,
-                    }}>
-                      <Trophy size={12} style={{ color: '#2563EB' }} />
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1E40AF' }}>{m.titulaireNom}</span>
-                      {m.titulaireSiret && <span style={{ fontSize: 10, color: '#3B82F6', fontFamily: 'monospace' }}>SIRET {m.titulaireSiret}</span>}
-                    </div>
-
-                    {/* Enterprise info */}
-                    {m.entreprise && (
-                      <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                        {m.entreprise.formeJuridique && <span style={{ padding: '1px 6px', fontSize: 9, fontWeight: 600, background: '#ECFDF5', color: '#065F46' }}>{m.entreprise.formeJuridique}</span>}
-                        {m.entreprise.effectifs && <span style={{ padding: '1px 6px', fontSize: 9, fontWeight: 600, background: '#F0F9FF', color: '#0369A1' }}>{m.entreprise.effectifs}</span>}
-                        {m.entreprise.activite && <span style={{ padding: '1px 6px', fontSize: 9, color: '#6B7280', background: '#F9FAFB', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.entreprise.activite}</span>}
-                      </div>
-                    )}
-
-                    {/* Date */}
-                    <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: 11, color: '#94A3B8' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={11} /> Notifié le {formatDate(m.dateNotification)}</span>
-                      {m.dureeMois && <span>Durée {m.dureeMois} mois</span>}
-                    </div>
-                  </div>
-
-                  {/* Amount */}
-                  <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 130, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={{
-                        display: 'inline-block', padding: '4px 10px',
-                        background: badge.bg, border: `1px solid ${badge.border}`,
-                        color: badge.color, fontSize: 15, fontWeight: 700,
-                      }}>
-                        {formatCurrency(m.montant)}
-                      </div>
-                      {m.formePrix && <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4 }}>Prix {m.formePrix.toLowerCase()}</div>}
-                    </div>
-                    <span
-                      onClick={(e) => { e.stopPropagation(); router.push(`/concurrence/${m.id}`); }}
-                      style={{ fontSize: 12, color: '#3B82F6', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', marginTop: 8, cursor: 'pointer' }}
-                    >
-                      Voir les détails <ExternalLink size={11} />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
+            return isLocked
+              ? <MarcheCardLocked key={m.id} m={m} />
+              : <MarcheCard key={m.id} m={m} />;
           })}
         </div>
       )}
@@ -475,23 +403,5 @@ export default function ConcurrencePage() {
         </div>
       )}
     </div>
-  );
-}
-
-function NatureBadge({ nature }: { nature: string }) {
-  const map: Record<string, { bg: string; text: string }> = {
-    TRAVAUX: { bg: '#FFFBEB', text: '#B45309' },
-    FOURNITURES: { bg: '#DBEAFE', text: '#2563EB' },
-    SERVICES: { bg: '#DBEAFE', text: '#1E40AF' },
-  };
-  const style = map[nature] || { bg: '#F3F4F6', text: '#6B7280' };
-  return (
-    <span style={{
-      padding: '2px 7px', fontSize: 10, fontWeight: 700,
-      background: style.bg, color: style.text, textTransform: 'uppercase',
-      letterSpacing: '0.04em',
-    }}>
-      {getNatureLabel(nature)}
-    </span>
   );
 }
