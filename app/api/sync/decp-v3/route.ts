@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { fetchDecpV3Batch } from '@/lib/decp-v3';
 import { type AttribueRecord } from '@/lib/decp-attribue';
 import { upsertAttribueRecords } from '@/lib/upsert-attribue';
+import { withCronLogging } from '@/lib/cronLogger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;

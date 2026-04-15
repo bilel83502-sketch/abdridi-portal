@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchMarchesSecurisesRecords } from '@/lib/marches-securises';
+import { withCronLogging } from '@/lib/cronLogger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -34,17 +35,14 @@ export async function GET(req: Request) {
               title: record.title,
               buyer: record.buyer,
               nature: record.nature,
-              department: record.department,
-              departmentName: record.departmentName,
-              region: record.region,
               value: record.value,
               deadline: record.deadline,
-              publicationDate: record.publicationDate,
               procedureType: record.procedureType,
               cpvCode: record.cpvCode,
               cpvLabel: record.cpvLabel,
               lots: record.lots,
               duration: record.duration,
+              documents: record.documents,
             },
             create: record,
           })
@@ -63,12 +61,8 @@ export async function GET(req: Request) {
                 title: record.title,
                 buyer: record.buyer,
                 nature: record.nature,
-                department: record.department,
-                departmentName: record.departmentName,
-                region: record.region,
                 value: record.value,
                 deadline: record.deadline,
-                publicationDate: record.publicationDate,
                 procedureType: record.procedureType,
                 cpvCode: record.cpvCode,
                 cpvLabel: record.cpvLabel,

@@ -1,8 +1,9 @@
 {
+  "regions": ["cdg1"],
   "crons": [
     {
       "path": "/api/sync/boamp",
-      "schedule": "0 5 * * *"
+      "schedule": "50 4 * * *"
     },
     {
       "path": "/api/sync/ted",
@@ -14,7 +15,7 @@
     },
     {
       "path": "/api/sync/decp-attribue",
-      "schedule": "0 8 * * *"
+      "schedule": "20 7 * * *"
     },
     {
       "path": "/api/sync/e-marchespublics",
@@ -57,7 +58,7 @@
       "schedule": "30 15 * * *"
     },
     {
-      "path": "/api/cron/alerts?secret=${CRON_SECRET}",
+      "path": "/api/cron/alerts",
       "schedule": "0 8 * * *"
     },
     {
@@ -109,8 +110,16 @@
       "schedule": "0 22 * * *"
     },
     {
+      "path": "/api/cron/purge-audit-logs",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/nurturing",
+      "schedule": "0 20 * * 0"
+    },
+    {
       "path": "/api/sync/synapse",
-      "schedule": "0 5 * * *"
+      "schedule": "5 5 * * *"
     },
     {
       "path": "/api/sync/ternum-bfc",
@@ -158,7 +167,23 @@
     },
     {
       "path": "/api/sync/intendre",
-      "schedule": "0 8 * * *"
+      "schedule": "10 8 * * *"
+    },
+    {
+      "path": "/api/sync/marches-demat",
+      "schedule": "15 8 * * *"
+    },
+    {
+      "path": "/api/sync/xmarches",
+      "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/cron/security-test",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/check-cron-failures",
+      "schedule": "0 * * * *"
     }
   ]
 }

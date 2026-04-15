@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchBoampAttribRecords, fetchDecpV3Records, type AttribueRecord } from '@/lib/decp-attribue';
 import { upsertAttribueRecords } from '@/lib/upsert-attribue';
+import { withCronLogging } from '@/lib/cronLogger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;

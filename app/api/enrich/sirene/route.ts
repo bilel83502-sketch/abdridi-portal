@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { enrichSirene } from '@/lib/sirene-enrich';
+import { withCronLogging } from '@/lib/cronLogger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;

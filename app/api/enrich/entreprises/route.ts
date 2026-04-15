@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { extractSiren, fetchEntreprise, sleep } from '@/lib/sirene';
+import { withCronLogging } from '@/lib/cronLogger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 min max for Vercel

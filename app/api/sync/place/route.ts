@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { fetchPlaceRecords } from '@/lib/place';
+import { withCronLogging } from '@/lib/cronLogger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Vercel free plan max
@@ -18,60 +19,27 @@ export async function GET(req: Request) {
   }
 
   try {
-    const records = await fetchPlaceRecords({ limit: 200 });
+    const { summary } = await withCronLogging('sync-place', async () => {
+      const records = await fetchPlaceRecords({ limit: 200 });
 
-    let created = 0;
-    let skipped = 0;
+      let created = 0;
+      let skipped = 0;
 
-    // Process in batches of 50 using $transaction for better performance
-    const BATCH_SIZE = 50;
-    for (let i = 0; i < records.length; i += BATCH_SIZE) {
-      const batch = records.slice(i, i + BATCH_SIZE);
-      const ops = batch
-        .filter((r) => r.sourceRef)
-        .map((record) =>
-          prisma.marche.upsert({
-            where: { sourceRef: record.sourceRef },
-            update: {
-              title: record.title,
-              buyer: record.buyer,
-              nature: record.nature,
-              department: record.department,
-              departmentName: record.departmentName,
-              region: record.region,
-              value: record.value,
-              deadline: record.deadline,
-              publicationDate: record.publicationDate,
-              procedureType: record.procedureType,
-              cpvCode: record.cpvCode,
-              cpvLabel: record.cpvLabel,
-              lots: record.lots,
-              duration: record.duration,
-            },
-            create: record,
-          })
-        );
-
-      try {
-        const results = await prisma.$transaction(ops);
-        created += results.length;
-      } catch (e: any) {
-        // Fallback: process individually on batch failure
-        for (const record of batch) {
-          if (!record.sourceRef) { skipped++; continue; }
-          try {
-            await prisma.marche.upsert({
+      // Process in batches of 50 using $transaction for better performance
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const ops = batch
+          .filter((r) => r.sourceRef)
+          .map((record) =>
+            prisma.marche.upsert({
               where: { sourceRef: record.sourceRef },
               update: {
                 title: record.title,
                 buyer: record.buyer,
                 nature: record.nature,
-                department: record.department,
-                departmentName: record.departmentName,
-                region: record.region,
                 value: record.value,
                 deadline: record.deadline,
-                publicationDate: record.publicationDate,
                 procedureType: record.procedureType,
                 cpvCode: record.cpvCode,
                 cpvLabel: record.cpvLabel,
@@ -79,32 +47,59 @@ export async function GET(req: Request) {
                 duration: record.duration,
               },
               create: record,
-            });
-            created++;
-          } catch {
-            skipped++;
+            })
+          );
+
+        try {
+          const results = await prisma.$transaction(ops);
+          created += results.length;
+        } catch (e: any) {
+          // Fallback: process individually on batch failure
+          for (const record of batch) {
+            if (!record.sourceRef) { skipped++; continue; }
+            try {
+              await prisma.marche.upsert({
+                where: { sourceRef: record.sourceRef },
+                update: {
+                  title: record.title,
+                  buyer: record.buyer,
+                  nature: record.nature,
+                  value: record.value,
+                  deadline: record.deadline,
+                  procedureType: record.procedureType,
+                  cpvCode: record.cpvCode,
+                  cpvLabel: record.cpvLabel,
+                  lots: record.lots,
+                  duration: record.duration,
+                },
+                create: record,
+              });
+              created++;
+            } catch {
+              skipped++;
+            }
           }
         }
       }
-    }
 
-    // Marquer les marchés PLACE expirés comme FERME
-    const expired = await prisma.marche.updateMany({
-      where: {
-        source: 'PLACE',
-        status: 'OUVERT',
-        deadline: { lt: new Date() },
-      },
-      data: { status: 'FERME' },
+      // Marquer les marchés PLACE expirés comme FERME
+      const expired = await prisma.marche.updateMany({
+        where: {
+          source: 'PLACE',
+          status: 'OUVERT',
+          deadline: { lt: new Date() },
+        },
+        data: { status: 'FERME' },
+      });
+
+      return {
+        total: records.length,
+        upserted: created,
+        skipped,
+        expired: expired.count,
+        syncedAt: new Date().toISOString(),
+      };
     });
-
-    const summary = {
-      total: records.length,
-      upserted: created,
-      skipped,
-      expired: expired.count,
-      syncedAt: new Date().toISOString(),
-    };
 
     console.log('[PLACE] Sync complete:', summary);
     return NextResponse.json(summary);
