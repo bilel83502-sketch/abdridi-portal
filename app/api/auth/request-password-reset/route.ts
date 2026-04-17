@@ -2,12 +2,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Resend } from 'resend';
 import crypto from 'crypto';
+import { rateLimitCheck } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
+  const forwarded = req.headers.get('x-forwarded-for');
+  const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
+  const { allowed } = await rateLimitCheck(`pwd-reset:${ip}`, 5, 15 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json(
+      { message: 'Trop de tentatives. Veuillez réessayer dans quelques minutes.' },
+      { status: 429 }
+    );
+  }
+
   const { email } = await req.json();
   if (!email) {
     return NextResponse.json({ message: 'Si ce compte existe, un email a été envoyé.' });
