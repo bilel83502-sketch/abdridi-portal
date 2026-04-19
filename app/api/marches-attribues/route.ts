@@ -1,27 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { extractSiren } from '@/lib/sirene';
+import { getUserAccess } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  // Check user plan
-  let isPaid = false;
-  try {
-    const session = await getServerSession(authOptions);
-    if (session?.user?.email) {
-      const currentUser = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        select: { role: true, plan: true, stripeCurrentPeriodEnd: true },
-      });
-      if (currentUser) {
-        isPaid = currentUser.role === 'ADMIN' ||
-          (currentUser.plan === 'VEILLE' && !!currentUser.stripeCurrentPeriodEnd && new Date(currentUser.stripeCurrentPeriodEnd) > new Date());
-      }
-    }
-  } catch (_e) { /* continue as free */ }
+  const { isPaid } = await getUserAccess();
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q') || '';
   const titulaire = searchParams.get('titulaire') || '';
@@ -95,6 +80,7 @@ export async function GET(req: Request) {
       }),
       prisma.marcheAttribue.groupBy({
         by: ['titulaireNom'],
+        where: { titulaireNom: { not: { startsWith: 'Titulaire ' } } },
         _count: true,
         orderBy: { _count: { titulaireNom: 'desc' } },
         take: 1,
@@ -127,7 +113,7 @@ export async function GET(req: Request) {
     return m;
   });
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     data: enrichedData,
     meta: {
       total,
@@ -146,4 +132,6 @@ export async function GET(req: Request) {
         : null,
     },
   });
+  res.headers.set('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
+  return res;
 }
