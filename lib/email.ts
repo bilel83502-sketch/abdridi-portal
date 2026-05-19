@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
+import { ADMIN_EMAIL } from './constants';
 
 const FROM_EMAIL = 'AB DRIDI <noreply@abdridi.com>';
-const ADMIN_EMAIL = 'bilel83502@gmail.com';
 
 // ─── Types ───
 
