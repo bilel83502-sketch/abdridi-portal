@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Users, CreditCard, TrendingUp, RefreshCw, Shield, Calendar, CheckCircle, Check, Cookie } from 'lucide-react';
+import { Users, CreditCard, TrendingUp, RefreshCw, Shield, Calendar, CheckCircle, Check, Cookie, Star, StarOff } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string; border: string }> = {
   PENDING: { label: 'En attente', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
@@ -19,6 +19,8 @@ export default function AdminPage() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
   const [updatingAppt, setUpdatingAppt] = useState<string | null>(null);
+  const [userSearch, setUserSearch] = useState('');
+  const [updatingPlanFor, setUpdatingPlanFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'authenticated' && user?.role !== 'ADMIN') {
@@ -43,6 +45,35 @@ export default function AdminPage() {
       console.error(e);
     }
     setSyncing(null);
+  }
+
+  async function toggleUserPlan(targetUser: any) {
+    const grant = !targetUser.hasSub;
+    const label = grant ? 'activer le plan VEILLE' : 'retirer le plan VEILLE';
+    if (!confirm(`Confirmer : ${label} pour ${targetUser.name || targetUser.email} ?`)) return;
+    setUpdatingPlanFor(targetUser.id);
+    try {
+      const res = await fetch(`/api/admin/users/${targetUser.id}/plan`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: grant ? 'GRANT_VEILLE' : 'REVOKE_VEILLE' }),
+      });
+      if (res.ok) {
+        const { user: updated } = await res.json();
+        setData((prev: any) => ({
+          ...prev,
+          users: prev.users.map((u: any) =>
+            u.id === updated.id ? { ...u, plan: updated.plan, hasSub: updated.hasSub } : u
+          ),
+        }));
+      } else {
+        const { error } = await res.json().catch(() => ({ error: 'Erreur inconnue' }));
+        alert(`Erreur : ${error}`);
+      }
+    } catch (e: any) {
+      alert(`Erreur réseau : ${e?.message || e}`);
+    }
+    setUpdatingPlanFor(null);
   }
 
   async function updateAppointmentStatus(id: string, newStatus: string) {
@@ -282,13 +313,22 @@ export default function AdminPage() {
       {/* Users table */}
       <div className="card overflow-hidden">
         <div className="p-3.5 px-5 border-b border-gray-100">
-          <span className="text-[13px] font-semibold">Utilisateurs ({data.users.length})</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="text-[13px] font-semibold">Utilisateurs ({data.users.filter((u: any) => !userSearch || u.name?.toLowerCase().includes(userSearch.toLowerCase()) || u.email?.toLowerCase().includes(userSearch.toLowerCase())).length})</span>
+            <input
+              type="text"
+              placeholder="Rechercher un utilisateur..."
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #E5E7EB', fontSize: 12, width: 220, fontFamily: 'inherit' }}
+            />
+          </div>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table className="w-full" style={{ minWidth: 700 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #F3F4F6' }}>
-                {['Nom', 'Email', 'Entreprise', 'Plan', 'Inscrit le', 'Dernier login'].map((h) => (
+                {['Nom', 'Email', 'Entreprise', 'Plan', 'Inscrit le', 'Dernier login', 'Actions'].map((h) => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     {h}
                   </th>
@@ -296,8 +336,8 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {data.users.map((u: any, i: number) => (
-                <tr key={u.id} style={{ borderBottom: i < data.users.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
+              {data.users.filter((u: any) => !userSearch || u.name?.toLowerCase().includes(userSearch.toLowerCase()) || u.email?.toLowerCase().includes(userSearch.toLowerCase())).map((u: any, i: number, arr: any[]) => (
+                <tr key={u.id} style={{ borderBottom: i < arr.length - 1 ? '1px solid #F3F4F6' : 'none' }}>
                   <td style={{ padding: '10px 16px', fontSize: 13, fontWeight: 500 }}>
                     {u.name}
                     {u.role === 'ADMIN' && (
@@ -322,6 +362,43 @@ export default function AdminPage() {
                   </td>
                   <td style={{ padding: '10px 16px', fontSize: 12, color: '#9CA3AF' }}>
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('fr-FR') : '\u2014'}
+                  </td>
+                  <td style={{ padding: '10px 16px' }}>
+                    {u.role === 'ADMIN' ? (
+                      <span style={{ fontSize: 11, color: '#9CA3AF' }}>\u2014</span>
+                    ) : u.hasSub ? (
+                      <button
+                        onClick={() => toggleUserPlan(u)}
+                        disabled={updatingPlanFor === u.id}
+                        title="Retirer le plan VEILLE (repassera en D\u00e9couverte)"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          padding: '5px 10px', borderRadius: 6, border: '1px solid #FECACA',
+                          background: '#FEF2F2', color: '#B91C1C', fontSize: 11, fontWeight: 600,
+                          cursor: updatingPlanFor === u.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                          opacity: updatingPlanFor === u.id ? 0.5 : 1,
+                        }}
+                      >
+                        <StarOff size={12} />
+                        Retirer VEILLE
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => toggleUserPlan(u)}
+                        disabled={updatingPlanFor === u.id}
+                        title="Activer le plan VEILLE (acc\u00e8s complet sans paiement)"
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 4,
+                          padding: '5px 10px', borderRadius: 6, border: '1px solid #A7F3D0',
+                          background: '#ECFDF5', color: '#059669', fontSize: 11, fontWeight: 600,
+                          cursor: updatingPlanFor === u.id ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                          opacity: updatingPlanFor === u.id ? 0.5 : 1,
+                        }}
+                      >
+                        <Star size={12} />
+                        Activer VEILLE
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
