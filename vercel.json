@@ -183,7 +183,7 @@
     },
     {
       "path": "/api/cron/check-cron-failures",
-      "schedule": "0 * * * *"
+      "schedule": "30 9 * * *"
     }
   ]
 }
