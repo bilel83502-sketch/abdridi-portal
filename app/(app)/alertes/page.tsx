@@ -1,335 +1,340 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Mail, Plus, Pause, Play, Trash2, X, Bell } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Mail, Plus, Pause, Play, Trash2, X, Bell, Lock, Pencil, BarChart3, Lightbulb } from 'lucide-react';
+import FocusTrap from 'focus-trap-react';
+import { useModalKeyboard } from '@/hooks/useModalKeyboard';
+import Link from 'next/link';
 import TagInput from '@/components/TagInput';
 import DepartmentSelect from '@/components/DepartmentSelect';
+
+function timeAgo(date: string | null): string {
+  if (!date) return 'jamais';
+  const d = new Date(date);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `il y a ${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `il y a ${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `il y a ${days}j`;
+}
 
 export default function AlertesPage() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const closeForm = useCallback(() => { resetForm(); setShowForm(false); }, []);
+  useModalKeyboard({ isOpen: showForm, onClose: closeForm });
+  const [isPaid, setIsPaid] = useState(true);
 
-  // Form state
   const [formName, setFormName] = useState('');
   const [formKeywords, setFormKeywords] = useState<string[]>([]);
   const [formNatures, setFormNatures] = useState<string[]>([]);
   const [formDepartments, setFormDepartments] = useState<string[]>([]);
   const [formFrequency, setFormFrequency] = useState('DAILY');
-  const [formDept, setFormDept] = useState('');
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/alertes').then(r => r.json()).then(d => { setAlerts(d); setLoading(false); });
+    fetch('/api/alertes').then(r => r.json()).then(d => {
+      setAlerts(d.alerts || []);
+      setIsPaid(d.isPaid ?? false);
+      setLoading(false);
+    });
   }, []);
 
+  useEffect(() => { document.title = 'Alertes | AB DRIDI'; }, []);
+
+  const activeCount = alerts.filter(a => a.active).length;
+
   async function toggleAlert(id: string, active: boolean) {
-    await fetch('/api/alertes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, active: !active }) });
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, active: !active } : a));
+    try {
+      const res = await fetch('/api/alertes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, active: !active }) });
+      if (!res.ok) { const data = await res.json(); alert(data.error || 'Erreur'); return; }
+      setAlerts(prev => prev.map(a => a.id === id ? { ...a, active: !active } : a));
+    } catch { alert('Erreur reseau'); }
   }
 
   async function deleteAlert(id: string) {
-    await fetch('/api/alertes', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
-    setAlerts(prev => prev.filter(a => a.id !== id));
+    if (!confirm('Supprimer cette alerte ?')) return;
+    try {
+      await fetch('/api/alertes', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      setAlerts(prev => prev.filter(a => a.id !== id));
+    } catch { alert('Erreur lors de la suppression'); }
   }
 
-  function toggleNature(n: string) {
-    setFormNatures(prev => prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]);
-  }
+  function toggleNature(n: string) { setFormNatures(prev => prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n]); }
+  function resetForm() { setFormName(''); setFormKeywords([]); setFormNatures([]); setFormDepartments([]); setFormFrequency('DAILY'); setFormError(''); setEditingId(null); }
+  function openEdit(a: any) { setEditingId(a.id); setFormName(a.name); setFormKeywords(a.keywords || []); setFormNatures(a.natures || []); setFormDepartments(a.departments || []); setFormFrequency(a.frequency || 'DAILY'); setFormError(''); setShowForm(true); }
 
-  function addDepartment() {
-    if (formDept && !formDepartments.includes(formDept)) {
-      setFormDepartments(prev => [...prev, formDept]);
-      setFormDept('');
-    }
-  }
-
-  function resetForm() {
-    setFormName(''); setFormKeywords([]); setFormNatures([]);
-    setFormDepartments([]); setFormFrequency('DAILY'); setFormDept('');
-  }
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault(); setFormError('');
     if (!formName.trim() || formKeywords.length === 0) return;
     setSaving(true);
-    const res = await fetch('/api/alertes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: formName,
-        keywords: formKeywords,
-        natures: formNatures,
-        departments: formDepartments,
-        frequency: formFrequency,
-      }),
-    });
-    const alert = await res.json();
-    setAlerts(prev => [alert, ...prev]);
-    resetForm();
-    setShowForm(false);
+    try {
+      const payload = { name: formName, keywords: formKeywords, natures: formNatures, departments: formDepartments, frequency: formFrequency };
+      const res = editingId
+        ? await fetch('/api/alertes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingId, ...payload }) })
+        : await fetch('/api/alertes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) { setFormError(data.error || 'Erreur'); setSaving(false); return; }
+      if (editingId) { setAlerts(prev => prev.map(a => a.id === editingId ? { ...a, ...payload } : a)); }
+      else { setAlerts(prev => [data, ...prev]); }
+      resetForm(); setShowForm(false);
+    } catch { setFormError('Erreur reseau'); }
     setSaving(false);
   }
 
-  const freqLabels: Record<string, string> = { DAILY: 'Quotidien', IMMEDIATE: 'Immédiat', WEEKLY: 'Hebdo' };
+  const freqLabels: Record<string, string> = { DAILY: 'Quotidien', IMMEDIATE: 'Immediat', WEEKLY: 'Hebdo' };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', height: 40, padding: '0 12px', borderRadius: 8,
+    border: '1px solid #334155', background: '#0F172A', color: '#E2E8F0',
+    fontSize: 13, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+  };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-5">
+    <div style={{ background: '#0A1628', margin: '-20px -16px -28px', padding: '24px 24px 32px', minHeight: 'calc(100vh - 64px)' }}>
+      {/* ── HEADER ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto' }}>
         <div>
-          <h1 className="text-xl font-bold">Alertes email</h1>
-          <p className="text-[13px] text-gray-500 mt-0.5">Recevez les nouvelles consultations selon vos critères de veille.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Alertes email</h1>
+            {!loading && isPaid && alerts.length > 0 && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#94A3B8', background: 'rgba(148,163,184,0.1)', padding: '2px 10px', borderRadius: 10 }}>
+                {activeCount} active{activeCount > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Recevez les nouvelles consultations selon vos criteres de veille.</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-gradient"><Plus size={15} /> Créer une alerte</button>
+        {isPaid && (
+          <button onClick={() => { resetForm(); setShowForm(true); }} style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px',
+            background: '#00C2FF', color: '#0A1628', border: 'none', borderRadius: 8,
+            fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          }}>
+            <Plus size={16} strokeWidth={3} /> Creer une alerte
+          </button>
+        )}
       </div>
 
-      {/* ── Creation form modal ── */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.5)' }} onClick={() => setShowForm(false)} />
-          <div style={{
-            position: 'relative', width: 520, maxWidth: '90vw', background: '#fff',
-            padding: 32, boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>Nouvelle alerte</h2>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', padding: 4, display: 'flex' }}>
-                <X size={20} />
-              </button>
+      <div style={{ maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto' }}>
+
+      {/* ── PAYWALL ── */}
+      {!loading && !isPaid && (
+        <div style={{ background: '#0F172A', borderRadius: 12, border: '1px solid #1E293B', padding: '48px 40px', textAlign: 'center', maxWidth: 560, margin: '0 auto' }}>
+          <div style={{ width: 64, height: 64, margin: '0 auto 20px', borderRadius: 16, background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Lock size={28} style={{ color: '#F59E0B' }} />
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Alertes email personnalisees</h2>
+          <p style={{ fontSize: 14, color: '#94A3B8', marginBottom: 28, lineHeight: 1.6, maxWidth: 420, margin: '0 auto 28px' }}>
+            Les alertes email sont reservees aux abonnes <strong style={{ color: '#F59E0B' }}>Veille &amp; Accompagnement</strong>.
+            Recevez chaque matin les nouveaux marches qui correspondent a vos criteres.
+          </p>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 28, textAlign: 'left' }}>
+            {[
+              { n: '1', t: 'Criteres sur mesure', d: 'Mots-cles, departements, secteurs' },
+              { n: '2', t: 'Email quotidien', d: 'Nouvelles consultations chaque matin a 8h' },
+              { n: '3', t: 'Multi-alertes', d: 'Jusqu\'a 10 alertes simultanees' },
+            ].map(s => (
+              <div key={s.n} style={{ flex: 1, padding: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid #1E293B', borderRadius: 8 }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#00C2FF', color: '#0A1628', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.n}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', marginBottom: 3 }}>{s.t}</div>
+                <div style={{ fontSize: 11, color: '#94A3B8' }}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+          <Link href="/abonnement" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px', fontSize: 14, fontWeight: 600, background: '#00C2FF', color: '#0A1628', textDecoration: 'none', borderRadius: 8 }}>
+            Decouvrir l&apos;offre Veille &amp; Accompagnement
+          </Link>
+        </div>
+      )}
+
+      {/* ── MODAL ── */}
+      {isPaid && showForm && (
+        <FocusTrap>
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="alert-modal-title" style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,22,40,0.8)' }} onClick={() => setShowForm(false)} />
+          <div className="modal-content" style={{ position: 'relative', width: 520, maxWidth: '90vw', background: '#1E293B', borderRadius: 12, border: '1px solid #334155', boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 id="alert-modal-title" style={{ fontSize: 17, fontWeight: 700, color: '#fff', margin: 0 }}>{editingId ? 'Modifier l\'alerte' : 'Nouvelle alerte'}</h2>
+              <button onClick={() => setShowForm(false)} aria-label="Fermer" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: 4, display: 'flex' }}><X size={20} /></button>
             </div>
-
-            <form onSubmit={handleCreate}>
-              {/* Name */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                  Nom de l&apos;alerte <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  value={formName}
-                  onChange={e => setFormName(e.target.value)}
-                  placeholder="Ex: Transport IDF"
-                  required
-                  className="input"
-                  style={{ height: 40, fontSize: 13 }}
-                />
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: 14 }}>
+                <label htmlFor="alert-name" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Nom de l&apos;alerte *</label>
+                <input id="alert-name" value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Transport IDF" required style={inputStyle} />
               </div>
-
-              {/* Keywords */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                  Mots-clés <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <TagInput
-                  tags={formKeywords}
-                  onChange={setFormKeywords}
-                  placeholder="transport, nettoyage, BTP..."
-                />
-                <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 4 }}>Tapez Entrée ou virgule pour ajouter</p>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Mots-cles *</label>
+                <TagInput tags={formKeywords} onChange={setFormKeywords} placeholder="transport, nettoyage, BTP..." />
+                <p style={{ fontSize: 10, color: '#94A3B8', marginTop: 3 }}>Tapez Entree ou virgule pour ajouter</p>
               </div>
-
-              {/* Natures */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nature des prestations</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {[
-                    { v: 'SERVICES', l: 'Services' },
-                    { v: 'TRAVAUX', l: 'Travaux' },
-                    { v: 'FOURNITURES', l: 'Fournitures' },
-                  ].map(n => (
-                    <button
-                      key={n.v}
-                      type="button"
-                      onClick={() => toggleNature(n.v)}
-                      style={{
-                        padding: '6px 14px', fontSize: 12, fontWeight: 500,
-                        border: formNatures.includes(n.v) ? '1px solid #3B82F6' : '1px solid #E2E8F0',
-                        background: formNatures.includes(n.v) ? '#DBEAFE' : '#fff',
-                        color: formNatures.includes(n.v) ? '#2563EB' : '#64748B',
-                        cursor: 'pointer', fontFamily: 'inherit',
-                      }}
-                    >
-                      {n.l}
-                    </button>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Nature des prestations</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[{ v: 'SERVICES', l: 'Services' }, { v: 'TRAVAUX', l: 'Travaux' }, { v: 'FOURNITURES', l: 'Fournitures' }].map(n => (
+                    <button key={n.v} type="button" onClick={() => toggleNature(n.v)} style={{
+                      padding: '6px 14px', fontSize: 12, fontWeight: 500, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                      border: formNatures.includes(n.v) ? '1px solid rgba(0,194,255,0.4)' : '1px solid #334155',
+                      background: formNatures.includes(n.v) ? 'rgba(0,194,255,0.1)' : '#0F172A',
+                      color: formNatures.includes(n.v) ? '#00C2FF' : '#94A3B8',
+                    }}>{n.l}</button>
                   ))}
                 </div>
               </div>
-
-              {/* Departments */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Départements</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex: 1 }}>
-                    <DepartmentSelect value={formDept} onChange={setFormDept} />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addDepartment}
-                    style={{
-                      padding: '0 16px', height: 40, border: '1px solid #E2E8F0',
-                      background: '#fff', cursor: 'pointer', fontFamily: 'inherit',
-                      fontSize: 13, fontWeight: 500, color: '#374151',
-                    }}
-                  >
-                    Ajouter
-                  </button>
-                </div>
-                {formDepartments.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-                    {formDepartments.map(d => (
-                      <span key={d} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
-                        padding: '3px 8px', fontSize: 11, fontWeight: 500,
-                        background: '#DBEAFE', color: '#2563EB',
-                      }}>
-                        Dép. {d}
-                        <button type="button" onClick={() => setFormDepartments(prev => prev.filter(x => x !== d))}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: '#2563EB' }}>
-                          <X size={10} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Departements</label>
+                <DepartmentSelect multi value={formDepartments} onChange={setFormDepartments} />
               </div>
-
-              {/* Frequency */}
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Fréquence d&apos;envoi</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {[
-                    { v: 'DAILY', l: 'Quotidien (8h)' },
-                    { v: 'WEEKLY', l: 'Hebdomadaire' },
-                    { v: 'IMMEDIATE', l: 'Immédiat' },
-                  ].map(f => (
-                    <button
-                      key={f.v}
-                      type="button"
-                      onClick={() => setFormFrequency(f.v)}
-                      style={{
-                        padding: '6px 14px', fontSize: 12, fontWeight: 500,
-                        border: formFrequency === f.v ? '1px solid #3B82F6' : '1px solid #E2E8F0',
-                        background: formFrequency === f.v ? '#DBEAFE' : '#fff',
-                        color: formFrequency === f.v ? '#2563EB' : '#64748B',
-                        cursor: 'pointer', fontFamily: 'inherit',
-                      }}
-                    >
-                      {f.l}
-                    </button>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Frequence d&apos;envoi</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[{ v: 'DAILY', l: 'Quotidien (8h)' }, { v: 'WEEKLY', l: 'Hebdomadaire' }, { v: 'IMMEDIATE', l: 'Immediat' }].map(f => (
+                    <button key={f.v} type="button" onClick={() => setFormFrequency(f.v)} style={{
+                      padding: '6px 14px', fontSize: 12, fontWeight: 500, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
+                      border: formFrequency === f.v ? '1px solid rgba(0,194,255,0.4)' : '1px solid #334155',
+                      background: formFrequency === f.v ? 'rgba(0,194,255,0.1)' : '#0F172A',
+                      color: formFrequency === f.v ? '#00C2FF' : '#94A3B8',
+                    }}>{f.l}</button>
                   ))}
                 </div>
               </div>
-
-              {/* Submit */}
+              {formError && (
+                <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 6, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', fontSize: 12, color: '#F87171' }}>{formError}</div>
+              )}
               <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => { resetForm(); setShowForm(false); }}
-                  style={{
-                    flex: 1, padding: '10px 0', border: '1px solid #E2E8F0',
-                    background: '#fff', fontSize: 13, fontWeight: 500,
-                    cursor: 'pointer', fontFamily: 'inherit', color: '#64748B',
-                  }}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !formName.trim() || formKeywords.length === 0}
-                  style={{
-                    flex: 1, padding: '10px 0', border: 'none',
-                    background: '#3B82F6', fontSize: 13, fontWeight: 600,
-                    cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                    color: '#fff', opacity: saving ? 0.6 : 1,
-                  }}
-                >
-                  {saving ? 'Création...' : 'Créer l\'alerte'}
-                </button>
+                <button type="button" onClick={() => { resetForm(); setShowForm(false); }} style={{
+                  flex: 1, padding: '10px 0', border: '1px solid #334155', background: 'transparent', borderRadius: 8,
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', color: '#94A3B8',
+                }}>Annuler</button>
+                <button type="submit" disabled={saving || !formName.trim() || formKeywords.length === 0} style={{
+                  flex: 1, padding: '10px 0', border: 'none', background: '#00C2FF', borderRadius: 8,
+                  fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                  color: '#0A1628', opacity: saving ? 0.6 : 1,
+                }}>{saving ? 'Sauvegarde...' : editingId ? 'Enregistrer' : 'Creer l\'alerte'}</button>
               </div>
             </form>
           </div>
         </div>
+        </FocusTrap>
       )}
 
+      {/* ── CONTENT ── */}
       {loading ? (
-        <div className="text-center text-gray-400 py-16">Chargement...</div>
-      ) : alerts.length === 0 ? (
-        <div style={{
-          background: '#fff', border: '1px solid var(--border)',
-          padding: '56px 40px', textAlign: 'center', maxWidth: 520, margin: '0 auto',
-        }}>
-          <div style={{
-            width: 64, height: 64, margin: '0 auto 20px',
-            background: 'var(--indigo-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Mail size={28} style={{ color: 'var(--indigo)' }} />
+        <div style={{ textAlign: 'center', color: '#64748B', padding: '64px 0', fontSize: 14 }}>Chargement...</div>
+      ) : !isPaid ? null : alerts.length === 0 ? (
+        <div style={{ background: '#0F172A', borderRadius: 12, border: '1px solid #1E293B', padding: '56px 40px', textAlign: 'center', maxWidth: 540, margin: '0 auto' }}>
+          <div style={{ width: 72, height: 72, margin: '0 auto 20px', borderRadius: 16, background: 'rgba(0,194,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Bell size={32} style={{ color: '#00C2FF' }} />
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
-            Recevez chaque jour les marchés qui vous correspondent
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--text-sec)', marginBottom: 32, lineHeight: 1.6 }}>
-            Configurez vos critères de veille et ne ratez plus aucun appel d&apos;offres pertinent.
-          </p>
-          <div style={{ display: 'flex', gap: 16, marginBottom: 32, textAlign: 'left' }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Recevez chaque jour les marches qui vous correspondent</h2>
+          <p style={{ fontSize: 14, color: '#94A3B8', marginBottom: 28, lineHeight: 1.6 }}>Configurez vos criteres de veille et ne ratez plus aucun appel d&apos;offres pertinent.</p>
+          <div style={{ display: 'flex', gap: 12, marginBottom: 28, textAlign: 'left' }}>
             {[
-              { n: '1', t: 'Choisissez vos critères', d: 'Secteur, département, type de marché' },
-              { n: '2', t: 'Recevez par email', d: 'Chaque matin à 8h, les nouvelles consultations' },
-              { n: '3', t: 'Ne ratez plus rien', d: 'Répondez avant la clôture' },
+              { n: '1', t: 'Choisissez vos criteres', d: 'Secteur, departement, type de marche' },
+              { n: '2', t: 'Recevez par email', d: 'Chaque matin a 8h, les nouvelles consultations' },
+              { n: '3', t: 'Ne ratez plus rien', d: 'Repondez avant la cloture' },
             ].map(s => (
-              <div key={s.n} style={{ flex: 1, padding: '14px', background: 'var(--surface-sub)', border: '1px solid var(--border)' }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--indigo)', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.n}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{s.t}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.d}</div>
+              <div key={s.n} style={{ flex: 1, padding: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid #1E293B', borderRadius: 8 }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#00C2FF', color: '#0A1628', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.n}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0', marginBottom: 3 }}>{s.t}</div>
+                <div style={{ fontSize: 11, color: '#94A3B8' }}>{s.d}</div>
               </div>
             ))}
           </div>
-          <button onClick={() => setShowForm(true)} className="btn-gradient" style={{
-            padding: '12px 32px', fontSize: 14, fontWeight: 600,
-            background: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+          <button onClick={() => { resetForm(); setShowForm(true); }} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px',
+            background: '#00C2FF', color: '#0A1628', border: 'none', borderRadius: 8,
+            fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            <Plus size={15} /> Créer ma première alerte
+            <Plus size={16} strokeWidth={3} /> Creer ma premiere alerte
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {alerts.map(a => (
-            <div key={a.id} className={`card p-4 px-5 ${a.active ? '' : 'opacity-50'}`}>
-              <div className="flex justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Mail size={14} className={a.active ? 'text-blue-600' : 'text-gray-400'} />
-                    <span className="text-sm font-semibold">{a.name}</span>
-                    <span className={`px-2.5 py-[2px] rounded text-[10px] font-semibold ${a.active ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
-                      {a.active ? 'Active' : 'Pause'}
-                    </span>
-                    <span className="px-2.5 py-[2px] rounded text-[10px] bg-gray-100 text-gray-500">
+            <div key={a.id} style={{
+              background: '#0F172A', border: '1px solid #1E293B', borderRadius: 12,
+              padding: '16px 20px', opacity: a.active ? 1 : 0.55, transition: 'opacity 0.15s',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {/* Name + badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{a.name}</span>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600,
+                      background: a.active ? 'rgba(0,194,255,0.1)' : 'rgba(100,116,139,0.15)',
+                      color: a.active ? '#00C2FF' : '#64748B',
+                      border: a.active ? '1px solid rgba(0,194,255,0.25)' : '1px solid #334155',
+                    }}>{a.active ? 'Active' : 'En pause'}</span>
+                    <span style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: '#1E293B', color: '#94A3B8' }}>
                       {freqLabels[a.frequency] || a.frequency}
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-1">
+                  {/* Chips */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
                     {a.keywords?.map((k: string, j: number) => (
-                      <span key={j} className="px-2 py-[2px] rounded text-[10px] font-semibold bg-blue-50 text-blue-600">{k}</span>
+                      <span key={`k${j}`} style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: 'rgba(0,194,255,0.1)', color: '#00C2FF', border: '1px solid rgba(0,194,255,0.25)' }}>{k}</span>
                     ))}
                     {a.natures?.map((n: string, j: number) => (
-                      <span key={j} className="px-2 py-[2px] rounded text-[10px] font-semibold bg-amber-50 text-amber-600">{n === 'TRAVAUX' ? 'Travaux' : n === 'SERVICES' ? 'Services' : 'Fournitures'}</span>
+                      <span key={`n${j}`} style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.25)' }}>
+                        {n === 'TRAVAUX' ? 'Travaux' : n === 'SERVICES' ? 'Services' : 'Fournitures'}
+                      </span>
                     ))}
                     {a.departments?.map((d: string, j: number) => (
-                      <span key={j} className="px-2 py-[2px] rounded text-[10px] font-semibold bg-blue-50 text-blue-600">Dép. {d}</span>
+                      <span key={`d${j}`} style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: '#1E293B', color: '#94A3B8', border: '1px solid #334155' }}>Dep. {d}</span>
                     ))}
                   </div>
+                  {/* Stats */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#94A3B8' }}>
+                    <BarChart3 size={12} style={{ color: '#64748B' }} />
+                    <span>
+                      {typeof a.lastMatchCount === 'number' ? `${a.lastMatchCount} marche${a.lastMatchCount !== 1 ? 's' : ''} trouve${a.lastMatchCount !== 1 ? 's' : ''}` : '0 marches trouves'}
+                      <span style={{ color: '#334155', margin: '0 5px' }}>·</span>
+                      Dernier envoi : {timeAgo(a.lastSentAt)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => toggleAlert(a.id, a.active)} className="p-1.5 rounded border border-gray-200 bg-white cursor-pointer hover:bg-gray-50" title={a.active ? 'Mettre en pause' : 'Activer'}>
-                    {a.active ? <Pause size={12} className="text-gray-400" /> : <Play size={12} className="text-gray-400" />}
-                  </button>
-                  <button onClick={() => deleteAlert(a.id)} className="p-1.5 rounded border border-gray-200 bg-white cursor-pointer hover:bg-gray-50" title="Supprimer">
-                    <Trash2 size={12} className="text-gray-400" />
-                  </button>
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0, marginLeft: 12 }}>
+                  <button onClick={() => openEdit(a)} title="Modifier" style={{
+                    width: 32, height: 32, borderRadius: 6, border: '1px solid #1E293B', background: 'rgba(30,41,59,0.5)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8',
+                  }}><Pencil size={13} /></button>
+                  <button onClick={() => toggleAlert(a.id, a.active)} title={a.active ? 'Mettre en pause' : 'Activer'} style={{
+                    width: 32, height: 32, borderRadius: 6, border: '1px solid #1E293B', background: 'rgba(30,41,59,0.5)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94A3B8',
+                  }}>{a.active ? <Pause size={13} /> : <Play size={13} />}</button>
+                  <button onClick={() => deleteAlert(a.id)} title="Supprimer" style={{
+                    width: 32, height: 32, borderRadius: 6, border: '1px solid #1E293B', background: 'rgba(30,41,59,0.5)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B',
+                  }}><Trash2 size={13} /></button>
                 </div>
               </div>
             </div>
           ))}
+
+          {/* Tip */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 8,
+            padding: '12px 16px', background: '#0F172A', border: '1px solid #1E293B', borderRadius: 8,
+          }}>
+            <Lightbulb size={15} style={{ color: '#00C2FF', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.5, margin: 0 }}>
+              <strong style={{ color: '#00C2FF' }}>Astuce</strong> — Creez plusieurs alertes avec des mots-cles differents pour couvrir tous vos secteurs d&apos;activite.
+              Vous pouvez avoir jusqu&apos;a 10 alertes actives.
+            </p>
+          </div>
         </div>
       )}
+
+      </div>
     </div>
   );
 }

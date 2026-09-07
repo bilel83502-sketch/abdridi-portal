@@ -17,13 +17,15 @@ export async function GET(req: Request) {
   }
 
   try {
-    const result = await enrichSirene(200);
+    const { summary } = await withCronLogging('enrich-sirene', async () => {
+      const result = await enrichSirene(200);
 
-    const summary = {
-      source: 'SIRENE-ENRICH',
-      ...result,
-      syncedAt: new Date().toISOString(),
-    };
+      return {
+        source: 'SIRENE-ENRICH',
+        ...result,
+        syncedAt: new Date().toISOString(),
+      };
+    });
 
     console.log('[SIRENE] Enrichment complete:', summary);
     return NextResponse.json(summary);

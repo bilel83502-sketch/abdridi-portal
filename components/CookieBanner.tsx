@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { initAnalytics } from '@/lib/analytics';
 
 export default function CookieBanner() {
   const [show, setShow] = useState(false);
@@ -13,18 +14,34 @@ export default function CookieBanner() {
   const handleConsent = async (accepted: boolean) => {
     document.cookie = `cookie_consent=${accepted ? 'accepted' : 'declined'}; max-age=${365 * 24 * 60 * 60}; path=/; SameSite=Lax`;
 
+    if (accepted) {
+      initAnalytics();
+    }
+
     try {
       await fetch('/api/cookies/consent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accepted }),
       });
-    } catch (e) { /* silently fail */ }
+    } catch { /* silently fail */ }
 
     setShow(false);
   };
 
   if (!show) return null;
+
+  const btnStyle = {
+    padding: '8px 18px',
+    border: '1px solid rgba(255,255,255,0.3)',
+    color: '#fff',
+    fontWeight: 600 as const,
+    fontSize: 13,
+    cursor: 'pointer' as const,
+    fontFamily: 'inherit',
+    borderRadius: 6,
+    background: 'transparent',
+  };
 
   return (
     <div style={{
@@ -35,21 +52,14 @@ export default function CookieBanner() {
       borderTop: '1px solid rgba(59,130,246,0.2)',
     }}>
       <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', flex: 1, minWidth: 280, margin: 0, lineHeight: 1.5 }}>
-        Nous utilisons des cookies essentiels au fonctionnement du site.
-        <a href="/privacy" style={{ color: '#60A5FA', marginLeft: 6, textDecoration: 'none' }}>Politique de confidentialité</a>
+        Nous utilisons des cookies essentiels et, avec votre accord, des cookies d&apos;analyse (Google Analytics) pour ameliorer le site.{' '}
+        <a href="/confidentialite" style={{ color: '#60A5FA', textDecoration: 'none' }}>En savoir plus</a>
       </p>
       <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={() => handleConsent(false)} style={{
-          padding: '8px 18px', background: 'transparent',
-          border: '1px solid rgba(255,255,255,0.2)', color: '#fff',
-          fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-        }}>
+        <button onClick={() => handleConsent(false)} style={btnStyle}>
           Refuser
         </button>
-        <button onClick={() => handleConsent(true)} style={{
-          padding: '8px 18px', background: '#3B82F6', border: 'none',
-          color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-        }}>
+        <button onClick={() => handleConsent(true)} style={btnStyle}>
           Accepter
         </button>
       </div>

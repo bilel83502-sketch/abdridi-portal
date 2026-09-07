@@ -25,25 +25,27 @@ export async function GET(req: Request) {
   const batchSize = 500;
 
   try {
-    const records = await fetchNantesBatch({
-      limit: batchSize,
-      startOffset: pageNum * batchSize,
+    const { summary } = await withCronLogging('sync-nantes-attribue', async () => {
+      const records = await fetchNantesBatch({
+        limit: batchSize,
+        startOffset: pageNum * batchSize,
+      });
+
+      const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
+      const total = await prisma.marcheAttribue.count();
+
+      return {
+        source: 'NANTES',
+        page: pageNum,
+        offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
+        fetched: records.length,
+        upserted,
+        skipped,
+        dedup,
+        totalInDb: total,
+        syncedAt: new Date().toISOString(),
+      };
     });
-
-    const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
-    const total = await prisma.marcheAttribue.count();
-
-    const summary = {
-      source: 'NANTES',
-      page: pageNum,
-      offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
-      fetched: records.length,
-      upserted,
-      skipped,
-      dedup,
-      totalInDb: total,
-      syncedAt: new Date().toISOString(),
-    };
 
     console.log('[NANTES] Sync complete:', summary);
     return NextResponse.json(summary);

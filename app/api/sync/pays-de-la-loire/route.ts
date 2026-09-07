@@ -18,7 +18,8 @@ export async function GET(req: Request) {
   }
 
   try {
-    const records = await fetchPDLRecords({ limit: 200 });
+    const { summary } = await withCronLogging('sync-pays-de-la-loire', async () => {
+      const records = await fetchPDLRecords({ limit: 200 });
 
     let created = 0;
     let skipped = 0;
@@ -87,13 +88,14 @@ export async function GET(req: Request) {
       data: { status: 'FERME' },
     });
 
-    const summary = {
-      total: records.length,
-      upserted: created,
-      skipped,
-      expired: expired.count,
-      syncedAt: new Date().toISOString(),
-    };
+      return {
+        total: records.length,
+        upserted: created,
+        skipped,
+        expired: expired.count,
+        syncedAt: new Date().toISOString(),
+      };
+    });
 
     console.log('[PDL] Sync complete:', summary);
     return NextResponse.json(summary);

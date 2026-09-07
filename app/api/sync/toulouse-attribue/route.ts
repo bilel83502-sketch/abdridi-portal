@@ -25,25 +25,27 @@ export async function GET(req: Request) {
   const batchSize = 500;
 
   try {
-    const records = await fetchToulouseBatch({
-      limit: batchSize,
-      startOffset: pageNum * batchSize,
+    const { summary } = await withCronLogging('sync-toulouse-attribue', async () => {
+      const records = await fetchToulouseBatch({
+        limit: batchSize,
+        startOffset: pageNum * batchSize,
+      });
+
+      const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
+      const total = await prisma.marcheAttribue.count();
+
+      return {
+        source: 'TOULOUSE',
+        page: pageNum,
+        offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
+        fetched: records.length,
+        upserted,
+        skipped,
+        dedup,
+        totalInDb: total,
+        syncedAt: new Date().toISOString(),
+      };
     });
-
-    const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
-    const total = await prisma.marcheAttribue.count();
-
-    const summary = {
-      source: 'TOULOUSE',
-      page: pageNum,
-      offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
-      fetched: records.length,
-      upserted,
-      skipped,
-      dedup,
-      totalInDb: total,
-      syncedAt: new Date().toISOString(),
-    };
 
     console.log('[TOULOUSE] Sync complete:', summary);
     return NextResponse.json(summary);

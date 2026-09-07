@@ -25,25 +25,27 @@ export async function GET(req: Request) {
   const batchSize = 500;
 
   try {
-    const records = await fetchDecpV3Batch({
-      limit: batchSize,
-      startOffset: pageNum * batchSize,
+    const { summary } = await withCronLogging('sync-decp-v3', async () => {
+      const records = await fetchDecpV3Batch({
+        limit: batchSize,
+        startOffset: pageNum * batchSize,
+      });
+
+      const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
+      const total = await prisma.marcheAttribue.count();
+
+      return {
+        source: 'DECP-V3',
+        page: pageNum,
+        offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
+        fetched: records.length,
+        upserted,
+        skipped,
+        dedup,
+        totalInDb: total,
+        syncedAt: new Date().toISOString(),
+      };
     });
-
-    const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
-    const total = await prisma.marcheAttribue.count();
-
-    const summary = {
-      source: 'DECP-V3',
-      page: pageNum,
-      offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
-      fetched: records.length,
-      upserted,
-      skipped,
-      dedup,
-      totalInDb: total,
-      syncedAt: new Date().toISOString(),
-    };
 
     console.log('[DECP-V3] Sync complete:', summary);
     return NextResponse.json(summary);

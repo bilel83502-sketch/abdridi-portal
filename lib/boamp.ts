@@ -238,6 +238,49 @@ function extractDuration(donnees: any): string | null {
   return null;
 }
 
+/* ───── Extraction des documents du DCE ───── */
+function extractDocuments(donnees: any, idweb: string): { name: string; url: string; type: string; size: string | null }[] | null {
+  const docs: { name: string; url: string; type: string; size: string | null }[] = [];
+
+  try {
+    const d = typeof donnees === 'string' ? JSON.parse(donnees) : donnees;
+
+    // eForms: look for document references
+    const eforms = d?.EFORMS?.ContractNotice;
+    if (eforms) {
+      const docRefs = eforms?.['cac:AdditionalDocumentReference'];
+      const docArr = Array.isArray(docRefs) ? docRefs : docRefs ? [docRefs] : [];
+      for (const doc of docArr) {
+        const attachment = doc?.['cac:Attachment'];
+        const uri = attachment?.['cac:ExternalReference']?.['cbc:URI'];
+        const filename = attachment?.['cac:ExternalReference']?.['cbc:FileName'] || doc?.['cbc:ID'];
+        if (uri && filename) {
+          const ext = filename.split('.').pop()?.toLowerCase() || 'pdf';
+          docs.push({ name: filename, url: uri, type: ext, size: null });
+        }
+      }
+    }
+
+    // Legacy: URLS_DOCUMENT field
+    const urls = d?.URLS_DOCUMENT || d?.URL_DOCUMENT;
+    if (urls) {
+      const urlArr = Array.isArray(urls) ? urls : [urls];
+      for (const u of urlArr) {
+        const url = typeof u === 'string' ? u : u?.['#text'] || u?.url;
+        if (url) {
+          const name = url.split('/').pop() || 'Document';
+          const ext = name.split('.').pop()?.toLowerCase() || 'pdf';
+          docs.push({ name, url, type: ext, size: null });
+        }
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+
+  return docs.length > 0 ? docs : null;
+}
+
 /* ───── Type retour pour le mapping ───── */
 export interface BoampMarche {
   title: string;
@@ -256,6 +299,7 @@ export interface BoampMarche {
   cpvLabel: string | null;
   lots: number;
   duration: string | null;
+  documents: any;
   status: string;
 }
 
@@ -288,6 +332,7 @@ function mapRecord(r: any): BoampMarche | null {
     cpvLabel: r.descripteur_libelle?.join(', ') || cpv.label,
     lots: extractLots(r.donnees),
     duration: extractDuration(r.donnees),
+    documents: extractDocuments(r.donnees, idweb),
     status: 'OUVERT',
   };
 }

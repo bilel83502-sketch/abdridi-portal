@@ -1,12 +1,13 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
 function LoginContent() {
+  useEffect(() => { document.title = 'Connexion | AB DRIDI'; }, []);
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get('registered');
@@ -14,20 +15,58 @@ function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [googleAccount, setGoogleAccount] = useState(false);
+  const [setPasswordSent, setSetPasswordSent] = useState(false);
+  const [setPasswordLoading, setSetPasswordLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [needs2FA, setNeeds2FA] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = await signIn('credentials', { email, password, redirect: false });
+    setGoogleAccount(false);
+
+    const credentials: Record<string, string> = { email, password, redirect: 'false' };
+    if (needs2FA) {
+      if (useBackupCode) {
+        credentials.backupCode = twoFactorCode;
+      } else {
+        credentials.twoFactorCode = twoFactorCode;
+      }
+    }
+
+    const res = await signIn('credentials', { ...credentials, redirect: false });
     if (res?.error) {
-      setError('Email ou mot de passe incorrect.');
+      if (res.error.includes('GOOGLE_ACCOUNT')) {
+        setGoogleAccount(true);
+      } else if (res.error.includes('2FA_REQUIRED')) {
+        setNeeds2FA(true);
+        setError('');
+      } else if (res.error.includes('2FA_INVALID')) {
+        setError('Code 2FA incorrect. Réessayez.');
+        setTwoFactorCode('');
+      } else {
+        setError('Email ou mot de passe incorrect.');
+      }
       setLoading(false);
     } else {
       router.push('/marches');
     }
+  }
+
+  async function handleSendSetPassword() {
+    setSetPasswordLoading(true);
+    await fetch('/api/auth/request-password-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    setSetPasswordSent(true);
+    setSetPasswordLoading(false);
   }
 
   return (
@@ -48,7 +87,7 @@ function LoginContent() {
 
           <div className="login-left-stats">
             {[
-              { n: '17+', t: 'sources officielles' },
+              { n: '25+', t: 'sources officielles' },
               { n: '100%', t: 'données publiques' },
               { n: '24/7', t: 'mise à jour' },
             ].map((s, i) => (
@@ -127,7 +166,7 @@ function LoginContent() {
           <div className="login-separator"><span>ou</span></div>
 
           {error && (
-            <div className="login-error">
+            <div className="login-error" role="alert">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="15" y1="9" x2="9" y2="15" />
@@ -137,15 +176,68 @@ function LoginContent() {
             </div>
           )}
 
+          {googleAccount && (
+            <div style={{
+              padding: '16px',
+              background: '#FFF7ED', border: '1px solid #FED7AA',
+              color: '#9A3412', fontSize: 13, marginBottom: 20,
+              borderRadius: 8,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                Ce compte a été créé avec Google. Connectez-vous avec Google ou définissez un mot de passe.
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => signIn('google', { callbackUrl: '/marches' })}
+                  className="login-google-btn"
+                  style={{ margin: 0 }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                  </svg>
+                  Continuer avec Google
+                </button>
+                {setPasswordSent ? (
+                  <p style={{ color: '#059669', fontSize: 12, textAlign: 'center', margin: 0 }}>
+                    Email envoyé ! Vérifiez votre boîte de réception pour définir votre mot de passe.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSendSetPassword}
+                    disabled={setPasswordLoading}
+                    style={{
+                      background: 'none', border: '1px solid #9A3412', color: '#9A3412',
+                      padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                      cursor: 'pointer', fontFamily: 'inherit', borderRadius: 6,
+                    }}
+                  >
+                    {setPasswordLoading ? 'Envoi en cours...' : 'Définir un mot de passe par email'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="login-form">
             <div className="login-field">
-              <label className="login-label">Email professionnel</label>
+              <label htmlFor="login-email" className="login-label">Email professionnel</label>
               <div className="login-input-wrap">
                 <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="4" width="20" height="16" rx="2" />
                   <path d="M22 7l-10 6L2 7" />
                 </svg>
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
@@ -159,7 +251,7 @@ function LoginContent() {
 
             <div className="login-field">
               <div className="login-label-row">
-                <label className="login-label">Mot de passe</label>
+                <label htmlFor="login-password" className="login-label">Mot de passe</label>
                 <ForgotPasswordLink />
               </div>
               <div className="login-input-wrap">
@@ -168,6 +260,7 @@ function LoginContent() {
                   <path d="M7 11V7a5 5 0 0110 0v4" />
                 </svg>
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -198,6 +291,37 @@ function LoginContent() {
                 </button>
               </div>
             </div>
+
+            {needs2FA && (
+              <div className="login-field" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0110 0v4" />
+                  </svg>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#1E40AF' }}>Vérification en deux étapes</span>
+                </div>
+                <label className="login-label" style={{ fontSize: 12 }}>
+                  {useBackupCode ? 'Code de secours' : 'Code à 6 chiffres (Google Authenticator)'}
+                </label>
+                <input
+                  type="text"
+                  value={twoFactorCode}
+                  onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, useBackupCode ? '' : '').slice(0, useBackupCode ? 8 : 6))}
+                  className="login-input"
+                  placeholder={useBackupCode ? 'Code de secours' : '000000'}
+                  autoFocus
+                  autoComplete="one-time-code"
+                  style={{ textAlign: 'center', fontSize: 20, letterSpacing: 8, fontWeight: 700 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => { setUseBackupCode(!useBackupCode); setTwoFactorCode(''); }}
+                  style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 12, cursor: 'pointer', marginTop: 8, fontFamily: 'inherit' }}
+                >
+                  {useBackupCode ? 'Utiliser le code TOTP' : 'Utiliser un code de secours'}
+                </button>
+              </div>
+            )}
 
             <button type="submit" disabled={loading} className="login-submit">
               {loading ? (

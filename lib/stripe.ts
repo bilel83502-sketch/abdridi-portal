@@ -18,7 +18,7 @@ export const PLANS = {
   },
   VEILLE: {
     name: 'Veille & Accompagnement',
-    price: 25.90,
+    price: 150,
     priceId: process.env.STRIPE_PRICE_VEILLE || '',
     features: [
       'Consultations illimit\u00e9es',

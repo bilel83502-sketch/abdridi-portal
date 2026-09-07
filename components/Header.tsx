@@ -12,7 +12,12 @@ const MAIN_TABS = [
   { href: '/dashboard', label: 'Tableau de bord' },
   { href: '/alertes', label: 'Alertes' },
   { href: '/concurrence', label: 'Concurrence' },
+  { href: '/pilotage', label: 'Pilotage', adminOnly: true },
   { href: '/rendez-vous', label: 'Rendez-vous' },
+];
+
+const PROSPECTOR_TABS = [
+  { href: '/prospection', label: 'Prospection' },
 ];
 
 export default function Header() {
@@ -20,8 +25,10 @@ export default function Header() {
   const { data: session } = useSession();
   const user = session?.user as any;
   const isAdmin = user?.role === 'ADMIN';
+  const isProspector = user?.role === 'PROSPECTOR';
   const isPaid = isAdmin || user?.plan === 'VEILLE';
-  const isFreePlan = !isAdmin && !isPaid;
+  const isFreePlan = !isAdmin && !isProspector && !isPaid;
+  const navTabs = isProspector ? PROSPECTOR_TABS : MAIN_TABS.filter(t => !t.adminOnly || isAdmin);
   const initials = user?.company
     ? user.company.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
     : (user?.name ? user.name.slice(0, 2).toUpperCase() : 'AB');
@@ -48,7 +55,7 @@ export default function Header() {
   return (
     <>
       {/* Free plan banner */}
-      {isFreePlan && (
+      {isFreePlan && !isProspector && (
         <div style={{
           background: 'var(--brand)', padding: '7px 16px',
           textAlign: 'center', fontSize: 12, color: '#fff',
@@ -63,7 +70,7 @@ export default function Header() {
       )}
 
       <header style={{
-        position: 'sticky', top: 0, zIndex: 50,
+        position: 'sticky', top: 0, zIndex: 1000,
         background: 'var(--nav)',
         borderBottom: '1px solid var(--nav-border)',
       }}>
@@ -71,16 +78,16 @@ export default function Header() {
 
           {/* Logo */}
           <Link href="/marches" style={{ marginRight: 32, textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} style={{ borderRadius: 0 }} />
+            <Image src="/logo.png" alt="AB DRIDI" width={48} height={48} priority style={{ borderRadius: 0 }} />
             <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
           </Link>
 
           {/* Desktop nav */}
-          <nav className="header-desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-            {MAIN_TABS.map(t => {
+          <nav className="header-desktop-nav" aria-label="Navigation principale" style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+            {navTabs.map(t => {
               const active = pathname === t.href || (t.href !== '/dashboard' && pathname.startsWith(t.href));
               return (
-                <Link key={t.href} href={t.href} style={{ textDecoration: 'none' }}>
+                <Link key={t.href} href={t.href} id={`nav-${t.href.slice(1)}`} style={{ textDecoration: 'none' }}>
                   <div style={{
                     padding: '6px 14px', borderRadius: 6, fontSize: 13,
                     fontWeight: active ? 500 : 400,
@@ -100,7 +107,12 @@ export default function Header() {
             {/* Avatar dropdown */}
             <div ref={dropRef} style={{ position: 'relative' }}>
               <button
+                id="user-menu-btn"
                 onClick={() => setDropdownOpen(v => !v)}
+                aria-label="Menu utilisateur"
+                aria-expanded={dropdownOpen}
+                aria-haspopup="menu"
+                aria-controls="user-menu"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 7,
                   background: 'transparent', border: 'none', cursor: 'pointer',
@@ -122,7 +134,7 @@ export default function Header() {
               </button>
 
               {dropdownOpen && (
-                <div style={{
+                <div id="user-menu" role="menu" style={{
                   position: 'absolute', top: 'calc(100% + 8px)', right: 0,
                   background: '#1E293B', border: '1px solid #2D3F55',
                   borderRadius: 10, padding: 6, minWidth: 192,
@@ -155,6 +167,8 @@ export default function Header() {
             className="header-hamburger"
             onClick={() => setMobileOpen(true)}
             style={{ marginLeft: 'auto', display: 'none' }}
+            aria-label="Ouvrir le menu"
+            aria-expanded={mobileOpen}
           >
             <Menu size={20} />
           </button>
@@ -170,13 +184,13 @@ export default function Header() {
           }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px 16px', borderBottom: '1px solid var(--nav-border)', marginBottom: 8 }}>
               <span style={{ fontSize: '1rem', fontWeight: 700, letterSpacing: '0.1em', color: '#FFFFFF' }}>DRIDI</span>
-              <button onClick={() => setMobileOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}>
+              <button onClick={() => setMobileOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }} aria-label="Fermer le menu">
                 <X size={18} />
               </button>
             </div>
-            {[...MAIN_TABS,
+            {[...navTabs,
               ...(isAdmin ? [{ href: '/admin', label: 'Administration' }] : []),
-              { href: '/abonnement', label: 'Abonnement' },
+              ...(!isProspector ? [{ href: '/abonnement', label: 'Abonnement' }] : []),
               { href: '/parametres', label: 'Paramètres' },
             ].map(t => {
               const active = pathname === t.href || (t.href !== '/dashboard' && pathname.startsWith(t.href));

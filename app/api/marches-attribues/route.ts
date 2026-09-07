@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { extractSiren } from '@/lib/sirene';
 import { getUserAccess } from '@/lib/access';
+import { TRANSPORT_CPV_PREFIXES, TRANSPORT_KEYWORDS } from '@/lib/sectors';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export async function GET(req: Request) {
   const montantMin = searchParams.get('montantMin') || '';
   const montantMax = searchParams.get('montantMax') || '';
   const periode = searchParams.get('periode') || '';
+  const sector = (searchParams.get('sector') || '').toLowerCase();
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
 
@@ -36,6 +38,21 @@ export async function GET(req: Request) {
 
   if (nature) where.nature = nature;
   if (department) where.departement = department;
+
+  // Filtre secteur élargi (cf. lib/sectors.ts). Cumule avec les autres
+  // conditions via AND. Le secteur Transport ratisse CPV 60/34/50.1x/63
+  // + une vingtaine de mots-clés métier (navette, TPMR, fret, …).
+  if (sector === 'transport') {
+    const sectorOR: any[] = [];
+    for (const prefix of TRANSPORT_CPV_PREFIXES) {
+      sectorOR.push({ codeCPV: { startsWith: prefix } });
+    }
+    for (const kw of TRANSPORT_KEYWORDS) {
+      sectorOR.push({ objet: { contains: kw, mode: 'insensitive' } });
+      sectorOR.push({ labelCPV: { contains: kw, mode: 'insensitive' } });
+    }
+    where.AND = [...(where.AND || []), { OR: sectorOR }];
+  }
 
   // Filtres montant
   if (montantMin || montantMax) {

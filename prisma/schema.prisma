@@ -22,8 +22,23 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   lastLoginAt   DateTime?
+  lastNurturingEmail DateTime?
   alerts        Alert[]
   appointments  Appointment[]
+  favoris       Favori[]
+
+  // RGPD consent tracking
+  consentDate          DateTime?
+  consentIP            String?
+  consentVersion       String?
+  marketingConsent     Boolean   @default(false)
+  marketingConsentDate DateTime?
+  onboardingDismissed  Boolean   @default(false)
+
+  // 2FA
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean  @default(false)
+  backupCodes      String[]
 
   // Stripe
   stripeCustomerId       String?
@@ -66,13 +81,16 @@ model Marche {
   cpvLabel        String?
   lots            Int      @default(1)
   duration        String?
+  documents       Json?    // [{name, url, type, size}]
   status          String   @default("OUVERT")
   createdAt       DateTime @default(now())
+  missions        Mission[]
 
   @@index([nature])
   @@index([department])
   @@index([status])
   @@index([publicationDate])
+  @@index([cpvCode])
 }
 
 model MarcheAttribue {
@@ -106,6 +124,8 @@ model MarcheAttribue {
   @@index([departement])
   @@index([dateNotification])
   @@index([montant])
+  @@index([titulaireSiret])
+  @@index([objet])
 }
 
 model Entreprise {
@@ -123,20 +143,35 @@ model Entreprise {
   @@index([raisonSociale])
 }
 
+model Favori {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  marcheId  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, marcheId])
+  @@index([userId])
+}
+
 model Alert {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name        String
   keywords    String[]
   natures     String[]
   departments String[]
-  frequency   String   @default("DAILY")
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  frequency   String    @default("DAILY")
+  active         Boolean   @default(true)
+  isDefault      Boolean   @default(false)
+  lastSentAt     DateTime?
+  lastMatchCount Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([userId])
+  @@index([active])
 }
 
 model Appointment {
@@ -166,4 +201,133 @@ model Relance {
   createdAt     DateTime    @default(now())
 
   @@index([appointmentId])
+}
+
+// ─── Pilotage / Prospection ───
+
+model Mission {
+  id             String     @id @default(cuid())
+  name           String
+  aoReference    String?
+  aoTitle        String?
+  deadline       DateTime?
+  ficheRecapUrl  String?
+  ficheRecapName String?
+  status         String     @default("ACTIVE")
+  marcheId       String?
+  marche         Marche?    @relation(fields: [marcheId], references: [id])
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  prospects      Prospect[]
+  documents      MissionDocument[]
+
+  @@index([status])
+  @@index([marcheId])
+}
+
+model MissionDocument {
+  id        String   @id @default(cuid())
+  missionId String
+  mission   Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  name      String
+  type      String   @default("AUTRE")
+  url       String
+  mimeType  String?
+  size      Int?
+  fileData  String?
+  createdAt DateTime @default(now())
+
+  @@index([missionId])
+}
+
+model Prospect {
+  id            String             @id @default(cuid())
+  missionId     String
+  mission       Mission            @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  company       String
+  contact       String?
+  phone         String?
+  email         String?
+  status        String             @default("A_CONTACTER")
+  note          String?
+  rdvDate       DateTime?
+  devisAmount   Float?
+  lastContactAt DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  activities    ProspectActivity[]
+
+  @@index([missionId])
+  @@index([status])
+  @@index([missionId, status])
+}
+
+model ProspectActivity {
+  id         String   @id @default(cuid())
+  prospectId String
+  prospect   Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  action     String
+  result     String?
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([prospectId])
+  @@index([createdAt])
+  @@index([action, createdAt])
+  @@index([result, createdAt])
+}
+
+model CronLog {
+  id              String   @id @default(cuid())
+  jobName         String
+  executedAt      DateTime @default(now())
+  success         Boolean
+  message         String?
+  alertsProcessed Int      @default(0)
+  emailsSent      Int      @default(0)
+
+  @@index([jobName])
+  @@index([executedAt])
+}
+
+model StripeEventLog {
+  id             String   @id @default(cuid())
+  stripeEventId  String   @unique
+  eventType      String
+  processedAt    DateTime @default(now())
+  success        Boolean  @default(true)
+  errorMessage   String?
+
+  @@index([eventType])
+  @@index([processedAt])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  userEmail    String?
+  userRole     String?
+  action       String
+  resource     String?
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json?
+  success      Boolean  @default(true)
+  country      String?
+  city         String?
+  deviceType   String?
+  browserName  String?
+  osName       String?
+  requestPath  String?
+  responseTime Int?
+  statusCode   Int?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([resource, resourceId])
+  @@index([country])
+  @@index([success])
 }

@@ -14,7 +14,8 @@
     "sync:decp": "tsx scripts/sync-decp.ts",
     "sync:decp-attribue": "tsx scripts/sync-decp-attribue.ts",
     "security-test": "tsx scripts/security-test.ts",
-    "ensure:admin": "tsx scripts/ensure-admin.ts"
+    "ensure:admin": "tsx scripts/ensure-admin.ts",
+    "db:size": "tsx scripts/db-size.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

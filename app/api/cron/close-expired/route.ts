@@ -16,34 +16,36 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
-  const now = new Date();
+  const { summary } = await withCronLogging('cron-close-expired', async () => {
+    const now = new Date();
 
-  // Ferme les marchés dont la deadline est dépassée et le status est encore OUVERT
-  const result = await prisma.marche.updateMany({
-    where: {
-      status: 'OUVERT',
-      deadline: { lt: now },
-    },
-    data: { status: 'FERME' },
+    // Ferme les marchés dont la deadline est dépassée et le status est encore OUVERT
+    const result = await prisma.marche.updateMany({
+      where: {
+        status: 'OUVERT',
+        deadline: { lt: now },
+      },
+      data: { status: 'FERME' },
+    });
+
+    // Ferme aussi les marchés sans deadline publiés il y a plus de 90 jours
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const resultNoDeadline = await prisma.marche.updateMany({
+      where: {
+        status: 'OUVERT',
+        deadline: null,
+        publicationDate: { lt: ninetyDaysAgo },
+      },
+      data: { status: 'FERME' },
+    });
+
+    return {
+      closedByDeadline: result.count,
+      closedNoDeadline: resultNoDeadline.count,
+      total: result.count + resultNoDeadline.count,
+      runAt: now.toISOString(),
+    };
   });
-
-  // Ferme aussi les marchés sans deadline publiés il y a plus de 90 jours
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-  const resultNoDeadline = await prisma.marche.updateMany({
-    where: {
-      status: 'OUVERT',
-      deadline: null,
-      publicationDate: { lt: ninetyDaysAgo },
-    },
-    data: { status: 'FERME' },
-  });
-
-  const summary = {
-    closedByDeadline: result.count,
-    closedNoDeadline: resultNoDeadline.count,
-    total: result.count + resultNoDeadline.count,
-    runAt: now.toISOString(),
-  };
 
   console.log('[CLOSE-EXPIRED]', summary);
   return NextResponse.json(summary);

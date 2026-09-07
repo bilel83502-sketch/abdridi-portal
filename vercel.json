@@ -184,6 +184,18 @@
     {
       "path": "/api/cron/check-cron-failures",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/sync/francemarches",
+      "schedule": "45 4 * * *"
+    },
+    {
+      "path": "/api/sync/aji",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/sync/centraledesmarches",
+      "schedule": "15 5 * * *"
     }
   ]
 }

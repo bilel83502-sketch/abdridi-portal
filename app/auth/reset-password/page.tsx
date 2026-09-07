@@ -29,7 +29,7 @@ function ResetContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (password.length < 8) { setError('Le mot de passe doit contenir au moins 8 caractères.'); return; }
+    if (password.length < 10 || !/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[!@#$%^&*()_+\-=\[\]{};:,.<>?]/.test(password)) { setError('Le mot de passe doit contenir au moins 10 caractères, une majuscule, un chiffre et un caractère spécial.'); return; }
     if (password !== confirmPassword) { setError('Les mots de passe ne correspondent pas.'); return; }
 
     setLoading(true);
@@ -81,9 +81,9 @@ function ResetContent() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Min. 8 caractères"
+                placeholder="Min. 10 car., 1 majuscule, 1 chiffre, 1 spécial"
                 required
-                minLength={8}
+                minLength={10}
                 style={{ width: '100%', padding: '10px 14px', border: '1px solid #E2E8F0', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>

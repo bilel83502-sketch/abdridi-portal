@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { ChevronDown, X, Check } from 'lucide-react';
 
 export const DEPARTMENTS = [
   { code: '01', name: 'Ain' }, { code: '02', name: 'Aisne' }, { code: '03', name: 'Allier' },
@@ -42,12 +42,21 @@ export const DEPARTMENTS = [
   { code: '974', name: 'La Réunion' }, { code: '976', name: 'Mayotte' },
 ];
 
-export default function DepartmentSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+type MultiProps = { multi: true; value: string[]; onChange: (v: string[]) => void };
+type SingleProps = { multi?: false; value: string; onChange: (v: string) => void };
+type Props = MultiProps | SingleProps;
+
+export default function DepartmentSelect(props: Props) {
+  const isMulti = props.multi === true;
+  const selectedArr: string[] = isMulti ? props.value : (props.value ? [props.value] : []);
+  const selectedSet = new Set(selectedArr);
+
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  const selected = DEPARTMENTS.find(d => d.code === value);
   const filtered = search
     ? DEPARTMENTS.filter(d =>
         d.code.toLowerCase().includes(search.toLowerCase()) ||
@@ -63,45 +72,155 @@ export default function DepartmentSelect({ value, onChange }: { value: string; o
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  useEffect(() => { setHighlightIdx(-1); }, [search, open]);
+
+  const handleSelect = useCallback((code: string) => {
+    if (isMulti) {
+      const cb = props.onChange as (v: string[]) => void;
+      if (selectedSet.has(code)) cb(selectedArr.filter(c => c !== code));
+      else cb([...selectedArr, code]);
+    } else {
+      const cb = props.onChange as (v: string) => void;
+      cb(props.value === code ? '' : code);
+      setOpen(false);
+      setSearch('');
+    }
+  }, [isMulti, props, selectedArr, selectedSet]);
+
+  function clearAll(e: React.MouseEvent) {
+    e.stopPropagation();
+    setSearch('');
+    if (isMulti) (props.onChange as (v: string[]) => void)([]);
+    else (props.onChange as (v: string) => void)('');
+  }
+
+  function removeChip(code: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (isMulti) (props.onChange as (v: string[]) => void)(selectedArr.filter(c => c !== code));
+  }
+
+  // Keyboard navigation
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (!open) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setOpen(true);
+      }
+      return;
+    }
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setHighlightIdx(i => Math.min(i + 1, filtered.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setHighlightIdx(i => Math.max(i - 1, 0));
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (highlightIdx >= 0 && highlightIdx < filtered.length) {
+          handleSelect(filtered[highlightIdx].code);
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setOpen(false);
+        break;
+      case 'Home':
+        e.preventDefault();
+        setHighlightIdx(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        setHighlightIdx(filtered.length - 1);
+        break;
+    }
+  }
+
+  // Scroll highlighted option into view
+  useEffect(() => {
+    if (highlightIdx >= 0 && listRef.current) {
+      const el = listRef.current.children[isMulti ? highlightIdx : highlightIdx + 1] as HTMLElement;
+      el?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightIdx, isMulti]);
+
+  const displayText = selectedArr.length === 0
+    ? 'Tous'
+    : isMulti
+      ? `${selectedArr.length} département${selectedArr.length > 1 ? 's' : ''}`
+      : (() => { const d = DEPARTMENTS.find(d => d.code === selectedArr[0]); return d ? `${d.code} — ${d.name}` : selectedArr[0]; })();
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <div
+      {isMulti && selectedArr.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
+          {selectedArr.map(code => {
+            const dept = DEPARTMENTS.find(d => d.code === code);
+            return (
+              <span key={code} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 3,
+                padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 500,
+                background: '#DBEAFE', color: '#2563EB', border: '1px solid #93C5FD',
+              }}>
+                {code}{dept ? ` ${dept.name}` : ''}
+                <button type="button" onClick={(e) => removeChip(code, e)} aria-label={`Retirer ${dept?.name || code}`}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: '#2563EB' }}>
+                  <X size={11} />
+                </button>
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Trigger button */}
+      <button
+        type="button"
         onClick={() => setOpen(!open)}
+        onKeyDown={handleKeyDown}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-controls="dept-listbox"
+        aria-label={`Départements : ${displayText}`}
         className="input"
         style={{
-          height: 40, fontSize: 13, display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none',
+          width: '100%', height: 40, fontSize: 13, display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none', textAlign: 'left',
         }}
       >
-        <span style={{ color: value ? '#111827' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {selected ? `${selected.code} — ${selected.name}` : 'Tous'}
+        <span style={{ color: selectedArr.length > 0 ? '#111827' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {displayText}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 }}>
-          {value && (
-            <button
-              type="button"
-              onClick={e => { e.stopPropagation(); onChange(''); setSearch(''); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: '#9CA3AF' }}
-            >
+          {selectedArr.length > 0 && (
+            <span onClick={clearAll} role="button" tabIndex={-1} aria-label="Tout effacer"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, display: 'flex', color: '#9CA3AF' }}>
               <X size={13} />
-            </button>
+            </span>
           )}
-          <ChevronDown size={14} style={{ color: '#9CA3AF' }} />
+          <ChevronDown size={14} style={{ color: '#9CA3AF', transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }} />
         </div>
-      </div>
+      </button>
+
+      {/* Dropdown */}
       {open && (
         <div style={{
           position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
           marginTop: 4, background: '#fff', border: '1px solid #E5E7EB',
           borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          maxHeight: 260, display: 'flex', flexDirection: 'column',
+          maxHeight: 280, display: 'flex', flexDirection: 'column',
         }}>
           <div style={{ padding: '8px 8px 4px' }}>
             <input
               autoFocus
               value={search}
               onChange={e => setSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="Rechercher..."
+              aria-label="Rechercher un département"
               style={{
                 width: '100%', padding: '7px 10px', borderRadius: 6,
                 border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'inherit',
@@ -111,38 +230,58 @@ export default function DepartmentSelect({ value, onChange }: { value: string; o
               onBlur={e => (e.currentTarget.style.borderColor = '#E5E7EB')}
             />
           </div>
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            <div
-              onClick={() => { onChange(''); setSearch(''); setOpen(false); }}
-              style={{
-                padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-                background: !value ? '#EFF6FF' : 'transparent', color: !value ? '#2563EB' : '#374151',
-                fontWeight: !value ? 600 : 400,
-              }}
-              onMouseEnter={e => { if (value) e.currentTarget.style.background = '#F9FAFB'; }}
-              onMouseLeave={e => { if (value) e.currentTarget.style.background = 'transparent'; }}
-            >
-              Tous les departements
-            </div>
-            {filtered.map(d => (
+          <div ref={listRef} id="dept-listbox" role="listbox" aria-multiselectable={isMulti || undefined} style={{ overflowY: 'auto', flex: 1 }}>
+            {!isMulti && (
               <div
-                key={d.code}
-                onClick={() => { onChange(d.code); setSearch(''); setOpen(false); }}
+                role="option"
+                aria-selected={selectedArr.length === 0}
+                onClick={() => { handleSelect(''); setOpen(false); setSearch(''); }}
                 style={{
                   padding: '8px 12px', fontSize: 12, cursor: 'pointer',
-                  background: value === d.code ? '#EFF6FF' : 'transparent',
-                  color: value === d.code ? '#2563EB' : '#374151',
-                  fontWeight: value === d.code ? 600 : 400,
+                  background: selectedArr.length === 0 ? '#EFF6FF' : 'transparent',
+                  color: selectedArr.length === 0 ? '#2563EB' : '#374151',
+                  fontWeight: selectedArr.length === 0 ? 600 : 400,
                 }}
-                onMouseEnter={e => { if (value !== d.code) e.currentTarget.style.background = '#F9FAFB'; }}
-                onMouseLeave={e => { if (value !== d.code) e.currentTarget.style.background = 'transparent'; }}
               >
-                {d.code} — {d.name}
+                Tous les départements
               </div>
-            ))}
+            )}
+            {filtered.map((d, idx) => {
+              const isSelected = selectedSet.has(d.code);
+              const isHighlighted = idx === highlightIdx;
+              return (
+                <div
+                  key={d.code}
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => handleSelect(d.code)}
+                  style={{
+                    padding: '7px 12px', fontSize: 12, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: isHighlighted ? '#DBEAFE' : isSelected ? '#EFF6FF' : 'transparent',
+                    color: isSelected ? '#2563EB' : '#374151',
+                    fontWeight: isSelected ? 600 : 400,
+                    outline: isHighlighted ? '2px solid #3B82F6' : 'none',
+                    outlineOffset: -2,
+                  }}
+                >
+                  {isMulti && (
+                    <span style={{
+                      width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+                      border: isSelected ? '2px solid #2563EB' : '2px solid #D1D5DB',
+                      background: isSelected ? '#2563EB' : '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {isSelected && <Check size={10} color="#fff" strokeWidth={3} />}
+                    </span>
+                  )}
+                  {d.code} — {d.name}
+                </div>
+              );
+            })}
             {filtered.length === 0 && (
               <div style={{ padding: '12px', fontSize: 12, color: '#9CA3AF', textAlign: 'center' }}>
-                Aucun departement trouve
+                Aucun département trouvé
               </div>
             )}
           </div>

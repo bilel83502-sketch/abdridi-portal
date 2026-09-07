@@ -55,7 +55,6 @@ async function main() {
             lieuExecution: record.lieuExecution,
             departement: record.departement,
             departementNom: record.departementNom,
-            region: record.region,
             codeCPV: record.codeCPV,
             labelCPV: record.labelCPV,
             dureeMois: record.dureeMois,

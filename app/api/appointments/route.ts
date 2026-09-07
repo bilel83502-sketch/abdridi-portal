@@ -148,6 +148,49 @@ export async function POST(req: Request) {
   }
 }
 
+// DELETE — cancel a PENDING appointment (user can cancel their own)
+export async function DELETE(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 });
+    }
+
+    const user = await findSessionUser(session);
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
+    }
+
+    const body = await req.json();
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID manquant.' }, { status: 400 });
+    }
+
+    const appointment = await prisma.appointment.findUnique({ where: { id } });
+    if (!appointment) {
+      return NextResponse.json({ error: 'Rendez-vous introuvable.' }, { status: 404 });
+    }
+
+    // Only owner or admin can delete, and only PENDING appointments
+    if (appointment.userId !== user.id && user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Accès refusé.' }, { status: 403 });
+    }
+
+    if (appointment.status !== 'PENDING') {
+      return NextResponse.json({ error: 'Seuls les rendez-vous en attente peuvent être annulés.' }, { status: 400 });
+    }
+
+    await prisma.appointment.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    console.error('[Appointments DELETE] ERROR:', e.message);
+    return NextResponse.json({ error: e.message || 'Erreur serveur.' }, { status: 500 });
+  }
+}
+
 // PATCH — update appointment status (admin only)
 export async function PATCH(req: Request) {
   try {

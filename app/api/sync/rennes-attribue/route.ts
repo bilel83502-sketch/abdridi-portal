@@ -25,25 +25,27 @@ export async function GET(req: Request) {
   const batchSize = 500;
 
   try {
-    const records = await fetchRennesBatch({
-      limit: batchSize,
-      startOffset: pageNum * batchSize,
+    const { summary } = await withCronLogging('sync-rennes-attribue', async () => {
+      const records = await fetchRennesBatch({
+        limit: batchSize,
+        startOffset: pageNum * batchSize,
+      });
+
+      const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
+      const total = await prisma.marcheAttribue.count();
+
+      return {
+        source: 'RENNES',
+        page: pageNum,
+        offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
+        fetched: records.length,
+        upserted,
+        skipped,
+        dedup,
+        totalInDb: total,
+        syncedAt: new Date().toISOString(),
+      };
     });
-
-    const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
-    const total = await prisma.marcheAttribue.count();
-
-    const summary = {
-      source: 'RENNES',
-      page: pageNum,
-      offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
-      fetched: records.length,
-      upserted,
-      skipped,
-      dedup,
-      totalInDb: total,
-      syncedAt: new Date().toISOString(),
-    };
 
     console.log('[RENNES] Sync complete:', summary);
     return NextResponse.json(summary);

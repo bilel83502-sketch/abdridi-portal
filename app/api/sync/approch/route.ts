@@ -16,16 +16,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
-  // Domain is parked — return unavailable status
-  await fetchApprochRecords();
+  const { summary } = await withCronLogging('sync-approch', async () => {
+    // Domain is parked — return unavailable status
+    await fetchApprochRecords();
 
-  return NextResponse.json({
-    status: 'unavailable',
-    reason: 'Domain parked (approch.fr en vente sur Dovendi)',
-    total: 0,
-    upserted: 0,
-    skipped: 0,
-    expired: 0,
-    syncedAt: new Date().toISOString(),
+    return {
+      status: 'unavailable',
+      reason: 'Domain parked (approch.fr en vente sur Dovendi)',
+      total: 0,
+      upserted: 0,
+      skipped: 0,
+      expired: 0,
+      syncedAt: new Date().toISOString(),
+    };
   });
+
+  return NextResponse.json(summary);
 }

@@ -25,24 +25,26 @@ export async function GET(req: Request) {
   const batchSize = 500;
 
   try {
-    const records = await fetchTedAttribueBatch({
-      limit: batchSize,
-      page: pageNum + 1,
+    const { summary } = await withCronLogging('sync-ted-attribue', async () => {
+      const records = await fetchTedAttribueBatch({
+        limit: batchSize,
+        page: pageNum + 1,
+      });
+
+      const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
+      const total = await prisma.marcheAttribue.count();
+
+      return {
+        source: 'TED-ATT',
+        page: pageNum,
+        fetched: records.length,
+        upserted,
+        skipped,
+        dedup,
+        totalInDb: total,
+        syncedAt: new Date().toISOString(),
+      };
     });
-
-    const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
-    const total = await prisma.marcheAttribue.count();
-
-    const summary = {
-      source: 'TED-ATT',
-      page: pageNum,
-      fetched: records.length,
-      upserted,
-      skipped,
-      dedup,
-      totalInDb: total,
-      syncedAt: new Date().toISOString(),
-    };
 
     console.log('[TED-ATT] Sync complete:', summary);
     return NextResponse.json(summary);

@@ -22,15 +22,19 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
 
-  return NextResponse.json({
-    status: 'unavailable',
-    reason:
-      'safetender.com redirige vers omnikles.com (fusion). ' +
-      'Aucun listing public disponible. Couvert par /api/sync/klekoon.',
-    total: 0,
-    upserted: 0,
-    skipped: 0,
-    expired: 0,
-    syncedAt: new Date().toISOString(),
+  const { summary } = await withCronLogging('sync-safetender', async () => {
+    return {
+      status: 'unavailable',
+      reason:
+        'safetender.com redirige vers omnikles.com (fusion). ' +
+        'Aucun listing public disponible. Couvert par /api/sync/klekoon.',
+      total: 0,
+      upserted: 0,
+      skipped: 0,
+      expired: 0,
+      syncedAt: new Date().toISOString(),
+    };
   });
+
+  return NextResponse.json(summary);
 }

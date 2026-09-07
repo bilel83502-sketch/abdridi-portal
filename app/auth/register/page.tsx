@@ -1,17 +1,20 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function RegisterPage() {
+  useEffect(() => { document.title = 'Inscription | AB DRIDI'; }, []);
   const router = useRouter();
   const [form, setForm] = useState({
-    name: '', email: '', company: '', phone: '', siret: '',
+    name: '', email: '', company: '', phone: '', siret: '', sector: '',
     password: '', confirmPassword: '',
   });
+  const [acceptPolicy, setAcceptPolicy] = useState(false);
+  const [acceptMarketing, setAcceptMarketing] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -25,8 +28,8 @@ export default function RegisterPage() {
       setError('Les mots de passe ne correspondent pas.');
       return;
     }
-    if (form.password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères.');
+    if (form.password.length < 10 || !/[A-Z]/.test(form.password) || !/[0-9]/.test(form.password) || !/[!@#$%^&*()_+\-=\[\]{};:,.<>?]/.test(form.password)) {
+      setError('Le mot de passe doit contenir au moins 10 caractères, une majuscule, un chiffre et un caractère spécial.');
       return;
     }
     setLoading(true);
@@ -35,7 +38,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, acceptPolicy, acceptMarketing }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -64,7 +67,7 @@ export default function RegisterPage() {
           <div className="login-left-stats">
             {[
               { n: '6 100+', t: 'marchés surveillés' },
-              { n: '102', t: 'sources officielles' },
+              { n: '25+', t: 'sources officielles' },
               { n: '7 000+', t: 'contrats attribués' },
             ].map((s, i) => (
               <div key={i} className="login-left-stat">
@@ -114,7 +117,7 @@ export default function RegisterPage() {
           <div className="login-separator"><span>ou</span></div>
 
           {error && (
-            <div className="login-error">
+            <div className="login-error" role="alert">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
               </svg>
@@ -124,72 +127,90 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className="login-form">
             <div className="login-field">
-              <label className="login-label">Nom complet *</label>
+              <label htmlFor="reg-name" className="login-label">Nom complet *</label>
               <div className="login-input-wrap">
                 <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
                 </svg>
-                <input type="text" value={form.name} onChange={set('name')} className="login-input" placeholder="Jean Dupont" required />
+                <input id="reg-name" type="text" value={form.name} onChange={set('name')} className="login-input" placeholder="Jean Dupont" required />
               </div>
             </div>
 
             <div className="login-field">
-              <label className="login-label">Email professionnel *</label>
+              <label htmlFor="reg-email" className="login-label">Email professionnel *</label>
               <div className="login-input-wrap">
                 <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 6L2 7"/>
                 </svg>
-                <input type="email" value={form.email} onChange={set('email')} className="login-input" placeholder="vous@entreprise.com" required />
+                <input id="reg-email" type="email" value={form.email} onChange={set('email')} className="login-input" placeholder="vous@entreprise.com" required />
               </div>
             </div>
 
             <div className="login-field">
-              <label className="login-label">Entreprise *</label>
+              <label htmlFor="reg-company" className="login-label">Entreprise *</label>
               <div className="login-input-wrap">
                 <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
                 </svg>
-                <input type="text" value={form.company} onChange={set('company')} className="login-input" placeholder="Votre entreprise" required />
+                <input id="reg-company" type="text" value={form.company} onChange={set('company')} className="login-input" placeholder="Votre entreprise" required />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div className="login-field">
-                <label className="login-label">SIRET (optionnel)</label>
+                <label htmlFor="reg-siret" className="login-label">SIRET (optionnel)</label>
                 <div className="login-input-wrap">
                   <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
                   </svg>
-                  <input type="text" value={form.siret} onChange={set('siret')} className="login-input" placeholder="123 456 789 00012" />
+                  <input id="reg-siret" type="text" value={form.siret} onChange={set('siret')} className="login-input" placeholder="123 456 789 00012" />
                 </div>
               </div>
               <div className="login-field">
-                <label className="login-label">Téléphone (optionnel)</label>
+                <label htmlFor="reg-phone" className="login-label">Téléphone (optionnel)</label>
                 <div className="login-input-wrap">
                   <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
                   </svg>
-                  <input type="tel" value={form.phone} onChange={set('phone')} className="login-input" placeholder="06 12 34 56 78" />
+                  <input id="reg-phone" type="tel" value={form.phone} onChange={set('phone')} className="login-input" placeholder="06 12 34 56 78" />
                 </div>
               </div>
             </div>
 
             <div className="login-field">
-              <label className="login-label">Mot de passe *</label>
+              <label htmlFor="reg-sector" className="login-label">Secteur d&apos;activité</label>
+              <div className="login-input-wrap">
+                <select id="reg-sector" value={form.sector} onChange={e => setForm({ ...form, sector: e.target.value })} className="login-input" style={{ appearance: 'auto' }}>
+                  <option value="">Sélectionnez votre secteur</option>
+                  <option value="transport-medical">Transport médical / sanitaire</option>
+                  <option value="funeraire">Services funéraires</option>
+                  <option value="dechets">Déchets & propreté</option>
+                  <option value="alimentaire">Fourniture alimentaire</option>
+                  <option value="messagerie">Messagerie & logistique</option>
+                  <option value="btp">BTP & travaux</option>
+                  <option value="nettoyage">Nettoyage & entretien</option>
+                  <option value="autre">Autre secteur</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="reg-password" className="login-label">Mot de passe *</label>
               <div className="login-input-wrap">
                 <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
                 </svg>
                 <input
+                  id="reg-password"
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={set('password')}
                   className="login-input login-input-pw"
-                  placeholder="Min. 8 caractères"
+                  placeholder="Min. 10 caractères, 1 majuscule, 1 chiffre, 1 spécial"
                   required
-                  minLength={8}
+                  minLength={10}
                 />
-                <button type="button" className="login-eye-btn" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+                <button type="button" className="login-eye-btn" onClick={() => setShowPassword(!showPassword)} tabIndex={-1} aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
                   {showPassword ? (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
@@ -204,12 +225,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="login-field">
-              <label className="login-label">Confirmer le mot de passe *</label>
+              <label htmlFor="reg-confirm" className="login-label">Confirmer le mot de passe *</label>
               <div className="login-input-wrap">
                 <svg className="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
                 <input
+                  id="reg-confirm"
                   type="password"
                   value={form.confirmPassword}
                   onChange={set('confirmPassword')}
@@ -220,7 +242,35 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="login-submit">
+            <div style={{ margin: '4px 0 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={acceptPolicy}
+                  onChange={e => setAcceptPolicy(e.target.checked)}
+                  required
+                  style={{ width: 16, height: 16, accentColor: '#3B82F6', marginTop: 2, flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>
+                  J&apos;ai lu et j&apos;accepte la{' '}
+                  <a href="/confidentialite" target="_blank" style={{ color: '#3B82F6', textDecoration: 'none' }}>politique de confidentialité</a>
+                  {' '}et les{' '}
+                  <a href="/mentions-legales" target="_blank" style={{ color: '#3B82F6', textDecoration: 'none' }}>CGU</a>. *
+                </span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={acceptMarketing}
+                  onChange={e => setAcceptMarketing(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: '#3B82F6', marginTop: 2, flexShrink: 0 }}
+                />
+                <span style={{ fontSize: 11, color: '#9CA3AF', lineHeight: 1.5 }}>
+                  Je souhaite recevoir les actualités d&apos;AB DRIDI par email (1 email/mois max, désinscription à tout moment).
+                </span>
+              </label>
+            </div>
+            <button type="submit" disabled={loading || !acceptPolicy} className="login-submit" style={{ opacity: !acceptPolicy ? 0.5 : undefined, cursor: !acceptPolicy ? 'not-allowed' : undefined }}>
               {loading ? (
                 <>
                   <svg className="login-spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

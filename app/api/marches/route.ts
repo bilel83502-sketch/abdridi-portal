@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { getUserAccess } from '@/lib/access';
 import { authOptions } from '@/lib/auth';
+import { buildTransportSqlFilter } from '@/lib/sectors';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,8 @@ export async function GET(req: Request) {
   const source = searchParams.get('source') || '';
   const buyer = searchParams.get('buyer') || '';
   let cpvCode = searchParams.get('cpvCode') || '';
+  // Filtre secteur élargi (cf. lib/sectors.ts). Pour l'instant 'transport'.
+  const sector = (searchParams.get('sector') || '').toLowerCase();
 
   // Date filters
   const datePublishedFrom = searchParams.get('datePublishedFrom') || '';
@@ -141,6 +144,16 @@ export async function GET(req: Request) {
   if (cpvCode) {
     conditions.push(`"cpvCode" LIKE $${paramIdx++}`);
     params.push(`%${cpvCode}%`);
+  }
+  // Filtre secteur élargi : Action 1 du Sprint Acquisition.
+  // 'transport' = CPV 60.x + 34.x + 50.1x/50.2x + 63.x + mots-clés étendus
+  // (navette, autocar, TPMR, ambulance, déménagement, fret, coursier,
+  //  livraison, logistique, sanitaire, scolaire…). Voir lib/sectors.ts.
+  if (sector === 'transport') {
+    const { sql, params: sectorParams } = buildTransportSqlFilter(paramIdx);
+    conditions.push(sql);
+    params.push(...sectorParams);
+    paramIdx += sectorParams.length;
   }
   if (q) {
     const keywords = q.split(',').map(k => k.trim()).filter(Boolean);

@@ -5,3 +5,8 @@ node_modules/
 *.tsbuildinfo
 .vercel
 .env*.local
+
+# Fichiers systeme et sauvegardes
+.DS_Store
+*.bak
+.scratch_dummy.md

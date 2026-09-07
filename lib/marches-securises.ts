@@ -183,6 +183,7 @@ export interface MarchesSecurisesMarche {
   cpvLabel: string | null;
   lots: number;
   duration: string | null;
+  documents: any;
   status: string;
 }
 
@@ -206,7 +207,7 @@ function parseResultsHtml(html: string): MarchesSecurisesMarche[] {
     // Extract dept from buyer name: "Organisme (XX)"
     const paDeptMatch = paRaw.match(/\((\d{2,3}|2[AB])\)\s*$/);
     const dept = paDeptMatch ? paDeptMatch[1] : '00';
-    const buyer = paRaw.replace(/\s*\(\d{2,3}|2[AB]\)\s*$/, '').trim() || 'Marchés Sécurisés';
+    const buyer = paRaw.replace(/\s*\((?:\d{2,3}|2[AB])\)\s*$/, '').trim() || 'Marchés Sécurisés';
 
     // Title/Object: in tr_objet row
     const objMatch = item.match(/class="objet"[\s\S]*?max-width:\d+px;">([^<]+)/);
@@ -250,6 +251,17 @@ function parseResultsHtml(html: string): MarchesSecurisesMarche[] {
     const deadlineMatch = item.match(/td_clot_date">([^<]+)/);
     const deadline = deadlineMatch ? parseFrenchDate(deadlineMatch[1]) : null;
 
+    // Documents: extract file links from consultation block (retraitLink, pj links)
+    const documents: { name: string; url: string; type: string; size: string | null }[] = [];
+    // Look for downloadable file links in the block
+    const fileRegex = /href="([^"]*(?:telecharger|download|fichier|pj)[^"]*)"/gi;
+    let fm;
+    while ((fm = fileRegex.exec(item)) !== null) {
+      const fileUrl = fm[1].startsWith('http') ? fm[1] : `${BASE_URL}${fm[1]}`;
+      const fileName = decodeURIComponent(fileUrl.split('/').pop() || 'Document');
+      const ext = fileName.split('.').pop()?.toLowerCase() || 'pdf';
+      documents.push({ name: fileName, url: fileUrl, type: ext, size: null });
+    }
     results.push({
       title: reference ? `${reference} — ${title}`.slice(0, 500) : title.slice(0, 500),
       buyer: buyer.slice(0, 300),
@@ -267,6 +279,7 @@ function parseResultsHtml(html: string): MarchesSecurisesMarche[] {
       cpvLabel: null,
       lots,
       duration: null,
+      documents: documents.length > 0 ? documents : null,
       status: 'OUVERT',
     });
   }

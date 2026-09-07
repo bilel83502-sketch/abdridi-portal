@@ -27,28 +27,30 @@ export async function GET(req: Request) {
   const batchSize = 500;
 
   try {
-    let records: AttribueRecord[];
+    const { summary } = await withCronLogging('sync-decp-attribue', async () => {
+      let records: AttribueRecord[];
 
-    if (source === 'decp') {
-      records = await fetchDecpV3Records({ limit: batchSize, monthsBack: 12, startOffset: pageNum * batchSize });
-    } else {
-      records = await fetchBoampAttribRecords({ limit: batchSize, daysBack: 365, startOffset: pageNum * batchSize });
-    }
+      if (source === 'decp') {
+        records = await fetchDecpV3Records({ limit: batchSize, monthsBack: 12, startOffset: pageNum * batchSize });
+      } else {
+        records = await fetchBoampAttribRecords({ limit: batchSize, daysBack: 365, startOffset: pageNum * batchSize });
+      }
 
-    const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
-    const total = await prisma.marcheAttribue.count();
+      const { upserted, dedup, skipped } = await upsertAttribueRecords(records);
+      const total = await prisma.marcheAttribue.count();
 
-    const summary = {
-      source,
-      page: pageNum,
-      offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
-      fetched: records.length,
-      upserted,
-      skipped,
-      dedup,
-      totalInDb: total,
-      syncedAt: new Date().toISOString(),
-    };
+      return {
+        source,
+        page: pageNum,
+        offsetRange: `${pageNum * batchSize}-${pageNum * batchSize + records.length}`,
+        fetched: records.length,
+        upserted,
+        skipped,
+        dedup,
+        totalInDb: total,
+        syncedAt: new Date().toISOString(),
+      };
+    });
 
     console.log('[ATTRIBUE] Sync complete:', summary);
     return NextResponse.json(summary);

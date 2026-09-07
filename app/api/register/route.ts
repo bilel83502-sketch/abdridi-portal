@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimitCheck } from '@/lib/rate-limit';
 import { Resend } from 'resend';
 
 export const dynamic = 'force-dynamic';
@@ -14,8 +14,15 @@ const schema = z.object({
   company: z.string().optional(),
   phone: z.string().optional(),
   siret: z.string().optional(),
-  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères.'),
+  sector: z.string().optional(),
+  password: z.string()
+    .min(10, 'Le mot de passe doit contenir au moins 10 caractères.')
+    .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule.')
+    .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre.')
+    .regex(/[!@#$%^&*]/, 'Le mot de passe doit contenir au moins un caractère spécial (!@#$%^&*).'),
   confirmPassword: z.string(),
+  acceptPolicy: z.boolean().refine(v => v === true, { message: 'Vous devez accepter la politique de confidentialité.' }),
+  acceptMarketing: z.boolean().optional().default(false),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Les mots de passe ne correspondent pas.',
   path: ['confirmPassword'],
@@ -26,7 +33,7 @@ export async function POST(req: Request) {
     // Rate limiting by IP (5 registrations per hour)
     const forwarded = req.headers.get('x-forwarded-for');
     const ip = forwarded ? forwarded.split(',')[0].trim() : 'unknown';
-    const { allowed } = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
+    const { allowed } = await rateLimitCheck(`register:${ip}`, 5, 60 * 60 * 1000);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de tentatives. Réessayez dans une heure.' },
@@ -43,6 +50,7 @@ export async function POST(req: Request) {
     }
 
     const hash = await bcrypt.hash(data.password, 12);
+    const now = new Date();
     const user = await prisma.user.create({
       data: {
         email: data.email.toLowerCase().trim(),
@@ -50,11 +58,45 @@ export async function POST(req: Request) {
         company: data.company?.trim() || null,
         phone: data.phone?.trim() || null,
         siret: data.siret?.trim() || null,
+        sector: data.sector?.trim() || null,
         passwordHash: hash,
         role: 'USER',
         plan: 'DECOUVERTE',
+        consentDate: now,
+        consentIP: ip,
+        consentVersion: 'v1.0',
+        marketingConsent: data.acceptMarketing || false,
+        marketingConsentDate: data.acceptMarketing ? now : null,
       },
     });
+
+    // Auto-create default alert based on sector
+    try {
+      const SECTOR_ALERTS: Record<string, { name: string; keywords: string[] }> = {
+        'transport-medical': { name: 'Transport sanitaire', keywords: ['transport sanitaire', 'ambulance', 'transport sang', 'transport organes'] },
+        'funeraire': { name: 'Services funéraires', keywords: ['pompes funèbres', 'transport funéraire', 'cercueil'] },
+        'dechets': { name: 'Collecte déchets', keywords: ['collecte déchets', 'benne', 'tri sélectif', 'déchetterie'] },
+        'alimentaire': { name: 'Fourniture alimentaire', keywords: ['fourniture alimentaire', 'denrées', 'restauration collective'] },
+        'messagerie': { name: 'Transport & messagerie', keywords: ['transport colis', 'messagerie', 'livraison'] },
+        'btp': { name: 'BTP & travaux', keywords: ['travaux publics', 'bâtiment', 'voirie', 'chantier'] },
+        'nettoyage': { name: 'Nettoyage & propreté', keywords: ['nettoyage', 'propreté', 'entretien locaux'] },
+      };
+      const sectorConfig = SECTOR_ALERTS[data.sector || ''] || { name: 'Marchés publics', keywords: ['marchés publics'] };
+      await prisma.alert.create({
+        data: {
+          userId: user.id,
+          name: sectorConfig.name,
+          keywords: sectorConfig.keywords,
+          natures: [],
+          departments: [],
+          frequency: 'DAILY',
+          active: true,
+          isDefault: true,
+        },
+      });
+    } catch (alertErr) {
+      console.error('[Register] Auto-alert creation failed:', alertErr);
+    }
 
     // Send verification email
     try {

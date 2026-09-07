@@ -19,45 +19,20 @@ export async function GET(req: Request) {
   }
 
   try {
-    const records = await fetchDecpRecords({ limit: 500, monthsBack: 36 });
+    const { summary } = await withCronLogging('sync-decp', async () => {
+      const records = await fetchDecpRecords({ limit: 500, monthsBack: 36 });
 
-    let upserted = 0;
-    let skipped = 0;
+      let upserted = 0;
+      let skipped = 0;
 
-    // Process in batches of 50 using $transaction
-    const BATCH_SIZE = 50;
-    for (let i = 0; i < records.length; i += BATCH_SIZE) {
-      const batch = records.slice(i, i + BATCH_SIZE);
-      const ops = batch
-        .filter((r) => r.sourceRef)
-        .map((record) =>
-          prisma.marche.upsert({
-            where: { sourceRef: record.sourceRef },
-            update: {
-              title: record.title,
-              buyer: record.buyer,
-              nature: record.nature,
-              value: record.value,
-              deadline: record.deadline,
-              procedureType: record.procedureType,
-              cpvCode: record.cpvCode,
-              cpvLabel: record.cpvLabel,
-              lots: record.lots,
-              duration: record.duration,
-            },
-            create: record,
-          })
-        );
-
-      try {
-        const results = await prisma.$transaction(ops);
-        upserted += results.length;
-      } catch {
-        // Fallback: process individually on batch failure
-        for (const record of batch) {
-          if (!record.sourceRef) { skipped++; continue; }
-          try {
-            await prisma.marche.upsert({
+      // Process in batches of 50 using $transaction
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const ops = batch
+          .filter((r) => r.sourceRef)
+          .map((record) =>
+            prisma.marche.upsert({
               where: { sourceRef: record.sourceRef },
               update: {
                 title: record.title,
@@ -72,21 +47,48 @@ export async function GET(req: Request) {
                 duration: record.duration,
               },
               create: record,
-            });
-            upserted++;
-          } catch {
-            skipped++;
+            })
+          );
+
+        try {
+          const results = await prisma.$transaction(ops);
+          upserted += results.length;
+        } catch {
+          // Fallback: process individually on batch failure
+          for (const record of batch) {
+            if (!record.sourceRef) { skipped++; continue; }
+            try {
+              await prisma.marche.upsert({
+                where: { sourceRef: record.sourceRef },
+                update: {
+                  title: record.title,
+                  buyer: record.buyer,
+                  nature: record.nature,
+                  value: record.value,
+                  deadline: record.deadline,
+                  procedureType: record.procedureType,
+                  cpvCode: record.cpvCode,
+                  cpvLabel: record.cpvLabel,
+                  lots: record.lots,
+                  duration: record.duration,
+                },
+                create: record,
+              });
+              upserted++;
+            } catch {
+              skipped++;
+            }
           }
         }
       }
-    }
 
-    const summary = {
-      total: records.length,
-      upserted,
-      skipped,
-      syncedAt: new Date().toISOString(),
-    };
+      return {
+        total: records.length,
+        upserted,
+        skipped,
+        syncedAt: new Date().toISOString(),
+      };
+    });
 
     console.log('[DECP] Sync complete:', summary);
     return NextResponse.json(summary);

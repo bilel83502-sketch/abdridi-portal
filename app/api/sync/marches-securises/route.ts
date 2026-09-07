@@ -18,44 +18,19 @@ export async function GET(req: Request) {
   }
 
   try {
-    const records = await fetchMarchesSecurisesRecords({ limit: 200 });
+    const { summary } = await withCronLogging('sync-marches-securises', async () => {
+      const records = await fetchMarchesSecurisesRecords({ limit: 200 });
 
-    let created = 0;
-    let skipped = 0;
+      let created = 0;
+      let skipped = 0;
 
-    const BATCH_SIZE = 50;
-    for (let i = 0; i < records.length; i += BATCH_SIZE) {
-      const batch = records.slice(i, i + BATCH_SIZE);
-      const ops = batch
-        .filter((r) => r.sourceRef)
-        .map((record) =>
-          prisma.marche.upsert({
-            where: { sourceRef: record.sourceRef },
-            update: {
-              title: record.title,
-              buyer: record.buyer,
-              nature: record.nature,
-              value: record.value,
-              deadline: record.deadline,
-              procedureType: record.procedureType,
-              cpvCode: record.cpvCode,
-              cpvLabel: record.cpvLabel,
-              lots: record.lots,
-              duration: record.duration,
-              documents: record.documents,
-            },
-            create: record,
-          })
-        );
-
-      try {
-        const results = await prisma.$transaction(ops);
-        created += results.length;
-      } catch {
-        for (const record of batch) {
-          if (!record.sourceRef) { skipped++; continue; }
-          try {
-            await prisma.marche.upsert({
+      const BATCH_SIZE = 50;
+      for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const batch = records.slice(i, i + BATCH_SIZE);
+        const ops = batch
+          .filter((r) => r.sourceRef)
+          .map((record) =>
+            prisma.marche.upsert({
               where: { sourceRef: record.sourceRef },
               update: {
                 title: record.title,
@@ -68,33 +43,60 @@ export async function GET(req: Request) {
                 cpvLabel: record.cpvLabel,
                 lots: record.lots,
                 duration: record.duration,
+                documents: record.documents,
               },
               create: record,
-            });
-            created++;
-          } catch {
-            skipped++;
+            })
+          );
+
+        try {
+          const results = await prisma.$transaction(ops);
+          created += results.length;
+        } catch {
+          for (const record of batch) {
+            if (!record.sourceRef) { skipped++; continue; }
+            try {
+              await prisma.marche.upsert({
+                where: { sourceRef: record.sourceRef },
+                update: {
+                  title: record.title,
+                  buyer: record.buyer,
+                  nature: record.nature,
+                  value: record.value,
+                  deadline: record.deadline,
+                  procedureType: record.procedureType,
+                  cpvCode: record.cpvCode,
+                  cpvLabel: record.cpvLabel,
+                  lots: record.lots,
+                  duration: record.duration,
+                },
+                create: record,
+              });
+              created++;
+            } catch {
+              skipped++;
+            }
           }
         }
       }
-    }
 
-    const expired = await prisma.marche.updateMany({
-      where: {
-        source: 'MARCHES-SECURISES',
-        status: 'OUVERT',
-        deadline: { lt: new Date() },
-      },
-      data: { status: 'FERME' },
+      const expired = await prisma.marche.updateMany({
+        where: {
+          source: 'MARCHES-SECURISES',
+          status: 'OUVERT',
+          deadline: { lt: new Date() },
+        },
+        data: { status: 'FERME' },
+      });
+
+      return {
+        total: records.length,
+        upserted: created,
+        skipped,
+        expired: expired.count,
+        syncedAt: new Date().toISOString(),
+      };
     });
-
-    const summary = {
-      total: records.length,
-      upserted: created,
-      skipped,
-      expired: expired.count,
-      syncedAt: new Date().toISOString(),
-    };
 
     console.log('[MSEC] Sync complete:', summary);
     return NextResponse.json(summary);
