@@ -36,13 +36,14 @@ export default function MissionsPage() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreate, setShowCreate] = useState(false);
-  const closeCreate = useCallback(() => { setShowCreate(false); setCreateError(null); }, []);
+  const closeCreate = useCallback(() => { setShowCreate(false); setCreateError(null); setAoStatus('idle'); setAoResults([]); }, []);
   useModalKeyboard({ isOpen: showCreate, onClose: closeCreate });
   const [form, setForm] = useState({ name: '', aoReference: '', aoTitle: '', deadline: '', ficheRecapUrl: '', marcheId: '' });
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [aoSearch, setAoSearch] = useState('');
   const [aoResults, setAoResults] = useState<any[]>([]);
+  const [aoStatus, setAoStatus] = useState<'idle' | 'searching' | 'empty' | 'error'>('idle');
   const [selectedAo, setSelectedAo] = useState<any>(null);
   const searchTimeout = useRef<any>(null);
 
@@ -64,11 +65,26 @@ export default function MissionsPage() {
     setSelectedAo(null);
     setForm(f => ({ ...f, marcheId: '' }));
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    if (q.length < 2) { setAoResults([]); return; }
+    if (q.length < 2) { setAoResults([]); setAoStatus('idle'); return; }
+    setAoStatus('searching');
     searchTimeout.current = setTimeout(async () => {
-      const res = await fetch(`/api/pilotage/marches-search?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-      if (Array.isArray(data)) setAoResults(data);
+      try {
+        // Les titres d'AO copiés-collés sont souvent tronqués ou trop longs :
+        // on interroge sur un extrait significatif plutôt que sur le texte brut.
+        const cleaned = q.replace(/[.…]+\s*$/, '').trim();
+        const probe = cleaned.length > 60 ? cleaned.slice(0, 60) : cleaned;
+        const res = await fetch(`/api/pilotage/marches-search?q=${encodeURIComponent(probe)}`);
+        if (!res.ok) { setAoResults([]); setAoStatus('error'); return; }
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAoResults(data);
+          setAoStatus(data.length === 0 ? 'empty' : 'idle');
+        } else {
+          setAoResults([]); setAoStatus('error');
+        }
+      } catch {
+        setAoResults([]); setAoStatus('error');
+      }
     }, 300);
   }
 
@@ -79,6 +95,7 @@ export default function MissionsPage() {
     setForm(f => ({
       ...f,
       marcheId: ao.id,
+      name: f.name.trim() || String(ao.title || '').slice(0, 200),
       aoTitle: f.aoTitle || ao.title,
       aoReference: f.aoReference || '',
       deadline: f.deadline || (ao.deadline ? new Date(ao.deadline).toISOString().split('T')[0] : ''),
@@ -86,7 +103,10 @@ export default function MissionsPage() {
   }
 
   async function handleCreate() {
-    if (!form.name.trim()) return;
+    if (!form.name.trim()) {
+      setCreateError('Le nom de la mission est obligatoire. Renseignez-le pour continuer.');
+      return;
+    }
     setSaving(true);
     setCreateError(null);
     try {
@@ -221,6 +241,13 @@ export default function MissionsPage() {
                       style={{ width: '100%', padding: '9px 12px 9px 30px', borderRadius: 8, border: '1px solid #334155', background: '#0F172A', color: '#E2E8F0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
                   </div>
                 )}
+                {aoResults.length === 0 && aoStatus !== 'idle' && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: aoStatus === 'error' ? '#FCA5A5' : '#64748B' }}>
+                    {aoStatus === 'searching' && 'Recherche en cours...'}
+                    {aoStatus === 'empty' && "Aucun AO ouvert ne correspond. Vous pouvez créer la mission sans le lier : renseignez simplement le nom."}
+                    {aoStatus === 'error' && "La recherche d'AO est indisponible. Vous pouvez créer la mission sans la lier à un AO."}
+                  </div>
+                )}
                 {aoResults.length > 0 && (
                   <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#0F172A', border: '1px solid #334155', borderRadius: 8, maxHeight: 200, overflowY: 'auto', zIndex: 10, marginTop: 4 }}>
                     {aoResults.map((ao: any) => (
@@ -243,9 +270,9 @@ export default function MissionsPage() {
                   color: '#FCA5A5', borderRadius: 8, padding: '10px 12px', fontSize: 13, lineHeight: 1.45,
                 }}>{createError}</div>
               )}
-              <button onClick={handleCreate} disabled={saving || !form.name.trim()} style={{
+              <button onClick={handleCreate} disabled={saving} style={{
                 padding: '10px 20px', borderRadius: 8, background: '#3B82F6', color: '#fff', fontSize: 14, fontWeight: 600,
-                border: 'none', cursor: 'pointer', opacity: saving || !form.name.trim() ? 0.5 : 1, marginTop: 4,
+                border: 'none', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.5 : 1, marginTop: 4,
               }}>{saving ? 'Création...' : 'Créer la mission'}</button>
             </div>
           </div>
