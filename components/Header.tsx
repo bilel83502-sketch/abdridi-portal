@@ -26,9 +26,13 @@ export default function Header() {
   const user = session?.user as any;
   const isAdmin = user?.role === 'ADMIN';
   const isProspector = user?.role === 'PROSPECTOR';
-  const isPaid = isAdmin || user?.plan === 'VEILLE';
+  const isPaid = isAdmin || isProspector || user?.plan === 'VEILLE';
   const isFreePlan = !isAdmin && !isProspector && !isPaid;
-  const navTabs = isProspector ? PROSPECTOR_TABS : MAIN_TABS.filter(t => !t.adminOnly || isAdmin);
+  // Commercial : tous les onglets de l'admin sauf Pilotage (cockpit de gestion),
+  // plus son onglet Prospection (missions assignées).
+  const navTabs = isProspector
+    ? [...MAIN_TABS.filter(t => !t.adminOnly), ...PROSPECTOR_TABS]
+    : MAIN_TABS.filter(t => !t.adminOnly || isAdmin);
   const initials = user?.company
     ? user.company.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
     : (user?.name ? user.name.slice(0, 2).toUpperCase() : 'AB');
@@ -140,7 +144,7 @@ export default function Header() {
                   borderRadius: 10, padding: 6, minWidth: 192,
                   boxShadow: '0 8px 32px rgba(0,0,0,0.4)', zIndex: 100,
                 }}>
-                  <DropItem href="/abonnement" Icon={CreditCard} label="Abonnement" />
+                  {!isProspector && <DropItem href="/abonnement" Icon={CreditCard} label="Abonnement" />}
                   {isAdmin && <DropItem href="/admin" Icon={Shield} label="Administration" accent />}
                   <DropItem href="/parametres" Icon={Settings} label="Paramètres" />
                   <div style={{ height: 1, background: '#2D3F55', margin: '4px 0' }} />

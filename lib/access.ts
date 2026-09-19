@@ -14,7 +14,9 @@ type UserAccess = {
  * Returns true for ADMIN users or users with an active VEILLE subscription.
  */
 export function hasFullAccess(user: UserAccess): boolean {
-  if (user.role === 'ADMIN') return true;
+  // L'admin et l'équipe commerciale interne (PROSPECTOR) ont un accès
+  // illimité aux outils de veille, sans abonnement.
+  if (user.role === 'ADMIN' || user.role === 'PROSPECTOR') return true;
   if (user.plan === 'VEILLE' && user.stripeCurrentPeriodEnd && new Date(user.stripeCurrentPeriodEnd) > new Date()) return true;
   return false;
 }

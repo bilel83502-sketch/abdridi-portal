@@ -177,12 +177,12 @@ export default function ParametresPage() {
         <div className="p-4 rounded-md bg-gray-50 border border-gray-200 flex justify-between items-center">
           <div>
             <div className="text-[15px] font-bold">
-              <span className="gradient-text">{user?.plan === 'VEILLE' ? 'Veille & Accompagnement' : 'Découverte'}</span>
+              <span className="gradient-text">{user?.role === 'PROSPECTOR' ? 'Accès équipe AB DRIDI' : user?.plan === 'VEILLE' ? 'Veille & Accompagnement' : 'Découverte'}</span>
               <span className="font-normal text-gray-500 text-[13px] ml-2">
-                {user?.plan === 'VEILLE' ? '— 150€/mois' : '— Gratuit'}
+                {user?.role === 'PROSPECTOR' ? '— Illimité' : user?.plan === 'VEILLE' ? '— 150€/mois' : '— Gratuit'}
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-0.5">{user?.plan === 'VEILLE' ? 'Recherche illimitée · Alertes quotidiennes · Accès toutes sources' : '3 consultations/jour · Recherche basique · Toutes sources'}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{user?.role === 'PROSPECTOR' || user?.plan === 'VEILLE' ? 'Recherche illimitée · Alertes quotidiennes · Accès toutes sources' : '3 consultations/jour · Recherche basique · Toutes sources'}</p>
           </div>
           <span className="px-3 py-[3px] rounded text-[10px] font-bold bg-emerald-50 text-emerald-600">Actif</span>
         </div>

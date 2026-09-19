@@ -13,7 +13,8 @@ export async function GET() {
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const weekLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const userRecord = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
+  const userRecord = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true, role: true } });
+  const isTeam = userRecord?.role === 'ADMIN' || userRecord?.role === 'PROSPECTOR';
 
   const [totalOpen, newThisWeek, closingSoon, userAlerts, byNature, recentMarches, topDepartments, totalAttribues] = await Promise.all([
     prisma.marche.count({ where: { status: 'OUVERT' } }),
@@ -47,7 +48,7 @@ export async function GET() {
 
   const res = NextResponse.json({
     totalOpen, newThisWeek, closingSoon, userAlerts, totalAttribues,
-    userPlan: userRecord?.plan || 'DECOUVERTE',
+    userPlan: isTeam ? 'VEILLE' : (userRecord?.plan || 'DECOUVERTE'),
     byNature: byNature.map(b => ({ nature: b.nature, count: b._count })),
     recentMarches,
     topDepartments: topDepartments.map(d => ({ department: d.department, count: d._count })),
