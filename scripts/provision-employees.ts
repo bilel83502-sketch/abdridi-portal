@@ -13,8 +13,6 @@
  *     client) → seul son rôle passe à PROSPECTOR, rien d'autre n'est
  *     modifié (mot de passe, nom existants conservés).
  *
- * ⚠️ À COMPLÉTER avant de lancer : l'email de Mirko Modolo ci-dessous.
- *
  * Usage : npx tsx scripts/provision-employees.ts
  */
 import { config } from 'dotenv';
@@ -36,7 +34,7 @@ const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const EMPLOYEES: { name: string; email: string }[] = [
-  { name: 'Mirko Modolo', email: 'REMPLACER_PAR_EMAIL_DE_MIRKO@exemple.com' },
+  { name: 'Mirko Modolo', email: 'mirkomodolo@gmail.com' },
   { name: 'Arij', email: 'dridiarij9@gmail.com' },
 ];
 
