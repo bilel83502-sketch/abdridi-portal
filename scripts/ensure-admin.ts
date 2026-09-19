@@ -10,7 +10,7 @@
  *   npx tsx scripts/ensure-admin.ts
  */
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+config({ path: '.env.local', override: true }); // priorité sur .env (placeholder)
 
 import { PrismaClient } from '@prisma/client';
 import { ADMIN_EMAIL } from '../lib/constants';

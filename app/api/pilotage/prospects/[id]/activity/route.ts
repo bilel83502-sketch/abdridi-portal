@@ -12,6 +12,19 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
 
+  // Un commercial ne doit consulter l'historique que d'un prospect dont
+  // la mission lui est assignée — pas de n'importe quel prospectId deviné.
+  if (user.role === 'PROSPECTOR') {
+    const prospect = await prisma.prospect.findUnique({
+      where: { id: params.id },
+      select: { mission: { select: { status: true, assignedToId: true } } },
+    });
+    if (!prospect) return NextResponse.json({ error: 'Prospect introuvable' }, { status: 404 });
+    if (prospect.mission.status !== 'ACTIVE' || prospect.mission.assignedToId !== user.id) {
+      return NextResponse.json({ error: 'Accès refusé — mission non assignée' }, { status: 403 });
+    }
+  }
+
   const activities = await prisma.prospectActivity.findMany({
     where: { prospectId: params.id },
     orderBy: { createdAt: 'desc' },
@@ -30,11 +43,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const prospect = await prisma.prospect.findUnique({
     where: { id: params.id },
-    include: { mission: { select: { status: true } } },
+    include: { mission: { select: { status: true, assignedToId: true } } },
   });
   if (!prospect) return NextResponse.json({ error: 'Prospect introuvable' }, { status: 404 });
-  if (user.role === 'PROSPECTOR' && prospect.mission.status !== 'ACTIVE') {
-    return NextResponse.json({ error: 'Accès refusé — mission non active' }, { status: 403 });
+  if (user.role === 'PROSPECTOR' && (prospect.mission.status !== 'ACTIVE' || prospect.mission.assignedToId !== user.id)) {
+    return NextResponse.json({ error: 'Accès refusé — mission non assignée' }, { status: 403 });
   }
 
   const body = await req.json();

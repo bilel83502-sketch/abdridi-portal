@@ -9,7 +9,21 @@
  *   npx tsx scripts/db-size.ts
  */
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+
+// Les imports ESM sont evalues avant cette ligne : Prisma a donc deja pu charger
+// le .env du projet (qui contient une URL factice host:5432). override:true
+// garantit que .env.local a le dernier mot.
+config({ path: '.env.local', override: true });
+
+const DB = process.env.DATABASE_URL || '';
+if (!DB || /@host:|@localhost|\/\/host:/.test(DB)) {
+  console.error('\nErreur de configuration : DATABASE_URL pointe vers une adresse factice');
+  console.error(`  valeur lue : ${DB.replace(/:\/\/[^@]*@/, '://***@') || '(vide)'}`);
+  console.error('  Verifiez que .env.local existe a la racine du projet et contient');
+  console.error('  la vraie DATABASE_URL Neon. Le fichier .env, lui, contient un');
+  console.error('  gabarit qui ne doit pas servir.\n');
+  process.exit(1);
+}
 
 import { PrismaClient } from '@prisma/client';
 

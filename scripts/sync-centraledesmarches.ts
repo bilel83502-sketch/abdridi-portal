@@ -11,7 +11,7 @@
  */
 import 'dotenv/config';
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+config({ path: '.env.local', override: true }); // priorité sur .env (placeholder)
 
 import { PrismaClient } from '@prisma/client';
 import {

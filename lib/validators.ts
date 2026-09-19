@@ -24,6 +24,7 @@ export const missionUpdateSchema = z.object({
   ficheRecapUrl: z.string().url().optional().nullable().or(z.literal('')),
   ficheRecapName: z.string().max(200).optional().nullable(),
   marcheId: z.string().cuid().or(z.literal('')).optional().nullable(),
+  assignedToId: z.string().cuid().or(z.literal('')).optional().nullable(),
 });
 
 // ─── Prospect ───

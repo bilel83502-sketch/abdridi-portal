@@ -94,6 +94,19 @@ export default function ProspectionMissionPage() {
   }
   if (!user || (user.role !== 'ADMIN' && user.role !== 'PROSPECTOR')) return null;
 
+  if (!mission) {
+    return (
+      <div style={{ background: '#1E293B', borderRadius: 10, border: '1px solid #334155', padding: 48, textAlign: 'center' }}>
+        <p style={{ color: '#64748B', fontSize: 14, marginBottom: 16 }}>
+          Cette mission est introuvable ou ne vous est plus assignée.
+        </p>
+        <Link href="/prospection" style={{ color: '#10B981', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+          ← Retour à mes missions
+        </Link>
+      </div>
+    );
+  }
+
   const prospects = [...(mission.prospects || [])].sort((a: any, b: any) => PRIORITY_ORDER.indexOf(a.status) - PRIORITY_ORDER.indexOf(b.status));
   const documents: any[] = mission.documents || [];
   const ficheRecap = documents.find((d: any) => d.type === 'FICHE_RECAP');

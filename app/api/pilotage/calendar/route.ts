@@ -11,7 +11,11 @@ export async function GET() {
   }
 
   const prospects = await prisma.prospect.findMany({
-    where: { rdvDate: { not: null } },
+    where: {
+      rdvDate: { not: null },
+      // Un commercial ne voit que les rendez-vous de ses missions actives assignées.
+      ...(user.role === 'PROSPECTOR' ? { mission: { status: 'ACTIVE', assignedToId: user.id } } : {}),
+    },
     select: {
       id: true,
       company: true,

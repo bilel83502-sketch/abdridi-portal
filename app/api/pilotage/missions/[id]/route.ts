@@ -34,6 +34,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   });
 
   if (!mission) return NextResponse.json({ error: 'Mission introuvable' }, { status: 404 });
+
+  // Un commercial ne peut ouvrir que ses missions actives assignées — même en
+  // connaissant l'identifiant d'une autre mission, il ne doit pas y accéder.
+  if (user.role === 'PROSPECTOR' && (mission.status !== 'ACTIVE' || mission.assignedToId !== user.id)) {
+    return NextResponse.json({ error: 'Accès refusé — cette mission ne vous est pas assignée' }, { status: 403 });
+  }
+
   return NextResponse.json(mission);
 }
 
@@ -60,6 +67,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (d.ficheRecapUrl !== undefined) data.ficheRecapUrl = d.ficheRecapUrl?.trim() || null;
   if (d.ficheRecapName !== undefined) data.ficheRecapName = d.ficheRecapName?.trim() || null;
   if (d.marcheId !== undefined) data.marcheId = d.marcheId || null;
+  if (d.assignedToId !== undefined) data.assignedToId = d.assignedToId || null;
 
   const mission = await prisma.mission.update({ where: { id: params.id }, data });
   auditFromSession(user, req, 'MISSION_UPDATE', 'Mission', params.id, data);

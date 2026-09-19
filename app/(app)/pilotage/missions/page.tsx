@@ -6,13 +6,17 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import FocusTrap from 'focus-trap-react';
 import { useModalKeyboard } from '@/hooks/useModalKeyboard';
 import Link from 'next/link';
-import { FolderOpen, Plus, X, ChevronLeft, Calendar, Users, Target, Search, Trash2 } from 'lucide-react';
+import { FolderOpen, Plus, X, ChevronLeft, Calendar, Users, Target, Search, Trash2, AlertTriangle } from 'lucide-react';
+import { getMissionUrgency, URGENCY_STYLE, sortByUrgency, countUrgent } from '@/lib/missionUrgency';
 
 type Mission = {
   id: string; name: string; aoReference: string | null; aoTitle: string | null;
   deadline: string | null; status: string; createdAt: string;
   totalProspects: number; contacted: number; interested: number; progress: number;
+  assignedToId: string | null; assignedTo: { id: string; name: string; email: string } | null;
 };
+
+type TeamMember = { id: string; name: string; email: string; activeMissionsCount: number };
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
   ACTIVE: { label: 'Active', bg: 'rgba(16,185,129,0.15)', color: '#10B981' },
@@ -34,7 +38,9 @@ export default function MissionsPage() {
   const router = useRouter();
   const user = session?.user as any;
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [team, setTeam] = useState<TeamMember[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [query, setQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
   const closeCreate = useCallback(() => { setShowCreate(false); setCreateError(null); setAoStatus('idle'); setAoResults([]); }, []);
   useModalKeyboard({ isOpen: showCreate, onClose: closeCreate });
@@ -52,6 +58,12 @@ export default function MissionsPage() {
   }, [status, user, router]);
 
   useEffect(() => { loadMissions(); }, [user]);
+
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      fetch('/api/pilotage/team').then(r => r.json()).then(d => { if (Array.isArray(d)) setTeam(d); });
+    }
+  }, [user]);
 
   async function loadMissions() {
     if (user?.role !== 'ADMIN') return;
@@ -164,6 +176,20 @@ export default function MissionsPage() {
     setMissions(prev => prev.map(m => m.id === id ? { ...m, status: newStatus } : m));
   }
 
+  async function handleAssign(id: string, assignedToId: string, e: React.SyntheticEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    await fetch(`/api/pilotage/missions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignedToId: assignedToId || null }),
+    });
+    const assignee = team.find(t => t.id === assignedToId) || null;
+    setMissions(prev => prev.map(m => m.id === id
+      ? { ...m, assignedToId: assignedToId || null, assignedTo: assignee ? { id: assignee.id, name: assignee.name, email: assignee.email } : null }
+      : m));
+  }
+
   async function handleDelete(id: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -177,7 +203,17 @@ export default function MissionsPage() {
   }
   if (user?.role !== 'ADMIN') return null;
 
-  const filtered = statusFilter === 'all' ? missions : missions.filter(m => m.status === statusFilter);
+  const byStatus = statusFilter === 'all' ? missions : missions.filter(m => m.status === statusFilter);
+  const q = query.trim().toLowerCase();
+  const bySearch = q
+    ? byStatus.filter(m => [m.name, m.aoTitle, m.aoReference].some(v => (v || '').toLowerCase().includes(q)))
+    : byStatus;
+  const filtered = sortByUrgency(bySearch);
+
+  const totalProspects = filtered.reduce((s, m) => s + m.totalProspects, 0);
+  const totalInteresses = filtered.reduce((s, m) => s + m.interested, 0);
+  const urgentCount = countUrgent(filtered.filter(m => m.status === 'ACTIVE'));
+  const unassignedActiveCount = filtered.filter(m => m.status === 'ACTIVE' && !m.assignedToId).length;
 
   return (
     <div>
@@ -201,14 +237,42 @@ export default function MissionsPage() {
         </button>
       </div>
 
-      {/* Status filters */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-        {STATUS_FILTERS.map(f => (
-          <button key={f.key} onClick={() => setStatusFilter(f.key)} style={{
-            padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer',
-            background: statusFilter === f.key ? '#3B82F6' : '#1E293B', color: statusFilter === f.key ? '#fff' : '#64748B',
-          }}>{f.label}</button>
-        ))}
+      {/* KPIs — vue d'ensemble pour piloter, pas seulement lister */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <MiniStat icon={<FolderOpen size={15} />} label="Missions" value={filtered.length} color="#3B82F6" />
+        <MiniStat icon={<Users size={15} />} label="Prospects" value={totalProspects} color="#00C2FF" />
+        <MiniStat icon={<Target size={15} />} label="Intéressés" value={totalInteresses} color="#10B981" />
+        <MiniStat
+          icon={<AlertTriangle size={15} />}
+          label="Dépôt sous 7 jours"
+          value={urgentCount}
+          color={urgentCount > 0 ? '#F59E0B' : '#64748B'}
+          highlight={urgentCount > 0}
+        />
+        <MiniStat
+          icon={<Users size={15} />}
+          label="Actives non assignées"
+          value={unassignedActiveCount}
+          color={unassignedActiveCount > 0 ? '#F59E0B' : '#64748B'}
+          highlight={unassignedActiveCount > 0}
+        />
+      </div>
+
+      {/* Status filters + recherche */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {STATUS_FILTERS.map(f => (
+            <button key={f.key} onClick={() => setStatusFilter(f.key)} style={{
+              padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, border: 'none', cursor: 'pointer',
+              background: statusFilter === f.key ? '#3B82F6' : '#1E293B', color: statusFilter === f.key ? '#fff' : '#64748B',
+            }}>{f.label}</button>
+          ))}
+        </div>
+        <div style={{ position: 'relative', marginLeft: 'auto', minWidth: 220 }}>
+          <Search size={14} style={{ position: 'absolute', left: 10, top: 9, color: '#64748B' }} />
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher une mission..."
+            style={{ width: '100%', padding: '7px 10px 7px 30px', borderRadius: 6, border: '1px solid #334155', background: '#1E293B', color: '#E2E8F0', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+        </div>
       </div>
 
       {/* Create modal */}
@@ -284,8 +348,10 @@ export default function MissionsPage() {
       {filtered.length === 0 ? (
         <div style={{ background: '#1E293B', borderRadius: 10, border: '1px solid #334155', padding: 48, textAlign: 'center' }}>
           <FolderOpen size={40} style={{ color: '#334155', margin: '0 auto 12px' }} />
-          <p style={{ color: '#64748B', fontSize: 14 }}>{statusFilter === 'all' ? 'Aucune mission pour le moment' : 'Aucune mission avec ce statut'}</p>
-          {statusFilter === 'all' && (
+          <p style={{ color: '#64748B', fontSize: 14 }}>
+            {q ? `Aucune mission ne correspond à "${query.trim()}"` : statusFilter === 'all' ? 'Aucune mission pour le moment' : 'Aucune mission avec ce statut'}
+          </p>
+          {statusFilter === 'all' && !q && (
             <button onClick={() => setShowCreate(true)} style={{
               padding: '8px 16px', borderRadius: 8, background: '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', marginTop: 8,
             }}>Créer votre première mission</button>
@@ -308,6 +374,18 @@ export default function MissionsPage() {
                         style={{ padding: '2px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', outline: 'none', border: `1px solid ${badge.color}44`, background: badge.bg, color: badge.color, appearance: 'auto' }}>
                         {Object.entries(STATUS_BADGE).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
+                      <select value={m.assignedToId || ''} onClick={e => e.preventDefault()}
+                        onChange={e => handleAssign(m.id, e.target.value, e as any)}
+                        title="Assigner à un commercial"
+                        style={{
+                          padding: '2px 6px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', outline: 'none', appearance: 'auto',
+                          border: `1px solid ${m.assignedToId ? '#33415566' : '#F59E0B66'}`,
+                          background: m.assignedToId ? 'rgba(100,116,139,0.12)' : 'rgba(245,158,11,0.15)',
+                          color: m.assignedToId ? '#94A3B8' : '#F59E0B',
+                        }}>
+                        <option value="">Non assigné</option>
+                        {team.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      </select>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {m.aoReference && <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'monospace' }}>{m.aoReference}</span>}
@@ -320,7 +398,21 @@ export default function MissionsPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20, fontSize: 12, color: '#94A3B8' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={13} /> {m.totalProspects} prospect{m.totalProspects > 1 ? 's' : ''}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Target size={13} /> {m.interested} intéressé{m.interested > 1 ? 's' : ''}</span>
-                    {m.deadline && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={13} /> {new Date(m.deadline).toLocaleDateString('fr-FR')}</span>}
+                    {m.deadline && (() => {
+                      const u = getMissionUrgency(m.deadline);
+                      const st = URGENCY_STYLE[u.level];
+                      const showBadge = u.level === 'critical' || u.level === 'soon' || u.level === 'expired';
+                      return (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Calendar size={13} /> {new Date(m.deadline).toLocaleDateString('fr-FR')}
+                          {showBadge && (
+                            <span style={{ padding: '1px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700, background: st.bg, color: st.color, border: `1px solid ${st.border}` }}>
+                              {u.label}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })()}
                     <div style={{ flex: 1 }} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 80, height: 6, borderRadius: 3, background: '#334155' }}>
@@ -335,6 +427,21 @@ export default function MissionsPage() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function MiniStat({ icon, label, value, color, highlight }: { icon: React.ReactNode; label: string; value: number; color: string; highlight?: boolean }) {
+  return (
+    <div style={{
+      background: '#1E293B', borderRadius: 10, padding: '12px 16px',
+      border: `1px solid ${highlight ? color + '66' : '#334155'}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, color }}>
+        {icon}
+        <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</span>
+      </div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: highlight ? color : '#E2E8F0' }}>{value}</div>
     </div>
   );
 }

@@ -5,14 +5,14 @@ import { prisma } from '@/lib/prisma';
 import { prospectUpdateSchema, formatZodErrors } from '@/lib/validators';
 import { auditFromSession } from '@/lib/audit';
 
-async function checkAccess(prospectId: string, userRole: string) {
+async function checkAccess(prospectId: string, userRole: string, userId: string) {
   const prospect = await prisma.prospect.findUnique({
     where: { id: prospectId },
-    include: { mission: { select: { status: true } } },
+    include: { mission: { select: { status: true, assignedToId: true } } },
   });
   if (!prospect) return { ok: false as const, status: 404, error: 'Prospect introuvable' };
-  if (userRole === 'PROSPECTOR' && prospect.mission.status !== 'ACTIVE') {
-    return { ok: false as const, status: 403, error: 'Accès refusé — mission non active' };
+  if (userRole === 'PROSPECTOR' && (prospect.mission.status !== 'ACTIVE' || prospect.mission.assignedToId !== userId)) {
+    return { ok: false as const, status: 403, error: 'Accès refusé — mission non assignée' };
   }
   return { ok: true as const, prospect };
 }
@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
 
-  const access = await checkAccess(params.id, user.role);
+  const access = await checkAccess(params.id, user.role, user.id);
   if (!access.ok) return NextResponse.json({ error: access.error }, { status: access.status });
 
   const body = await req.json();

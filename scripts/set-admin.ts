@@ -3,7 +3,7 @@
  * Usage: npx tsx scripts/set-admin.ts bilel83502@gmail.com
  */
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+config({ path: '.env.local', override: true }); // priorité sur .env (placeholder)
 
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();

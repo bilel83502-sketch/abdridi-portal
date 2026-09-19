@@ -15,7 +15,10 @@
     "sync:decp-attribue": "tsx scripts/sync-decp-attribue.ts",
     "security-test": "tsx scripts/security-test.ts",
     "ensure:admin": "tsx scripts/ensure-admin.ts",
-    "db:size": "tsx scripts/db-size.ts"
+    "db:size": "tsx scripts/db-size.ts",
+    "alertes:audit": "tsx scripts/audit-alertes.ts",
+    "migrate:mission-assignee": "tsx scripts/migrate-mission-assignee.ts",
+    "provision:employees": "tsx scripts/provision-employees.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -26,6 +26,7 @@ model User {
   alerts        Alert[]
   appointments  Appointment[]
   favoris       Favori[]
+  assignedMissions Mission[] @relation("MissionAssignee")
 
   // RGPD consent tracking
   consentDate          DateTime?
@@ -216,6 +217,8 @@ model Mission {
   status         String     @default("ACTIVE")
   marcheId       String?
   marche         Marche?    @relation(fields: [marcheId], references: [id])
+  assignedToId   String?
+  assignedTo     User?      @relation("MissionAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   prospects      Prospect[]
@@ -223,6 +226,7 @@ model Mission {
 
   @@index([status])
   @@index([marcheId])
+  @@index([assignedToId])
 }
 
 model MissionDocument {
