@@ -100,6 +100,15 @@ const REGIONS: { name: string; slug: string; depts: string[] }[] = [
     slug: 'mayotte',
     depts: ['976'],
   },
+  {
+    name: 'Suisse',
+    slug: 'suisse',
+    depts: [
+      'CH', 'CH-AG', 'CH-AI', 'CH-AR', 'CH-BE', 'CH-BL', 'CH-BS', 'CH-FR', 'CH-GE', 'CH-GL',
+      'CH-GR', 'CH-JU', 'CH-LU', 'CH-NE', 'CH-NW', 'CH-OW', 'CH-SG', 'CH-SH', 'CH-SO',
+      'CH-SZ', 'CH-TG', 'CH-TI', 'CH-UR', 'CH-VD', 'CH-VS', 'CH-ZG', 'CH-ZH',
+    ],
+  },
 ];
 
 // Build flat lookup

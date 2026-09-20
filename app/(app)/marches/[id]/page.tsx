@@ -48,6 +48,7 @@ function buildSourceUrl(sourceRef: string | null, source?: string | null): { url
   const homepages: Record<string, string> = {
     'BOAMP': 'https://www.boamp.fr',
     'TED': 'https://ted.europa.eu/fr/',
+    'SIMAP': 'https://www.simap.ch/fr',
     'DECP': 'https://data.economie.gouv.fr/explore/dataset/decp_augmente/table/',
     'PLACE': 'https://www.marches-publics.gouv.fr',
     'MARCHES-SECURISES': 'https://www.marches-securises.fr',
@@ -83,6 +84,9 @@ function buildSourceUrl(sourceRef: string | null, source?: string | null): { url
     const pubNumber = sourceRef.replace('TED-', '');
     if (!pubNumber) return { url: homepages['TED'], direct: false };
     return { url: `https://ted.europa.eu/fr/notice/-/detail/${pubNumber}`, direct: true };
+  }
+  if (sourceRef.startsWith('SIMAP-')) {
+    return { url: homepages['SIMAP'], direct: false };
   }
   if (sourceRef.startsWith('DECP-')) {
     return { url: homepages['DECP'], direct: false };

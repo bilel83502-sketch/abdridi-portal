@@ -18,7 +18,8 @@
     "db:size": "tsx scripts/db-size.ts",
     "alertes:audit": "tsx scripts/audit-alertes.ts",
     "migrate:mission-assignee": "tsx scripts/migrate-mission-assignee.ts",
-    "provision:employees": "tsx scripts/provision-employees.ts"
+    "provision:employees": "tsx scripts/provision-employees.ts",
+    "sync:simap": "tsx scripts/sync-simap.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

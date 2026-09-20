@@ -5,6 +5,8 @@
  * Pas de clé API requise pour les notices publiées
  */
 
+import { cantonFromNuts, SUISSE_REGION, CANTON_CH_UNKNOWN } from './cantons';
+
 const TED_API = 'https://api.ted.europa.eu/v3/notices/search';
 
 /* ───── Mapping NUTS FR → département ───── */
@@ -63,6 +65,13 @@ function resolveNuts(codes: string[]): {
 } {
   if (!codes || codes.length === 0) return { dept: '00', name: null, region: null };
 
+  // Suisse : NUTS CHxxx → canton
+  if (codes.some(c => c.startsWith('CH'))) {
+    const canton = cantonFromNuts(codes);
+    if (canton) return { dept: canton.code, name: canton.name, region: SUISSE_REGION };
+    return { dept: CANTON_CH_UNKNOWN.code, name: CANTON_CH_UNKNOWN.name, region: SUISSE_REGION };
+  }
+
   // Try NUTS codes from most specific to least
   for (const code of codes) {
     if (!code.startsWith('FR')) continue;
@@ -112,10 +121,12 @@ function getFrText(obj: Record<string, string | string[]> | null): string | null
   const fra = obj.fra;
   if (Array.isArray(fra)) return fra[0] || null;
   if (typeof fra === 'string') return fra;
-  // Fallback to English
-  const eng = obj.eng;
-  if (Array.isArray(eng)) return eng[0] || null;
-  if (typeof eng === 'string') return eng;
+  // Fallback : anglais, puis allemand / italien (avis suisses)
+  for (const lang of ['eng', 'deu', 'ita']) {
+    const v = obj[lang];
+    if (Array.isArray(v) && v[0]) return v[0];
+    if (typeof v === 'string' && v) return v;
+  }
   return null;
 }
 
@@ -239,7 +250,7 @@ export async function fetchTedRecords(options?: {
     const take = Math.min(remaining, pageSize);
 
     const body = {
-      query: `buyer-country = FRA AND notice-type = cn-standard AND publication-date >= ${sinceStr}`,
+      query: `(buyer-country = FRA OR buyer-country = CHE) AND notice-type = cn-standard AND publication-date >= ${sinceStr}`,
       fields: [
         'publication-number',
         'notice-title',

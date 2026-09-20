@@ -1,5 +1,7 @@
 {
-  "regions": ["cdg1"],
+  "regions": [
+    "cdg1"
+  ],
   "crons": [
     {
       "path": "/api/sync/boamp",
@@ -196,6 +198,10 @@
     {
       "path": "/api/sync/centraledesmarches",
       "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/sync/simap",
+      "schedule": "10 6 * * *"
     }
   ]
 }

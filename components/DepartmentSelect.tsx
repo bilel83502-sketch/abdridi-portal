@@ -40,6 +40,21 @@ export const DEPARTMENTS = [
   { code: '94', name: 'Val-de-Marne' }, { code: '95', name: 'Val-d\'Oise' },
   { code: '971', name: 'Guadeloupe' }, { code: '972', name: 'Martinique' }, { code: '973', name: 'Guyane' },
   { code: '974', name: 'La Réunion' }, { code: '976', name: 'Mayotte' },
+  // Suisse (cantons)
+  { code: 'CH', name: 'Suisse (national)' },
+  { code: 'CH-GE', name: 'Genève (Suisse)' }, { code: 'CH-VD', name: 'Vaud (Suisse)' },
+  { code: 'CH-VS', name: 'Valais (Suisse)' }, { code: 'CH-NE', name: 'Neuchâtel (Suisse)' },
+  { code: 'CH-JU', name: 'Jura (Suisse)' }, { code: 'CH-FR', name: 'Fribourg (Suisse)' },
+  { code: 'CH-BE', name: 'Berne (Suisse)' }, { code: 'CH-BS', name: 'Bâle-Ville (Suisse)' },
+  { code: 'CH-BL', name: 'Bâle-Campagne (Suisse)' }, { code: 'CH-SO', name: 'Soleure (Suisse)' },
+  { code: 'CH-AG', name: 'Argovie (Suisse)' }, { code: 'CH-ZH', name: 'Zurich (Suisse)' },
+  { code: 'CH-LU', name: 'Lucerne (Suisse)' }, { code: 'CH-ZG', name: 'Zoug (Suisse)' },
+  { code: 'CH-SZ', name: 'Schwyz (Suisse)' }, { code: 'CH-UR', name: 'Uri (Suisse)' },
+  { code: 'CH-OW', name: 'Obwald (Suisse)' }, { code: 'CH-NW', name: 'Nidwald (Suisse)' },
+  { code: 'CH-GL', name: 'Glaris (Suisse)' }, { code: 'CH-SH', name: 'Schaffhouse (Suisse)' },
+  { code: 'CH-SG', name: 'Saint-Gall (Suisse)' }, { code: 'CH-AR', name: 'Appenzell Rh.-Ext. (Suisse)' },
+  { code: 'CH-AI', name: 'Appenzell Rh.-Int. (Suisse)' }, { code: 'CH-TG', name: 'Thurgovie (Suisse)' },
+  { code: 'CH-GR', name: 'Grisons (Suisse)' }, { code: 'CH-TI', name: 'Tessin (Suisse)' },
 ];
 
 type MultiProps = { multi: true; value: string[]; onChange: (v: string[]) => void };
