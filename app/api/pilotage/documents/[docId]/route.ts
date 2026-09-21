@@ -12,23 +12,32 @@ export async function GET(_req: Request, { params }: { params: { docId: string }
 
   const doc = await prisma.missionDocument.findUnique({
     where: { id: params.docId },
-    include: { mission: { select: { status: true } } },
+    include: { mission: { select: { status: true, assignedToId: true } } },
   });
 
-  if (!doc || !doc.fileData) {
+  if (!doc) {
     return NextResponse.json({ error: 'Document introuvable' }, { status: 404 });
   }
+  if (!doc.fileData) {
+    // Document ajouté par lien externe : on redirige vers ce lien
+    if (doc.url && /^https?:\/\//.test(doc.url)) return NextResponse.redirect(doc.url);
+    return NextResponse.json({ error: 'Ce document n\'a pas de contenu stocké' }, { status: 404 });
+  }
 
-  // PROSPECTOR can only access documents from ACTIVE missions
-  if (user.role === 'PROSPECTOR' && doc.mission.status !== 'ACTIVE') {
-    return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+  // Un commercial n'accède qu'aux documents de ses missions actives assignées
+  if (user.role === 'PROSPECTOR' && (doc.mission.status !== 'ACTIVE' || doc.mission.assignedToId !== user.id)) {
+    return NextResponse.json({ error: 'Accès refusé — mission non assignée' }, { status: 403 });
   }
 
   const buffer = Buffer.from(doc.fileData, 'base64');
   const mimeType = doc.mimeType || 'application/octet-stream';
 
+  // Les en-têtes HTTP n'acceptent que de l'ASCII : un nom comme
+  // "Fiche récap.pdf" faisait planter la réponse (500) pour tout le monde.
+  const asciiName = doc.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, '_').replace(/"/g, '');
+  const utf8Name = encodeURIComponent(doc.name);
   const isPdf = mimeType === 'application/pdf';
-  const disposition = isPdf ? `inline; filename="${doc.name}"` : `attachment; filename="${doc.name}"`;
+  const disposition = `${isPdf ? 'inline' : 'attachment'}; filename="${asciiName}"; filename*=UTF-8''${utf8Name}`;
 
   return new Response(buffer, {
     headers: {

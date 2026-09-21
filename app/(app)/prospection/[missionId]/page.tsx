@@ -110,7 +110,8 @@ export default function ProspectionMissionPage() {
   const prospects = [...(mission.prospects || [])].sort((a: any, b: any) => PRIORITY_ORDER.indexOf(a.status) - PRIORITY_ORDER.indexOf(b.status));
   const documents: any[] = mission.documents || [];
   const ficheRecap = documents.find((d: any) => d.type === 'FICHE_RECAP');
-  const dceDocs = documents.filter((d: any) => d.type === 'DCE');
+  // Tout ce que l'admin a déposé, sauf la base de prospection (déjà importée en prospects) et la fiche récap (affichée à part)
+  const dceDocs = documents.filter((d: any) => d.type !== 'BASE_PROSPECTION' && d.type !== 'FICHE_RECAP');
   const rdvs = (mission.prospects || []).filter((p: any) => p.rdvDate).sort((a: any, b: any) => new Date(a.rdvDate).getTime() - new Date(b.rdvDate).getTime());
 
   // Stats
