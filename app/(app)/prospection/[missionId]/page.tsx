@@ -26,6 +26,8 @@ const CALL_RESULTS = [
   { status: 'INTERESSE', label: 'Intéressé', color: '#10B981' },
   { status: 'VISIO_PLANIFIEE', label: 'Visio planifiée', color: '#00C2FF' },
   { status: 'REFUSE', label: 'Refusé', color: '#EF4444' },
+  { status: 'DEVIS_ENVOYE', label: 'Devis envoyé', color: '#F59E0B' },
+  { status: 'DEVIS_SIGNE', label: 'Devis signé', color: '#10B981' },
 ];
 
 const PRIORITY_ORDER = ['A_CONTACTER', 'RAPPELER', 'PAS_JOIGNABLE', 'INTERESSE', 'VISIO_PLANIFIEE', 'DEVIS_ENVOYE', 'DEVIS_SIGNE', 'PAS_INTERESSE', 'REFUSE'];
@@ -44,6 +46,26 @@ export default function ProspectionMissionPage() {
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const [loadedActivities, setLoadedActivities] = useState<Record<string, any[]>>({});
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [closing, setClosing] = useState(false);
+
+  async function closeMission(newStatus: 'COMPLETED' | 'NON_ABOUTIE') {
+    const label = newStatus === 'COMPLETED' ? 'Terminée' : 'Non aboutie';
+    if (!confirm(`Marquer cette mission comme « ${label} » ? Elle disparaîtra de votre liste et l'administrateur sera prévenu.`)) return;
+    setClosing(true);
+    const res = await fetch(`/api/pilotage/missions/${params.missionId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    setClosing(false);
+    if (res.ok) {
+      toast.success(`Mission marquée « ${label} »`);
+      router.push('/prospection');
+    } else {
+      const d = await res.json().catch(() => ({}));
+      toast.error(d?.error || 'Impossible de changer le statut');
+    }
+  }
   const toast = useToast();
 
   useEffect(() => {
@@ -143,7 +165,21 @@ export default function ProspectionMissionPage() {
         <Link href="/prospection" style={{ color: '#64748B', fontSize: 13, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10 }}>
           <ChevronLeft size={14} /> Retour
         </Link>
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#E2E8F0', margin: 0 }}>{mission.name}</h1>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#E2E8F0', margin: 0, flex: '1 1 300px' }}>{mission.name}</h1>
+          {mission.status === 'ACTIVE' && (
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <button onClick={() => closeMission('COMPLETED')} disabled={closing} style={{
+                padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                border: '1px solid rgba(16,185,129,0.5)', background: 'rgba(16,185,129,0.12)', color: '#10B981', opacity: closing ? 0.5 : 1,
+              }}>✓ Marquer terminée</button>
+              <button onClick={() => closeMission('NON_ABOUTIE')} disabled={closing} style={{
+                padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                border: '1px solid rgba(239,68,68,0.5)', background: 'rgba(239,68,68,0.10)', color: '#EF4444', opacity: closing ? 0.5 : 1,
+              }}>Non aboutie</button>
+            </div>
+          )}
+        </div>
         {mission.marche && (
           <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12, color: '#94A3B8' }}>
             <span style={{ color: '#E2E8F0', fontWeight: 500, flex: '1 1 100%', fontSize: 13 }}>{mission.marche.title}</span>

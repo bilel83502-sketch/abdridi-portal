@@ -378,3 +378,32 @@ export async function sendMissionAssignedEmail(d: MissionAssignedEmailData): Pro
     console.error('[Email] Mission assignment email failed:', err);
   }
 }
+
+// ─── Notification admin : mission clôturée par un commercial ───
+
+export async function sendMissionClosedEmail(d: { missionId: string; missionName: string; status: string; byName: string }): Promise<void> {
+  if (!process.env.RESEND_API_KEY) return;
+  const label = d.status === 'COMPLETED' ? 'Terminée' : d.status === 'NON_ABOUTIE' ? 'Non aboutie' : d.status;
+  const color = d.status === 'COMPLETED' ? '#059669' : '#DC2626';
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: ADMIN_EMAIL,
+      subject: `Mission ${label.toLowerCase()} : ${d.missionName}`,
+      html: emailWrapper(`
+<tr><td style="background:#0A1628;padding:24px 32px;"><span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:0.1em;">AB DRIDI</span></td></tr>
+<tr><td style="padding:32px;">
+  <p style="margin:0 0 12px;font-size:14px;color:#374151;">${escapeHtml(d.byName)} a clôturé une mission :</p>
+  <p style="margin:0 0 6px;font-size:16px;font-weight:700;color:#111827;">${escapeHtml(d.missionName)}</p>
+  <p style="margin:0 0 24px;font-size:14px;font-weight:700;color:${color};">${label}</p>
+  <table cellpadding="0" cellspacing="0"><tr><td style="background:#2563EB;border-radius:6px;">
+    <a href="https://portal.abdridi.com/pilotage/missions/${d.missionId}" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-weight:600;font-size:14px;">Voir la mission</a>
+  </td></tr></table>
+</td></tr>
+${abDridiFooter()}`),
+    });
+  } catch (err) {
+    console.error('[Email] Mission closed email failed:', err);
+  }
+}

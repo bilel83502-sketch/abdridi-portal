@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { missionUpdateSchema, formatZodErrors } from '@/lib/validators';
 import { auditFromSession } from '@/lib/audit';
-import { sendMissionAssignedEmail } from '@/lib/email';
+import { sendMissionAssignedEmail, sendMissionClosedEmail } from '@/lib/email';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -45,14 +45,41 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json(mission);
 }
 
+const PROSPECTOR_ALLOWED_STATUSES = ['ACTIVE', 'COMPLETED', 'NON_ABOUTIE'];
+
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   const user = session?.user as any;
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'PROSPECTOR')) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
   }
 
   const body = await req.json();
+
+  // Un commercial peut uniquement clôturer une mission qui lui est assignée
+  // (Terminée / Non aboutie) — aucun autre champ, aucune autre mission.
+  if (user.role === 'PROSPECTOR') {
+    const keys = Object.keys(body || {});
+    if (keys.length !== 1 || keys[0] !== 'status' || !PROSPECTOR_ALLOWED_STATUSES.includes(body.status)) {
+      return NextResponse.json({ error: 'Seul le statut de la mission peut être modifié' }, { status: 403 });
+    }
+    const m = await prisma.mission.findUnique({ where: { id: params.id }, select: { assignedToId: true, status: true, name: true } });
+    if (!m || m.assignedToId !== user.id || m.status !== 'ACTIVE') {
+      return NextResponse.json({ error: 'Accès refusé — mission non assignée' }, { status: 403 });
+    }
+    const updated = await prisma.mission.update({ where: { id: params.id }, data: { status: body.status } });
+    auditFromSession(user, req, 'MISSION_UPDATE', 'Mission', params.id, { status: body.status });
+    if (body.status !== 'ACTIVE') {
+      sendMissionClosedEmail({
+        missionId: updated.id,
+        missionName: updated.name,
+        status: body.status,
+        byName: user.name || user.email || 'Un commercial',
+      }).catch(() => {});
+    }
+    return NextResponse.json(updated);
+  }
+
   const parsed = missionUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: formatZodErrors(parsed.error) }, { status: 400 });
