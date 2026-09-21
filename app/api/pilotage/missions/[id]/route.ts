@@ -68,7 +68,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: 'Accès refusé — mission non assignée' }, { status: 403 });
     }
     const updated = await prisma.mission.update({ where: { id: params.id }, data: { status: body.status } });
-    auditFromSession(user, req, 'MISSION_UPDATE', 'Mission', params.id, { status: body.status });
+    auditFromSession(
+      user, req,
+      body.status === 'ACTIVE' ? 'MISSION_UPDATE' : 'MISSION_CLOSED',
+      'Mission', params.id,
+      { status: body.status, byName: user.name || user.email },
+    );
     if (body.status !== 'ACTIVE') {
       sendMissionClosedEmail({
         missionId: updated.id,

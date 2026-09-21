@@ -24,6 +24,21 @@ export async function GET() {
     },
   });
 
+  // Admin : dernière clôture effectuée par un commercial, pour chaque mission
+  const closedMap = new Map<string, { byName: string; status: string; at: Date }>();
+  if (user.role === 'ADMIN' && missions.length > 0) {
+    const logs = await prisma.auditLog.findMany({
+      where: { action: 'MISSION_CLOSED', resource: 'Mission', resourceId: { in: missions.map(m => m.id) } },
+      orderBy: { createdAt: 'desc' },
+      select: { resourceId: true, metadata: true, userEmail: true, createdAt: true },
+    });
+    for (const l of logs) {
+      if (!l.resourceId || closedMap.has(l.resourceId)) continue;
+      const md = (l.metadata || {}) as any;
+      closedMap.set(l.resourceId, { byName: md.byName || l.userEmail || 'Un commercial', status: md.status || '', at: l.createdAt });
+    }
+  }
+
   const result = missions.map(m => {
     const total = m.prospects.length;
     const contacted = m.prospects.filter(p => p.status !== 'A_CONTACTER').length;
@@ -34,6 +49,11 @@ export async function GET() {
       status: m.status, createdAt: m.createdAt, totalProspects: total,
       contacted, interested, progress: total > 0 ? Math.round((contacted / total) * 100) : 0,
       assignedToId: m.assignedToId, assignedTo: m.assignedTo,
+      // Renseigné seulement si la mission est encore dans l'état où le commercial l'a laissée
+      closedInfo: (() => {
+        const c = closedMap.get(m.id);
+        return c && c.status === m.status ? c : null;
+      })(),
     };
   });
 

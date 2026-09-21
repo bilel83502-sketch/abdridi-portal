@@ -14,7 +14,10 @@ type Mission = {
   deadline: string | null; status: string; createdAt: string;
   totalProspects: number; contacted: number; interested: number; progress: number;
   assignedToId: string | null; assignedTo: { id: string; name: string; email: string } | null;
+  closedInfo: { byName: string; status: string; at: string } | null;
 };
+
+const CLOSED_SEEN_KEY = 'abdridi.missionsClosedSeenAt';
 
 type TeamMember = { id: string; name: string; email: string; activeMissionsCount: number };
 
@@ -39,6 +42,15 @@ export default function MissionsPage() {
   const user = session?.user as any;
   const [missions, setMissions] = useState<Mission[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [closedSeenAt, setClosedSeenAt] = useState<number>(0);
+  useEffect(() => {
+    try { setClosedSeenAt(Number(localStorage.getItem(CLOSED_SEEN_KEY) || 0)); } catch {}
+  }, []);
+  function markClosedSeen() {
+    const now = Date.now();
+    setClosedSeenAt(now);
+    try { localStorage.setItem(CLOSED_SEEN_KEY, String(now)); } catch {}
+  }
   const [statusFilter, setStatusFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -237,6 +249,36 @@ export default function MissionsPage() {
         </button>
       </div>
 
+      {/* Clôtures récentes par les commerciaux */}
+      {(() => {
+        const weekAgo = Date.now() - 7 * 24 * 3600 * 1000;
+        const recent = missions
+          .filter(m => m.closedInfo && new Date(m.closedInfo.at).getTime() > Math.max(weekAgo, closedSeenAt))
+          .sort((a, b) => new Date(b.closedInfo!.at).getTime() - new Date(a.closedInfo!.at).getTime());
+        if (recent.length === 0) return null;
+        return (
+          <div style={{ marginBottom: 20, padding: '14px 18px', borderRadius: 10, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.35)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#10B981' }}>
+                {recent.length} mission{recent.length > 1 ? 's' : ''} clôturée{recent.length > 1 ? 's' : ''} par vos commerciaux
+              </span>
+              <button onClick={markClosedSeen} style={{ background: 'none', border: 'none', color: '#64748B', fontSize: 12, cursor: 'pointer' }}>Marquer comme vu</button>
+            </div>
+            {recent.map(m => (
+              <Link key={m.id} href={`/pilotage/missions/${m.id}`} style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 13, color: '#E2E8F0', textDecoration: 'none', padding: '3px 0' }}>
+                <span style={{ fontWeight: 700, color: m.closedInfo!.status === 'COMPLETED' ? '#10B981' : '#EF4444', minWidth: 90 }}>
+                  {m.closedInfo!.status === 'COMPLETED' ? '✓ Terminée' : '✕ Non aboutie'}
+                </span>
+                <span style={{ flex: 1 }}>{m.name}</span>
+                <span style={{ color: '#94A3B8', fontSize: 12, whiteSpace: 'nowrap' }}>
+                  {m.closedInfo!.byName} · {new Date(m.closedInfo!.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </Link>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* KPIs — vue d'ensemble pour piloter, pas seulement lister */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 20 }}>
         <MiniStat icon={<FolderOpen size={15} />} label="Missions" value={filtered.length} color="#3B82F6" />
@@ -395,6 +437,11 @@ export default function MissionsPage() {
                     </div>
                   </div>
                   {m.aoTitle && <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 12px', lineHeight: 1.4 }}>{m.aoTitle}</p>}
+                  {m.closedInfo && (
+                    <p style={{ fontSize: 12, margin: '0 0 12px', color: m.closedInfo.status === 'COMPLETED' ? '#10B981' : '#EF4444', fontWeight: 600 }}>
+                      Clôturée par {m.closedInfo.byName} le {new Date(m.closedInfo.at).toLocaleDateString('fr-FR')} à {new Date(m.closedInfo.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20, fontSize: 12, color: '#94A3B8' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={13} /> {m.totalProspects} prospect{m.totalProspects > 1 ? 's' : ''}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Target size={13} /> {m.interested} intéressé{m.interested > 1 ? 's' : ''}</span>
