@@ -7,7 +7,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const CRON_SECRET = process.env.CRON_SECRET;
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Placeholder si la clé est absente : sans lui, `new Resend(undefined)` lève une
+// exception au chargement du module et fait échouer TOUT le build Vercel.
+// À l'exécution, sans vraie clé, l'envoi échoue proprement (erreur loggée).
+const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
 export async function GET(req: Request) {
   if (!CRON_SECRET) return NextResponse.json({ error: 'CRON_SECRET non configuré' }, { status: 500 });

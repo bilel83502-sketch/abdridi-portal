@@ -8,7 +8,7 @@ import Stripe from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { typescript: true });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_missing_key', { typescript: true });
 
 export async function DELETE(req: Request) {
   const session = await getServerSession(authOptions);

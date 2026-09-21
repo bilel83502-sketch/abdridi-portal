@@ -6,7 +6,10 @@ import { rateLimitCheck } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Placeholder si la clé est absente : sans lui, `new Resend(undefined)` lève une
+// exception au chargement du module et fait échouer TOUT le build Vercel.
+// À l'exécution, sans vraie clé, l'envoi échoue proprement (erreur loggée).
+const resend = new Resend(process.env.RESEND_API_KEY || 're_missing_key');
 
 export async function POST(req: Request) {
   const forwarded = req.headers.get('x-forwarded-for');
