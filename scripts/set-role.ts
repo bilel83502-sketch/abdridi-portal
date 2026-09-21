@@ -41,8 +41,13 @@ async function main() {
     else if (d.role === 'ADMIN') { console.error('❌ Refus : on ne supprime pas un admin par ce script.'); }
     else {
       const c = d._count;
-      if ((c.alerts || c.appointments || c.assignedMissions) && !force) {
-        console.error(`❌ ${del} possède ${c.assignedMissions} mission(s), ${c.alerts} alerte(s), ${c.appointments} RDV. Ajoutez --force pour supprimer quand même.`);
+      // Les missions assignées au doublon sont transférées au compte conservé
+      if (c.assignedMissions > 0) {
+        const moved = await prisma.mission.updateMany({ where: { assignedToId: d.id }, data: { assignedToId: u.id } });
+        console.log(`↪  ${moved.count} mission(s) transférée(s) de ${del} vers ${email}`);
+      }
+      if ((c.alerts || c.appointments) && !force) {
+        console.error(`❌ ${del} possède ${c.alerts} alerte(s), ${c.appointments} RDV. Ajoutez --force pour supprimer quand même.`);
       } else {
         await prisma.user.delete({ where: { id: d.id } });
         console.log(`🗑  Doublon ${del} supprimé.`);
