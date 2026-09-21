@@ -64,8 +64,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: 'Seul le statut de la mission peut être modifié' }, { status: 403 });
     }
     const m = await prisma.mission.findUnique({ where: { id: params.id }, select: { assignedToId: true, status: true, name: true } });
-    if (!m || m.assignedToId !== user.id || m.status !== 'ACTIVE') {
+    if (!m || m.assignedToId !== user.id) {
       return NextResponse.json({ error: 'Accès refusé — mission non assignée' }, { status: 403 });
+    }
+    if (!PROSPECTOR_ALLOWED_STATUSES.includes(m.status)) {
+      return NextResponse.json({ error: 'Mission mise en pause par l\'administrateur' }, { status: 403 });
+    }
+    if (m.status === body.status) {
+      return NextResponse.json(m);
     }
     const updated = await prisma.mission.update({ where: { id: params.id }, data: { status: body.status } });
     auditFromSession(

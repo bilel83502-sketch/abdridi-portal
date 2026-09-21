@@ -69,7 +69,14 @@ export default function MissionsPage() {
     if (status === 'authenticated' && user?.role !== 'ADMIN') router.push('/dashboard');
   }, [status, user, router]);
 
-  useEffect(() => { loadMissions(); }, [user]);
+  useEffect(() => {
+    loadMissions();
+    // Resynchronisation : les commerciaux peuvent changer un statut à tout moment
+    const onFocus = () => loadMissions();
+    window.addEventListener('focus', onFocus);
+    const t = setInterval(loadMissions, 60000);
+    return () => { window.removeEventListener('focus', onFocus); clearInterval(t); };
+  }, [user]);
 
   useEffect(() => {
     if (user?.role === 'ADMIN') {

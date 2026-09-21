@@ -13,9 +13,10 @@ export async function GET() {
   }
 
   const missions = await prisma.mission.findMany({
-    // Un commercial (PROSPECTOR) ne voit que les missions actives qui lui
-    // sont assignées — pas l'ensemble du portefeuille de l'admin.
-    where: user.role === 'PROSPECTOR' ? { status: 'ACTIVE', assignedToId: user.id } : undefined,
+    // Un commercial (PROSPECTOR) ne voit que les missions qui lui sont
+    // assignées (actives et clôturées, pour pouvoir rouvrir) — pas l'ensemble
+    // du portefeuille de l'admin.
+    where: user.role === 'PROSPECTOR' ? { assignedToId: user.id } : undefined,
     orderBy: { createdAt: 'desc' },
     include: {
       _count: { select: { prospects: true } },
