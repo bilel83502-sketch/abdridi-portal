@@ -329,6 +329,13 @@ export default function ProspectionMissionPage() {
               </h2>
               {ficheRecap.mimeType === 'application/pdf' ? (
                 <div style={{ background: '#1E293B', borderRadius: 10, border: '1px solid #334155', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 14px', borderBottom: '1px solid #334155' }}>
+                    <span style={{ fontSize: 13, color: '#E2E8F0', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ficheRecap.name}</span>
+                    <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+                      <a href={ficheRecap.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#F59E0B', fontWeight: 600, textDecoration: 'none' }}>Ouvrir en plein écran</a>
+                      <a href={ficheRecap.url} download={ficheRecap.name} style={{ fontSize: 12, color: '#F59E0B', fontWeight: 600, textDecoration: 'none' }}>Télécharger</a>
+                    </div>
+                  </div>
                   <iframe
                     src={ficheRecap.url}
                     style={{ width: '100%', height: 600, border: 'none' }}

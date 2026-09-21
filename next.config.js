@@ -26,6 +26,16 @@ const nextConfig = {
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
         ],
       },
+      {
+        // Les documents de mission (fiche récap PDF…) sont affichés dans un
+        // cadre sur la page Prospection. DENY bloquait l'affichage même depuis
+        // notre propre domaine : on autorise uniquement le même site.
+        // (Next.js : pour une même clé, la dernière règle qui matche gagne.)
+        source: '/api/pilotage/documents/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        ],
+      },
     ];
   },
 };
