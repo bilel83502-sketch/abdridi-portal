@@ -33,10 +33,12 @@ async function main() {
   }
 
   if (del) {
-    const d = await prisma.user.findUnique({
+    const d0 = await prisma.user.findUnique({
       where: { email: del.toLowerCase() },
-      include: { _count: { select: { alerts: true, appointments: true, assignedMissions: true } } },
+      include: { _count: { select: { alerts: true, appointments: true } } },
     });
+    // Compté via Mission directement : ne dépend pas d'un client Prisma régénéré
+    const d = d0 ? { ...d0, _count: { ...d0._count, assignedMissions: await prisma.mission.count({ where: { assignedToId: d0.id } }) } } : null;
     if (!d) { console.log(`ℹ️  Doublon ${del} introuvable — rien à supprimer.`); }
     else if (d.role === 'ADMIN') { console.error('❌ Refus : on ne supprime pas un admin par ce script.'); }
     else {
