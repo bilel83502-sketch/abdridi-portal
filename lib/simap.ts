@@ -223,7 +223,11 @@ export async function enrichSimapDetails(m: SimapMarche, debug = false): Promise
     const d = await getJson(`/publications/v1/project/${m._projectId}/publication-details/${m._publicationId}`, { lang: 'fr' });
     if (debug) {
       console.log('[SIMAP][debug] clés détail :', Object.keys(d || {}));
-      console.log('[SIMAP][debug] détail brut :', JSON.stringify(d, null, 2)?.slice(0, 4000));
+      try {
+        const fs = await import('fs');
+        fs.writeFileSync('simap-debug-detail.json', JSON.stringify(d, null, 2));
+        console.log('[SIMAP][debug] détail brut écrit dans simap-debug-detail.json');
+      } catch { console.log('[SIMAP][debug] détail brut :', JSON.stringify(d, null, 2)?.slice(0, 4000)); }
     }
 
     const isDateStr = (v: any) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v);

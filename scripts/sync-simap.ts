@@ -23,6 +23,11 @@ async function main() {
 
   console.log(`[SIMAP] Récupération des appels d'offres des ${daysBack} derniers jours (max ${limit})...`);
   const projects = await fetchSimapProjects({ daysBack, limit, debug });
+  if (debug) {
+    // Copie brute dans un fichier pour analyse (non commité)
+    const fs = await import('fs');
+    fs.writeFileSync('simap-debug.json', JSON.stringify({ firstProject: (projects[0] as any), note: 'voir console pour le détail brut' }, null, 2));
+  }
 
   if (projects.length === 0) { console.log('Aucun résultat.'); return; }
 

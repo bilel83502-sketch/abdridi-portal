@@ -10,3 +10,6 @@ node_modules/
 .DS_Store
 *.bak
 .scratch_dummy.md
+
+# dumps de debug simap
+simap-debug*.json
