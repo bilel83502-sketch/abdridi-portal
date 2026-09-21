@@ -310,3 +310,71 @@ export async function sendConfirmationEmail(data: ConfirmationEmailData): Promis
     console.error('[Email] Failed to send confirmation email:', err.message);
   }
 }
+
+// ─── Template: Mission assignée à un commercial ───
+
+type MissionAssignedEmailData = {
+  toEmail: string;
+  toName: string;
+  missionId: string;
+  missionName: string;
+  aoTitle: string | null;
+  aoReference: string | null;
+  deadline: Date | null;
+  totalProspects: number;
+  assignedBy: string;
+};
+
+function buildMissionAssignedHTML(d: MissionAssignedEmailData): string {
+  const firstName = escapeHtml(d.toName.split(' ')[0] || d.toName);
+  const url = `https://portal.abdridi.com/prospection/${d.missionId}`;
+  const deadlineRow = d.deadline
+    ? `<tr><td style="padding:6px 0;font-size:13px;color:#6B7280;width:140px;">Date limite de dépôt</td><td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${formatDateFR(d.deadline)}</td></tr>`
+    : '';
+  const refRow = d.aoReference
+    ? `<tr><td style="padding:6px 0;font-size:13px;color:#6B7280;">Référence</td><td style="padding:6px 0;font-size:13px;color:#111827;font-family:monospace;">${escapeHtml(d.aoReference)}</td></tr>`
+    : '';
+  const objetRow = d.aoTitle
+    ? `<tr><td style="padding:6px 0;font-size:13px;color:#6B7280;vertical-align:top;">Objet</td><td style="padding:6px 0;font-size:13px;color:#111827;">${escapeHtml(d.aoTitle)}</td></tr>`
+    : '';
+
+  return emailWrapper(`
+<tr><td style="background:#0A1628;padding:24px 32px;">
+  <span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:0.1em;">AB DRIDI</span>
+</td></tr>
+<tr><td style="padding:32px;">
+  <h1 style="margin:0 0 8px;font-size:20px;color:#111827;">Nouvelle mission assignée</h1>
+  <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.6;">
+    Bonjour ${firstName}, ${escapeHtml(d.assignedBy)} vient de vous confier une mission de prospection.
+  </p>
+  <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:16px 20px;margin:0 0 24px;">
+    <p style="margin:0 0 10px;font-size:16px;font-weight:700;color:#111827;">${escapeHtml(d.missionName)}</p>
+    <table cellpadding="0" cellspacing="0" style="width:100%;">
+      ${objetRow}${refRow}${deadlineRow}
+      <tr><td style="padding:6px 0;font-size:13px;color:#6B7280;">Prospects à contacter</td><td style="padding:6px 0;font-size:13px;color:#111827;font-weight:600;">${d.totalProspects}</td></tr>
+    </table>
+  </div>
+  <table cellpadding="0" cellspacing="0"><tr><td style="background:#2563EB;border-radius:6px;">
+    <a href="${url}" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-weight:600;font-size:14px;">Ouvrir la mission</a>
+  </td></tr></table>
+</td></tr>
+${abDridiFooter()}`);
+}
+
+export async function sendMissionAssignedEmail(d: MissionAssignedEmailData): Promise<void> {
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('[Email] RESEND_API_KEY not set — mission assignment email skipped');
+    return;
+  }
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: d.toEmail,
+      subject: `Mission assignée : ${d.missionName}`,
+      html: buildMissionAssignedHTML(d),
+    });
+  } catch (err) {
+    console.error('[Email] Mission assignment email failed:', err);
+  }
+}

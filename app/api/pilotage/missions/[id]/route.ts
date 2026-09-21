@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { missionUpdateSchema, formatZodErrors } from '@/lib/validators';
 import { auditFromSession } from '@/lib/audit';
+import { sendMissionAssignedEmail } from '@/lib/email';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -69,10 +70,39 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (d.marcheId !== undefined) data.marcheId = d.marcheId || null;
   if (d.assignedToId !== undefined) data.assignedToId = d.assignedToId || null;
 
-  const mission = await prisma.mission.update({ where: { id: params.id }, data });
+  // Pour savoir si l'assignation change réellement (et éviter un email
+  // à chaque modification de statut ou de date).
+  const before = data.assignedToId !== undefined
+    ? await prisma.mission.findUnique({ where: { id: params.id }, select: { assignedToId: true } })
+    : null;
+
+  const mission = await prisma.mission.update({
+    where: { id: params.id },
+    data,
+    include: {
+      assignedTo: { select: { name: true, email: true } },
+      _count: { select: { prospects: true } },
+    },
+  });
   auditFromSession(user, req, 'MISSION_UPDATE', 'Mission', params.id, data);
 
-  return NextResponse.json(mission);
+  // Nouvelle assignation (ou réassignation) → notification au commercial
+  if (data.assignedToId && before && before.assignedToId !== data.assignedToId && mission.assignedTo) {
+    sendMissionAssignedEmail({
+      toEmail: mission.assignedTo.email,
+      toName: mission.assignedTo.name,
+      missionId: mission.id,
+      missionName: mission.name,
+      aoTitle: mission.aoTitle,
+      aoReference: mission.aoReference,
+      deadline: mission.deadline,
+      totalProspects: mission._count.prospects,
+      assignedBy: user.name || 'AB DRIDI',
+    }).catch(() => {});
+  }
+
+  const { assignedTo, _count, ...plain } = mission as any;
+  return NextResponse.json({ ...plain, assignedTo });
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
