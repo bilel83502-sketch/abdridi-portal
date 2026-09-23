@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { ADMIN_EMAIL } from './constants';
+import { formatFrDateTime, formatFrTime } from './datetime';
 
 const FROM_EMAIL = 'AB DRIDI <noreply@abdridi.com>';
 
@@ -405,5 +406,57 @@ ${abDridiFooter()}`),
     });
   } catch (err) {
     console.error('[Email] Mission closed email failed:', err);
+  }
+}
+
+// ─── Rappel de rendez-vous (1 h et 15 min avant) ───
+
+type RdvReminderData = {
+  to: string[];
+  leadLabel: string;           // "dans 1 heure" / "dans 15 minutes"
+  company: string;
+  contact: string | null;
+  phone: string | null;
+  note: string | null;
+  missionId: string;
+  missionName: string;
+  rdvDate: Date;
+  commercialName: string | null;
+};
+
+export async function sendRdvReminderEmail(d: RdvReminderData): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY || d.to.length === 0) return false;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const heure = formatFrTime(d.rdvDate);
+  const rows = [
+    d.contact ? `<tr><td style="padding:5px 0;font-size:13px;color:#6B7280;width:110px;">Contact</td><td style="padding:5px 0;font-size:13px;color:#111827;">${escapeHtml(d.contact)}</td></tr>` : '',
+    d.phone ? `<tr><td style="padding:5px 0;font-size:13px;color:#6B7280;">Téléphone</td><td style="padding:5px 0;font-size:14px;color:#111827;font-weight:700;"><a href="tel:${escapeHtml(d.phone)}" style="color:#2563EB;text-decoration:none;">${escapeHtml(d.phone)}</a></td></tr>` : '',
+    `<tr><td style="padding:5px 0;font-size:13px;color:#6B7280;">Mission</td><td style="padding:5px 0;font-size:13px;color:#111827;">${escapeHtml(d.missionName)}</td></tr>`,
+    d.commercialName ? `<tr><td style="padding:5px 0;font-size:13px;color:#6B7280;">Commercial</td><td style="padding:5px 0;font-size:13px;color:#111827;">${escapeHtml(d.commercialName)}</td></tr>` : '',
+    d.note ? `<tr><td style="padding:5px 0;font-size:13px;color:#6B7280;vertical-align:top;">Note</td><td style="padding:5px 0;font-size:13px;color:#111827;">${escapeHtml(d.note)}</td></tr>` : '',
+  ].join('');
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: d.to,
+      subject: `Rappel — RDV ${escapeHtml(d.company)} à ${heure} (${d.leadLabel})`,
+      html: emailWrapper(`
+<tr><td style="background:#0A1628;padding:20px 32px;"><span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:0.1em;">AB DRIDI</span></td></tr>
+<tr><td style="padding:28px 32px;">
+  <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:0.05em;">Rendez-vous ${escapeHtml(d.leadLabel)}</p>
+  <h1 style="margin:0 0 4px;font-size:22px;color:#111827;">${heure} — ${escapeHtml(d.company)}</h1>
+  <p style="margin:0 0 20px;font-size:13px;color:#6B7280;">${formatFrDateTime(d.rdvDate)}</p>
+  <table cellpadding="0" cellspacing="0" style="width:100%;background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px 18px;margin-bottom:22px;">${rows}</table>
+  <table cellpadding="0" cellspacing="0"><tr><td style="background:#2563EB;border-radius:6px;">
+    <a href="https://portal.abdridi.com/prospection/${d.missionId}" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-weight:600;font-size:14px;">Ouvrir la mission</a>
+  </td></tr></table>
+</td></tr>
+${abDridiFooter()}`),
+    });
+    return true;
+  } catch (err) {
+    console.error('[Email] RDV reminder failed:', err);
+    return false;
   }
 }

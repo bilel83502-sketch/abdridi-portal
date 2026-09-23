@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { prospectUpdateSchema, formatZodErrors } from '@/lib/validators';
 import { auditFromSession } from '@/lib/audit';
+import { parseUserDateTime } from '@/lib/datetime';
 
 async function checkAccess(prospectId: string, userRole: string, userId: string) {
   const prospect = await prisma.prospect.findUnique({
@@ -37,7 +38,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const data: any = {};
   if (d.status !== undefined) data.status = d.status;
   if (d.note !== undefined) data.note = d.note;
-  if (d.rdvDate !== undefined) data.rdvDate = d.rdvDate ? new Date(d.rdvDate) : null;
+  if (d.rdvDate !== undefined) data.rdvDate = d.rdvDate ? parseUserDateTime(d.rdvDate) : null;
   if (d.devisAmount !== undefined) data.devisAmount = d.devisAmount ? parseFloat(String(d.devisAmount)) : null;
   if (d.contact !== undefined) data.contact = d.contact;
   if (d.phone !== undefined) data.phone = d.phone;

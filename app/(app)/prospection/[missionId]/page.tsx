@@ -7,6 +7,14 @@ import Link from 'next/link';
 import { ChevronLeft, Phone, FileText, ExternalLink, Calendar, Check, Filter, X } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 
+/** Transforme la saisie locale du navigateur en date absolue (fuseau inclus). */
+function toAbsoluteISO(v: string): string | null {
+  if (!v) return null;
+  const withTime = v.includes('T') ? v : `${v}T09:00`;
+  const d = new Date(withTime); // interprété dans le fuseau du navigateur
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   A_CONTACTER: { label: 'À contacter', color: '#3B82F6', bg: 'rgba(59,130,246,0.15)' },
   PAS_JOIGNABLE: { label: 'Pas joignable', color: '#64748B', bg: 'rgba(100,116,139,0.15)' },
@@ -97,7 +105,7 @@ export default function ProspectionMissionPage() {
       const res = await fetch(`/api/pilotage/prospects/${prospectId}/activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'APPEL', result: callResult, note: callNote || null, status: callResult, rdvDate: callRdvDate || null }),
+        body: JSON.stringify({ action: 'APPEL', result: callResult, note: callNote || null, status: callResult, rdvDate: toAbsoluteISO(callRdvDate) }),
       });
       if (!res.ok) throw new Error('Erreur serveur');
       const prospect = prospects.find((p: any) => p.id === prospectId);

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { prospectActivitySchema, formatZodErrors } from '@/lib/validators';
 import { auditFromSession } from '@/lib/audit';
+import { parseUserDateTime } from '@/lib/datetime';
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -64,7 +65,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const updateData: any = { lastContactAt: new Date() };
   if (status) updateData.status = status;
-  if (rdvDate) updateData.rdvDate = new Date(rdvDate);
+  if (rdvDate) updateData.rdvDate = parseUserDateTime(rdvDate);
   if (note) updateData.note = note;
 
   await prisma.prospect.update({ where: { id: params.id }, data: updateData });
