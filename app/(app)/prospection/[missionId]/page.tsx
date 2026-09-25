@@ -50,6 +50,7 @@ export default function ProspectionMissionPage() {
   const [callResult, setCallResult] = useState('');
   const [callNote, setCallNote] = useState('');
   const [callRdvDate, setCallRdvDate] = useState('');
+  const [callAmount, setCallAmount] = useState('');
   const [saving, setSaving] = useState(false);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const [loadedActivities, setLoadedActivities] = useState<Record<string, any[]>>({});
@@ -96,6 +97,7 @@ export default function ProspectionMissionPage() {
     setCallResult('');
     setCallNote(prospect?.note || '');
     setCallRdvDate('');
+    setCallAmount(prospect?.devisAmount ? String(prospect.devisAmount) : '');
   }
 
   async function submitCall(prospectId: string) {
@@ -105,7 +107,7 @@ export default function ProspectionMissionPage() {
       const res = await fetch(`/api/pilotage/prospects/${prospectId}/activity`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'APPEL', result: callResult, note: callNote || null, status: callResult, rdvDate: toAbsoluteISO(callRdvDate) }),
+        body: JSON.stringify({ action: 'APPEL', result: callResult, note: callNote || null, status: callResult, rdvDate: toAbsoluteISO(callRdvDate), devisAmount: callAmount || null }),
       });
       if (!res.ok) throw new Error('Erreur serveur');
       const prospect = prospects.find((p: any) => p.id === prospectId);
@@ -319,6 +321,13 @@ export default function ProspectionMissionPage() {
                         <div style={{ marginBottom: 10 }}>
                           <label htmlFor="call-rdv-date" style={{ display: 'block', fontSize: 11, color: '#94A3B8', marginBottom: 3 }}>Date et heure du RDV</label>
                           <input id="call-rdv-date" type="datetime-local" value={callRdvDate} onChange={e => setCallRdvDate(e.target.value)}
+                            style={{ padding: '6px 8px', borderRadius: 5, border: '1px solid #334155', background: '#0F172A', color: '#E2E8F0', fontSize: 12, outline: 'none' }} />
+                        </div>
+                      )}
+                      {(callResult === 'DEVIS_ENVOYE' || callResult === 'DEVIS_SIGNE') && (
+                        <div style={{ marginBottom: 10 }}>
+                          <label htmlFor="call-amount" style={{ display: 'block', fontSize: 11, color: '#94A3B8', marginBottom: 3 }}>Montant du devis (€ HT)</label>
+                          <input id="call-amount" value={callAmount} onChange={e => setCallAmount(e.target.value)} inputMode="decimal" placeholder="Ex: 12500"
                             style={{ padding: '6px 8px', borderRadius: 5, border: '1px solid #334155', background: '#0F172A', color: '#E2E8F0', fontSize: 12, outline: 'none' }} />
                         </div>
                       )}

@@ -20,7 +20,7 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
     include: {
       _count: { select: { prospects: true } },
-      prospects: { select: { status: true, devisAmount: true } },
+      prospects: { select: { status: true, devisAmount: true, company: true } },
       assignedTo: { select: { id: true, name: true, email: true } },
     },
   });
@@ -50,6 +50,9 @@ export async function GET() {
       status: m.status, createdAt: m.createdAt, totalProspects: total,
       contacted, interested, progress: total > 0 ? Math.round((contacted / total) * 100) : 0,
       assignedToId: m.assignedToId, assignedTo: m.assignedTo,
+      // Devis signés de la mission : montant total et entreprises retenues
+      signedAmount: m.prospects.filter(p => p.status === 'DEVIS_SIGNE').reduce((sum, p) => sum + (p.devisAmount || 0), 0),
+      signedCompanies: m.prospects.filter(p => p.status === 'DEVIS_SIGNE').map(p => p.company),
       // Renseigné seulement si la mission est encore dans l'état où le commercial l'a laissée
       closedInfo: (() => {
         const c = closedMap.get(m.id);

@@ -57,7 +57,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: formatZodErrors(parsed.error) }, { status: 400 });
   }
 
-  const { action, result, note, status, rdvDate } = parsed.data;
+  const { action, result, note, status, rdvDate, devisAmount } = parsed.data;
 
   const activity = await prisma.prospectActivity.create({
     data: { prospectId: params.id, action, result: result || null, note: note || null },
@@ -67,6 +67,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (status) updateData.status = status;
   if (rdvDate) updateData.rdvDate = parseUserDateTime(rdvDate);
   if (note) updateData.note = note;
+  if (devisAmount !== undefined && devisAmount !== null && devisAmount !== '') {
+    const amount = parseFloat(String(devisAmount).replace(',', '.'));
+    if (!isNaN(amount) && amount > 0) updateData.devisAmount = amount;
+  }
 
   await prisma.prospect.update({ where: { id: params.id }, data: updateData });
   auditFromSession(user, req, 'PROSPECT_ACTIVITY', 'Prospect', params.id, { action, result });

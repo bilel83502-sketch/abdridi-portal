@@ -20,7 +20,7 @@ export const missionUpdateSchema = z.object({
   aoReference: z.string().max(100).optional().nullable(),
   aoTitle: z.string().max(500).optional().nullable(),
   deadline: z.string().optional().nullable(),
-  status: z.enum(['ACTIVE', 'PAUSED', 'COMPLETED', 'NON_ABOUTIE']).optional(),
+  status: z.enum(['ACTIVE', 'PAUSED', 'COMPLETED', 'NON_ABOUTIE', 'SIGNEE']).optional(),
   ficheRecapUrl: z.string().url().optional().nullable().or(z.literal('')),
   ficheRecapName: z.string().max(200).optional().nullable(),
   marcheId: z.string().cuid().or(z.literal('')).optional().nullable(),
@@ -60,6 +60,7 @@ export const prospectActivitySchema = z.object({
   note: z.string().max(2000).optional().nullable(),
   status: z.string().optional().nullable(),
   rdvDate: z.string().optional().nullable(),
+  devisAmount: z.union([z.number().positive(), z.string(), z.null()]).optional(),
 });
 
 // ─── Document ───

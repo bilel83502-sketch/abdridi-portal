@@ -15,6 +15,7 @@ type Mission = {
   totalProspects: number; contacted: number; interested: number; progress: number;
   assignedToId: string | null; assignedTo: { id: string; name: string; email: string } | null;
   closedInfo: { byName: string; status: string; at: string } | null;
+  signedAmount: number; signedCompanies: string[];
 };
 
 const CLOSED_SEEN_KEY = 'abdridi.missionsClosedSeenAt';
@@ -26,6 +27,7 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }>
   PAUSED: { label: 'En pause', bg: 'rgba(245,158,11,0.15)', color: '#F59E0B' },
   COMPLETED: { label: 'Terminée', bg: 'rgba(100,116,139,0.15)', color: '#64748B' },
   NON_ABOUTIE: { label: 'Non aboutie', bg: 'rgba(239,68,68,0.15)', color: '#EF4444' },
+  SIGNEE: { label: 'Devis signé', bg: 'rgba(16,185,129,0.22)', color: '#34D399' },
 };
 
 const STATUS_FILTERS = [
@@ -34,6 +36,7 @@ const STATUS_FILTERS = [
   { key: 'PAUSED', label: 'En pause' },
   { key: 'COMPLETED', label: 'Terminées' },
   { key: 'NON_ABOUTIE', label: 'Non abouties' },
+  { key: 'SIGNEE', label: 'Devis signés' },
 ];
 
 export default function MissionsPage() {
@@ -53,6 +56,12 @@ export default function MissionsPage() {
   }
   const [statusFilter, setStatusFilter] = useState('all');
   const [query, setQuery] = useState('');
+  const [signMission, setSignMission] = useState<Mission | null>(null);
+  const [signProspects, setSignProspects] = useState<any[]>([]);
+  const [signProspectId, setSignProspectId] = useState('');
+  const [signAmount, setSignAmount] = useState('');
+  const [signSaving, setSignSaving] = useState(false);
+  const [signError, setSignError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const closeCreate = useCallback(() => { setShowCreate(false); setCreateError(null); setAoStatus('idle'); setAoResults([]); }, []);
   useModalKeyboard({ isOpen: showCreate, onClose: closeCreate });
@@ -184,9 +193,67 @@ export default function MissionsPage() {
     }
   }
 
+  async function openSignModal(m: Mission, e: React.SyntheticEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setSignMission(m);
+    setSignProspectId('');
+    setSignAmount('');
+    setSignError(null);
+    setSignProspects([]);
+    const res = await fetch(`/api/pilotage/missions/${m.id}`);
+    if (res.ok) {
+      const data = await res.json();
+      const list = (data.prospects || []);
+      setSignProspects(list);
+      // Pré-sélection : l'entreprise déjà marquée "devis signé", sinon "devis envoyé"
+      const pre = list.find((p: any) => p.status === 'DEVIS_SIGNE') || list.find((p: any) => p.status === 'DEVIS_ENVOYE');
+      if (pre) {
+        setSignProspectId(pre.id);
+        if (pre.devisAmount) setSignAmount(String(pre.devisAmount));
+      }
+    }
+  }
+
+  async function confirmSign() {
+    if (!signMission) return;
+    if (!signProspectId) { setSignError('Sélectionnez l\'entreprise qui a signé.'); return; }
+    const amount = parseFloat(signAmount.replace(',', '.'));
+    if (isNaN(amount) || amount <= 0) { setSignError('Indiquez le montant signé (en euros).'); return; }
+
+    setSignSaving(true);
+    setSignError(null);
+    try {
+      const r1 = await fetch(`/api/pilotage/prospects/${signProspectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'DEVIS_SIGNE', devisAmount: amount }),
+      });
+      if (!r1.ok) throw new Error((await r1.json().catch(() => ({})))?.error || 'Enregistrement du devis impossible');
+
+      const r2 = await fetch(`/api/pilotage/missions/${signMission.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'SIGNEE' }),
+      });
+      if (!r2.ok) throw new Error((await r2.json().catch(() => ({})))?.error || 'Changement de statut impossible');
+
+      setSignMission(null);
+      loadMissions();
+    } catch (err: any) {
+      setSignError(err?.message || 'Erreur inattendue');
+    } finally {
+      setSignSaving(false);
+    }
+  }
+
   async function handleStatusChange(id: string, newStatus: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (newStatus === 'SIGNEE') {
+      const m = missions.find(x => x.id === id);
+      if (m) { openSignModal(m, e); return; }
+    }
     await fetch(`/api/pilotage/missions/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -233,6 +300,8 @@ export default function MissionsPage() {
   const totalInteresses = filtered.reduce((s, m) => s + m.interested, 0);
   const urgentCount = countUrgent(filtered.filter(m => m.status === 'ACTIVE'));
   const unassignedActiveCount = filtered.filter(m => m.status === 'ACTIVE' && !m.assignedToId).length;
+  const signedMissions = filtered.filter(m => m.status === 'SIGNEE');
+  const signedTotal = filtered.reduce((sum, m) => sum + (m.signedAmount || 0), 0);
 
   return (
     <div>
@@ -304,6 +373,14 @@ export default function MissionsPage() {
           value={unassignedActiveCount}
           color={unassignedActiveCount > 0 ? '#F59E0B' : '#64748B'}
           highlight={unassignedActiveCount > 0}
+        />
+        <MiniStat
+          icon={<Target size={15} />}
+          label="Devis signés"
+          value={signedMissions.length}
+          color="#34D399"
+          highlight={signedMissions.length > 0}
+          sub={signedTotal > 0 ? `${Math.round(signedTotal).toLocaleString('fr-FR')} €` : undefined}
         />
       </div>
 
@@ -393,6 +470,46 @@ export default function MissionsPage() {
         </FocusTrap>
       )}
 
+      {/* Enregistrement d'un devis signé */}
+      {signMission && (
+        <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSignMission(null)}>
+          <div style={{ background: '#1E293B', borderRadius: 12, border: '1px solid #334155', width: 520, maxWidth: '90vw', padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#34D399', margin: 0 }}>Devis signé</h2>
+              <button onClick={() => setSignMission(null)} aria-label="Fermer" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}><X size={18} /></button>
+            </div>
+            <p style={{ fontSize: 13, color: '#94A3B8', margin: '0 0 16px' }}>{signMission.name}</p>
+
+            <label style={{ display: 'block', fontSize: 12, color: '#94A3B8', marginBottom: 6, fontWeight: 500 }}>Entreprise qui a signé *</label>
+            <select value={signProspectId} onChange={e => setSignProspectId(e.target.value)}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #334155', background: '#0F172A', color: '#E2E8F0', fontSize: 13, outline: 'none', marginBottom: 14, boxSizing: 'border-box' }}>
+              <option value="">{signProspects.length === 0 ? 'Chargement des entreprises...' : 'Sélectionner une entreprise'}</option>
+              {signProspects.map((p: any) => (
+                <option key={p.id} value={p.id}>{p.company}{p.contact ? ` — ${p.contact}` : ''}</option>
+              ))}
+            </select>
+
+            <label style={{ display: 'block', fontSize: 12, color: '#94A3B8', marginBottom: 6, fontWeight: 500 }}>Montant signé (€ HT) *</label>
+            <input value={signAmount} onChange={e => setSignAmount(e.target.value)} inputMode="decimal" placeholder="Ex: 12500"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #334155', background: '#0F172A', color: '#E2E8F0', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+
+            {signError && (
+              <div role="alert" style={{ marginTop: 12, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.4)', color: '#FCA5A5', borderRadius: 8, padding: '10px 12px', fontSize: 13 }}>{signError}</div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+              <button onClick={confirmSign} disabled={signSaving} style={{
+                flex: 1, padding: '10px 20px', borderRadius: 8, background: '#10B981', color: '#fff', fontSize: 14, fontWeight: 600,
+                border: 'none', cursor: signSaving ? 'default' : 'pointer', opacity: signSaving ? 0.5 : 1,
+              }}>{signSaving ? 'Enregistrement...' : 'Enregistrer le devis signé'}</button>
+              <button onClick={() => setSignMission(null)} style={{
+                padding: '10px 16px', borderRadius: 8, background: 'transparent', color: '#94A3B8', fontSize: 14, border: '1px solid #334155', cursor: 'pointer',
+              }}>Annuler</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Missions list */}
       {filtered.length === 0 ? (
         <div style={{ background: '#1E293B', borderRadius: 10, border: '1px solid #334155', padding: 48, textAlign: 'center' }}>
@@ -444,6 +561,11 @@ export default function MissionsPage() {
                     </div>
                   </div>
                   {m.aoTitle && <p style={{ fontSize: 13, color: '#64748B', margin: '0 0 12px', lineHeight: 1.4 }}>{m.aoTitle}</p>}
+                  {m.status === 'SIGNEE' && m.signedAmount > 0 && (
+                    <p style={{ fontSize: 13, margin: '0 0 12px', color: '#34D399', fontWeight: 700 }}>
+                      Signé {Math.round(m.signedAmount).toLocaleString('fr-FR')} € {m.signedCompanies.length > 0 && <span style={{ fontWeight: 500, color: '#94A3B8' }}>— {m.signedCompanies.join(', ')}</span>}
+                    </p>
+                  )}
                   {m.closedInfo && (
                     <p style={{ fontSize: 12, margin: '0 0 12px', color: m.closedInfo.status === 'COMPLETED' ? '#10B981' : '#EF4444', fontWeight: 600 }}>
                       Clôturée par {m.closedInfo.byName} le {new Date(m.closedInfo.at).toLocaleDateString('fr-FR')} à {new Date(m.closedInfo.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
@@ -485,7 +607,7 @@ export default function MissionsPage() {
   );
 }
 
-function MiniStat({ icon, label, value, color, highlight }: { icon: React.ReactNode; label: string; value: number; color: string; highlight?: boolean }) {
+function MiniStat({ icon, label, value, color, highlight, sub }: { icon: React.ReactNode; label: string; value: number; color: string; highlight?: boolean; sub?: string }) {
   return (
     <div style={{
       background: '#1E293B', borderRadius: 10, padding: '12px 16px',
@@ -496,6 +618,7 @@ function MiniStat({ icon, label, value, color, highlight }: { icon: React.ReactN
         <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</span>
       </div>
       <div style={{ fontSize: 22, fontWeight: 700, color: highlight ? color : '#E2E8F0' }}>{value}</div>
+      {sub && <div style={{ fontSize: 13, fontWeight: 700, color, marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }

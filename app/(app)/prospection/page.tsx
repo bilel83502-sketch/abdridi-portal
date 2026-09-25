@@ -16,6 +16,7 @@ const STATUS_OPTIONS: Record<string, { label: string; color: string; bg: string 
   ACTIVE: { label: 'Active', color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
   COMPLETED: { label: 'Terminée', color: '#94A3B8', bg: 'rgba(100,116,139,0.15)' },
   NON_ABOUTIE: { label: 'Non aboutie', color: '#EF4444', bg: 'rgba(239,68,68,0.15)' },
+  SIGNEE: { label: 'Devis signé', color: '#34D399', bg: 'rgba(16,185,129,0.22)' },
 };
 const PAUSED = { label: 'En pause', color: '#F59E0B', bg: 'rgba(245,158,11,0.15)' };
 
@@ -83,7 +84,7 @@ export default function ProspectionPage() {
   if (!user || (user.role !== 'ADMIN' && user.role !== 'PROSPECTOR')) return null;
 
   const active = missions.filter(m => m.status === 'ACTIVE' || m.status === 'PAUSED');
-  const closed = missions.filter(m => m.status === 'COMPLETED' || m.status === 'NON_ABOUTIE');
+  const closed = missions.filter(m => m.status === 'COMPLETED' || m.status === 'NON_ABOUTIE' || m.status === 'SIGNEE');
   const nbActive = missions.filter(m => m.status === 'ACTIVE').length;
 
   function StatusSelect({ m }: { m: Mission }) {

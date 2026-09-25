@@ -45,7 +45,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json(mission);
 }
 
-const PROSPECTOR_ALLOWED_STATUSES = ['ACTIVE', 'COMPLETED', 'NON_ABOUTIE'];
+const PROSPECTOR_ALLOWED_STATUSES = ['ACTIVE', 'COMPLETED', 'NON_ABOUTIE', 'SIGNEE'];
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
