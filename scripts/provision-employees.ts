@@ -13,7 +13,7 @@
  *     client) → seul son rôle passe à PROSPECTOR, rien d'autre n'est
  *     modifié (mot de passe, nom existants conservés).
  *
- * Usage : npx tsx scripts/provision-employees.ts
+ * Usage : npx tsx scripts/provision-employees.ts [<email>] ["Prénom Nom"]
  */
 import { config } from 'dotenv';
 config({ path: '.env.local', override: true });
@@ -33,10 +33,27 @@ import { Resend } from 'resend';
 const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const EMPLOYEES: { name: string; email: string }[] = [
-  { name: 'Mirko Modolo', email: 'mirkomodolo@gmail.com' },
-  { name: 'Arij', email: 'dridiarij9@gmail.com' },
+/**
+ * Sans argument : liste par défaut (première mise en place).
+ * Avec arguments : `npx tsx scripts/provision-employees.ts <email> ["Prénom Nom"]`
+ * — ne traite que cette personne, sans renvoyer d'email aux autres.
+ */
+const DEFAULT_EMPLOYEES: { name: string; email: string }[] = [
+  { name: 'Mirko Modolo', email: 'mirko.modolo@gmail.com' },
+  { name: 'Arij Dridi', email: 'dridiarij9@gmail.com' },
 ];
+
+function nameFromEmail(email: string): string {
+  const local = email.split('@')[0].replace(/[._-]+/g, ' ').trim();
+  return local.split(' ').filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ') || 'Commercial';
+}
+
+const argv = process.argv.slice(2).filter(a => !a.startsWith('--'));
+const EMPLOYEES: { name: string; email: string }[] = argv.length > 0
+  ? [{ email: argv[0], name: argv[1] || nameFromEmail(argv[0]) }]
+  : DEFAULT_EMPLOYEES;
 
 function randomPassword(): string {
   // Mot de passe temporaire : jamais affiché, jamais transmis — seul le
@@ -91,12 +108,12 @@ async function sendOnboardingEmail(name: string, email: string, resetUrl: string
 }
 
 async function main() {
-  const missing = EMPLOYEES.filter(e => e.email.includes('REMPLACER_PAR_EMAIL'));
-  if (missing.length > 0) {
-    console.error(`\n❌ Complétez d'abord l'email de : ${missing.map(m => m.name).join(', ')}`);
-    console.error('   Éditez scripts/provision-employees.ts puis relancez.\n');
+  const invalid = EMPLOYEES.filter(e => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.email));
+  if (invalid.length > 0) {
+    console.error(`\n❌ Adresse email invalide : ${invalid.map(m => m.email).join(', ')}\n`);
     process.exit(1);
   }
+  console.log(`\nComptes à traiter : ${EMPLOYEES.map(e => `${e.name} <${e.email}>`).join(', ')}`);
 
   for (const emp of EMPLOYEES) {
     const email = emp.email.toLowerCase().trim();
