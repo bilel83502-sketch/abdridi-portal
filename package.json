@@ -19,7 +19,8 @@
     "alertes:audit": "tsx scripts/audit-alertes.ts",
     "migrate:mission-assignee": "tsx scripts/migrate-mission-assignee.ts",
     "provision:employees": "tsx scripts/provision-employees.ts",
-    "sync:simap": "tsx scripts/sync-simap.ts"
+    "sync:simap": "tsx scripts/sync-simap.ts",
+    "set:password": "tsx scripts/set-password.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

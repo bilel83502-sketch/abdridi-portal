@@ -1,6 +1,6 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -39,22 +39,42 @@ function LoginContent() {
       }
     }
 
-    const res = await signIn('credentials', { ...credentials, redirect: false });
-    if (res?.error) {
-      if (res.error.includes('GOOGLE_ACCOUNT')) {
-        setGoogleAccount(true);
-      } else if (res.error.includes('2FA_REQUIRED')) {
-        setNeeds2FA(true);
-        setError('');
-      } else if (res.error.includes('2FA_INVALID')) {
-        setError('Code 2FA incorrect. Réessayez.');
-        setTwoFactorCode('');
-      } else {
-        setError('Email ou mot de passe incorrect.');
+    try {
+      const res = await signIn('credentials', { ...credentials, redirect: false });
+
+      if (res?.error) {
+        if (res.error.includes('GOOGLE_ACCOUNT')) {
+          setGoogleAccount(true);
+        } else if (res.error.includes('2FA_REQUIRED')) {
+          setNeeds2FA(true);
+          setError('');
+        } else if (res.error.includes('2FA_INVALID')) {
+          setError('Code 2FA incorrect. Réessayez.');
+          setTwoFactorCode('');
+        } else if (res.error.includes('Trop de tentatives')) {
+          setError('Trop de tentatives. Réessayez dans 15 minutes.');
+        } else {
+          setError('Email ou mot de passe incorrect.');
+        }
+        setLoading(false);
+        return;
       }
+
+      // Réponse inattendue (serveur indisponible, session non créée) : sans ce
+      // garde-fou, le bouton restait bloqué en chargement indéfiniment.
+      if (!res?.ok) {
+        setError('Connexion impossible pour le moment. Réessayez dans un instant.');
+        setLoading(false);
+        return;
+      }
+
+      // Un commercial arrive directement sur ses missions
+      const session = await getSession();
+      const role = (session?.user as any)?.role;
+      router.push(role === 'PROSPECTOR' ? '/prospection' : '/marches');
+    } catch {
+      setError('Connexion impossible. Vérifiez votre connexion internet et réessayez.');
       setLoading(false);
-    } else {
-      router.push('/marches');
     }
   }
 
