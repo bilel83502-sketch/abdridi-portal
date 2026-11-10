@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { rateLimitCheck } from '@/lib/rate-limit';
 import { Resend } from 'resend';
+import { TRIAL_PLAN, trialEndFrom, TRIAL_LABEL } from '@/lib/trial';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,7 +62,9 @@ export async function POST(req: Request) {
         sector: data.sector?.trim() || null,
         passwordHash: hash,
         role: 'USER',
-        plan: 'DECOUVERTE',
+        // 5 semaines d'accès complet offertes, sans carte bancaire.
+        plan: TRIAL_PLAN,
+        stripeCurrentPeriodEnd: trialEndFrom(now),
         consentDate: now,
         consentIP: ip,
         consentVersion: 'v1.0',
@@ -122,7 +125,10 @@ export async function POST(req: Request) {
             <div style="padding:32px 24px">
               <h2 style="font-size:20px;font-weight:700;color:#0F172A;margin:0 0 16px">Bienvenue sur AB DRIDI</h2>
               <p style="font-size:14px;color:#64748B;line-height:1.6;margin:0 0 24px">
-                Cliquez sur le bouton ci-dessous pour vérifier votre adresse email :
+                Votre essai gratuit de <strong style="color:#0F172A">${TRIAL_LABEL}</strong> est activé : appels d'offres illimités, alertes email chaque matin et veille concurrentielle. Aucune carte bancaire demandée.
+              </p>
+              <p style="font-size:14px;color:#64748B;line-height:1.6;margin:0 0 24px">
+                Cliquez sur le bouton ci-dessous pour vérifier votre adresse email et commencer :
               </p>
               <div style="text-align:center;margin:0 0 24px">
                 <a href="${verifyUrl}" style="display:inline-block;padding:12px 32px;background:#3B82F6;color:#fff;text-decoration:none;font-weight:600;font-size:14px">

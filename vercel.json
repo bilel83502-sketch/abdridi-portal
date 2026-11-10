@@ -64,6 +64,10 @@
       "schedule": "0 8 * * *"
     },
     {
+      "path": "/api/cron/trial",
+      "schedule": "40 8 * * *"
+    },
+    {
       "path": "/api/sync/decp-v3",
       "schedule": "0 4 * * *"
     },

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
+import { isTrialActive } from '@/lib/trial';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +29,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
     }
 
+    // Client en essai gratuit : il garde ses jours offerts, le premier
+    // prélèvement a lieu à la fin de l'essai (Stripe exige ≥ 48 h).
+    let trialEnd: number | undefined;
+    if (isTrialActive(dbUser) && dbUser.stripeCurrentPeriodEnd) {
+      const endMs = new Date(dbUser.stripeCurrentPeriodEnd).getTime();
+      if (endMs - Date.now() > 49 * 60 * 60 * 1000) trialEnd = Math.floor(endMs / 1000);
+    }
+
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      ...(trialEnd ? { subscription_data: { trial_end: trialEnd } } : {}),
       customer_email: session.user.email,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: {

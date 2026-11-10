@@ -9,9 +9,9 @@ import Script from 'next/script';
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'AB DRIDI — Trouvez vos marchés publics sur une seule plateforme',
-  description: 'AB DRIDI centralise 17+ sources officielles de marchés publics et monte 100% de vos dossiers de réponse. Veille automatique, mémoire technique, BPU, dépôt. Essai gratuit.',
-  keywords: 'marchés publics, appel d\'offres, BOAMP, dossier de réponse, mémoire technique, BPU, cabinet conseil marchés publics',
+  title: 'AB DRIDI — Marchés publics du transport : 5 semaines d\'essai gratuit',
+  description: 'Les appels d\'offres du transport repérés chaque matin sur 35+ sources officielles, et votre dossier de réponse monté à 100 % : mémoire technique, BPU, dépôt. 5 semaines gratuites, sans carte bancaire.',
+  keywords: 'marchés publics transport, appel d\'offres transport, transport sanitaire, transport scolaire, marchés publics, appel d\'offres, BOAMP, dossier de réponse, mémoire technique, BPU, cabinet conseil marchés publics',
   authors: [{ name: 'AB DRIDI' }],
   robots: 'index, follow',
   alternates: {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'AB DRIDI — Votre partenaire marchés publics',
-    description: 'Veille quotidienne sur 17+ sources officielles et montage complet de vos dossiers de réponse.',
+    description: 'Veille quotidienne sur 35+ sources officielles et montage complet de vos dossiers de réponse. 5 semaines offertes.',
     url: 'https://portal.abdridi.com/',
     siteName: 'AB DRIDI',
     locale: 'fr_FR',

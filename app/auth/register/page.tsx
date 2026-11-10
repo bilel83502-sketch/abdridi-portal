@@ -99,6 +99,9 @@ export default function RegisterPage() {
           </div>
 
           <h2 className="login-form-title">Créer un compte</h2>
+          <div style={{ margin: '-4px 0 18px', padding: '10px 14px', borderRadius: 8, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF', fontSize: 13, lineHeight: 1.5 }}>
+            <strong>5 semaines d&apos;accès complet offertes.</strong> Sans carte bancaire, sans engagement.
+          </div>
 
           <button
             type="button"
@@ -279,7 +282,7 @@ export default function RegisterPage() {
                   Création en cours...
                 </>
               ) : (
-                'Créer mon compte'
+                'Démarrer mes 5 semaines gratuites'
               )}
             </button>
           </form>

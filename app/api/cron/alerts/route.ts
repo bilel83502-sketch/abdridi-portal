@@ -70,7 +70,7 @@ export async function processAlerts(options?: { dryRun?: boolean; sinceDaysAgo?:
       user: {
         OR: [
           { role: 'ADMIN' },
-          { plan: 'VEILLE', stripeCurrentPeriodEnd: { gt: now } },
+          { plan: { in: ['VEILLE', 'ESSAI'] }, stripeCurrentPeriodEnd: { gt: now } },
         ],
       },
     },

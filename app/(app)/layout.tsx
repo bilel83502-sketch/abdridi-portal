@@ -1,4 +1,5 @@
 import Header from '@/components/Header';
+import TrialBanner from '@/components/TrialBanner';
 import Chatbot from '@/components/Chatbot';
 import { ToastProvider } from '@/components/Toast';
 
@@ -13,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           Aller au contenu principal
         </a>
         <Header />
+        <TrialBanner />
         <main id="main-content" className="max-w-[1220px] mx-auto px-4 md:px-8 py-5 md:py-7">{children}</main>
         <Chatbot />
       </div>

@@ -13,3 +13,6 @@ node_modules/
 
 # dumps de debug simap
 simap-debug*.json
+
+# envois de l annonce (adresses emails)
+scripts/.announce-trial-sent.txt

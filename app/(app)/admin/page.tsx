@@ -351,10 +351,11 @@ export default function AdminPage() {
                       fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px',
                       padding: '2px 8px', borderRadius: 3,
                       ...(u.hasSub ? { color: '#059669', background: '#ECFDF5', border: '1px solid #A7F3D0' }
+                        : u.plan === 'ESSAI' ? { color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A' }
                         : u.role === 'ADMIN' ? { color: '#3B82F6', background: '#DBEAFE', border: '1px solid #93C5FD' }
                         : { color: '#6B7280', background: '#F9FAFB', border: '1px solid #E5E7EB' })
                     }}>
-                      {u.role === 'ADMIN' ? 'Admin' : u.plan}
+                      {u.role === 'ADMIN' ? 'Admin' : u.plan === 'ESSAI' ? `Essai · ${u.trialDaysLeft ?? 0} j` : u.plan}
                     </span>
                   </td>
                   <td style={{ padding: '10px 16px', fontSize: 12, color: '#9CA3AF' }}>

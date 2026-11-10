@@ -8,6 +8,7 @@ import { logAudit } from './audit';
 import { verifyToken, verifyBackupCode } from './two-factor';
 import { captureSecurityEvent } from './sentry';
 import { ADMIN_EMAIL, isAdminEmail } from './constants';
+import { TRIAL_PLAN, trialEndFrom } from './trial';
 
 // Rate limit store keyed by IP — 5 attempts per 15 minutes
 function getLoginRateLimitKey(email: string): string {
@@ -109,7 +110,8 @@ export const authOptions: NextAuthOptions = {
               email,
               name: user.name || 'Utilisateur',
               role: adminMatch ? 'ADMIN' : 'USER',
-              plan: adminMatch ? 'VEILLE' : 'DECOUVERTE',
+              plan: adminMatch ? 'VEILLE' : TRIAL_PLAN,
+              ...(adminMatch ? {} : { stripeCurrentPeriodEnd: trialEndFrom() }),
               emailVerified: new Date(),
               lastLoginAt: new Date(),
             },

@@ -66,7 +66,10 @@ export async function GET() {
         plan: u.plan,
         createdAt: u.createdAt,
         lastLoginAt: u.lastLoginAt,
-        hasSub: !!(u.stripeCurrentPeriodEnd && new Date(u.stripeCurrentPeriodEnd) > now),
+        hasSub: u.plan !== 'ESSAI' && !!(u.stripeCurrentPeriodEnd && new Date(u.stripeCurrentPeriodEnd) > now),
+        trialDaysLeft: u.plan === 'ESSAI' && u.stripeCurrentPeriodEnd
+          ? Math.max(0, Math.ceil((new Date(u.stripeCurrentPeriodEnd).getTime() - now.getTime()) / 86400000))
+          : null,
       })),
     });
   } catch (e: any) {

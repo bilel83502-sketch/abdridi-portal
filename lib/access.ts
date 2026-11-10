@@ -2,6 +2,7 @@ import { prisma } from './prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth';
 import { isAdminEmail } from './constants';
+import { TRIAL_PLAN } from './trial';
 
 type UserAccess = {
   role: string;
@@ -17,7 +18,8 @@ export function hasFullAccess(user: UserAccess): boolean {
   // L'admin et l'équipe commerciale interne (PROSPECTOR) ont un accès
   // illimité aux outils de veille, sans abonnement.
   if (user.role === 'ADMIN' || user.role === 'PROSPECTOR') return true;
-  if (user.plan === 'VEILLE' && user.stripeCurrentPeriodEnd && new Date(user.stripeCurrentPeriodEnd) > new Date()) return true;
+  // Abonné Veille OU essai gratuit en cours (5 semaines à l'inscription).
+  if ((user.plan === 'VEILLE' || user.plan === TRIAL_PLAN) && user.stripeCurrentPeriodEnd && new Date(user.stripeCurrentPeriodEnd) > new Date()) return true;
   return false;
 }
 

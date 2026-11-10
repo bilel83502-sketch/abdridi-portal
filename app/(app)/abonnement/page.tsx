@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Check, X, Zap, Sparkles, Building2 } from 'lucide-react';
 
 const STRIPE_PRICE_VEILLE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_VEILLE || '';
@@ -76,6 +76,14 @@ function AbonnementContent() {
   const [error, setError] = useState<string | null>(null);
 
   const currentPlan = user?.role === 'ADMIN' ? 'ADMIN' : (user?.plan || 'DECOUVERTE');
+  const [trial, setTrial] = useState<{ status: string; daysLeft?: number; endsAt?: string } | null>(null);
+  useEffect(() => {
+    fetch('/api/user/trial').then(r => (r.ok ? r.json() : null)).then(setTrial).catch(() => {});
+  }, []);
+  const trialActive = trial?.status === 'ACTIVE';
+  const trialEndLabel = trial?.endsAt
+    ? new Date(trial.endsAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Paris' })
+    : '';
 
   async function handleSubscribe() {
     const priceId = STRIPE_PRICE_VEILLE_ID.trim();
@@ -121,6 +129,18 @@ function AbonnementContent() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Abonnement</h1>
         <p className="text-sm text-gray-500">Choisissez le plan adapt&eacute; &agrave; vos besoins</p>
       </div>
+
+      {trialActive && (
+        <div style={{ maxWidth: 720, margin: '0 auto 24px', padding: '16px 20px', borderRadius: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF', fontSize: 14, textAlign: 'center', lineHeight: 1.6 }}>
+          <strong>Essai gratuit en cours</strong> — il vous reste <strong>{trial?.daysLeft} jour{(trial?.daysLeft ?? 0) > 1 ? 's' : ''}</strong> d&apos;acc&egrave;s complet (jusqu&apos;au {trialEndLabel}).<br />
+          En vous abonnant maintenant, vous gardez vos jours offerts : le premier pr&eacute;l&egrave;vement n&apos;a lieu qu&apos;&agrave; la fin de l&apos;essai.
+        </div>
+      )}
+      {trial?.status === 'EXPIRED' && (
+        <div style={{ maxWidth: 720, margin: '0 auto 24px', padding: '16px 20px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: 14, textAlign: 'center' }}>
+          Votre essai gratuit est termin&eacute;. Abonnez-vous pour retrouver l&apos;acc&egrave;s complet et vos alertes.
+        </div>
+      )}
 
       {success && (
         <div style={{ maxWidth: 600, margin: '0 auto 24px', padding: '14px 18px', borderRadius: 8, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', fontSize: 14, textAlign: 'center', fontWeight: 500 }}>
@@ -259,8 +279,13 @@ function AbonnementContent() {
                         fontFamily: 'inherit',
                       }}
                     >
-                      {loadingPlan === plan.id ? 'Redirection vers Stripe...' : "S'abonner — 150€/mois"}
+                      {loadingPlan === plan.id ? 'Redirection vers Stripe...' : trialActive ? "S'abonner — 0€ aujourd'hui" : "S'abonner — 150€/mois"}
                     </button>
+                    {trialActive && (
+                      <div style={{ marginTop: 8, fontSize: 12, color: '#6B7280', textAlign: 'center' }}>
+                        Puis 150€/mois &agrave; partir du {trialEndLabel}
+                      </div>
+                    )}
                     {error && (
                       <div style={{
                         marginTop: 8, padding: '10px 14px', borderRadius: 8,

@@ -460,3 +460,92 @@ ${abDridiFooter()}`),
     return false;
   }
 }
+
+// ─── Essai gratuit : rappels J-7, J-1 et fin d'essai ───
+
+export type TrialEmailKind = 'J7' | 'J1' | 'END';
+
+export async function sendTrialEmail(d: { kind: TrialEmailKind; to: string; name: string; endsAt: Date }): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) return false;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const fin = d.endsAt.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' });
+  const prenom = escapeHtml((d.name || '').split(' ')[0] || 'Bonjour');
+
+  const content = {
+    J7: {
+      subject: 'Plus que 7 jours d\'essai gratuit — AB DRIDI',
+      title: 'Il vous reste 7 jours d\'essai',
+      body: `Votre accès complet au portail AB DRIDI se termine le <strong>${fin}</strong>. Profitez-en pour régler vos alertes et repérer les appels d'offres de votre secteur.<br><br>En vous abonnant dès maintenant, vous <strong>gardez vos jours offerts</strong> : le premier prélèvement n'a lieu qu'à la fin de l'essai.`,
+      cta: 'Garder mon accès',
+    },
+    J1: {
+      subject: 'Votre essai gratuit se termine demain — AB DRIDI',
+      title: 'Dernier jour d\'essai demain',
+      body: `Votre essai gratuit se termine <strong>${fin}</strong>. Après cette date, vos alertes quotidiennes s'arrêteront et vous ne verrez plus que 3 appels d'offres par jour.<br><br>Abonnez-vous en 1 minute pour ne rien manquer. Sans engagement, annulable à tout moment.`,
+      cta: 'Continuer avec AB DRIDI',
+    },
+    END: {
+      subject: 'Votre essai gratuit est terminé — AB DRIDI',
+      title: 'Votre essai gratuit est terminé',
+      body: `Merci d'avoir testé AB DRIDI. Votre compte est repassé en offre Découverte : vos alertes email sont en pause et l'accès aux appels d'offres est limité.<br><br>Réactivez l'accès complet à tout moment pour 150 € / mois, sans engagement. Et si vous voulez qu'on monte un dossier de réponse avec vous, répondez simplement à cet email.`,
+      cta: 'Réactiver mon accès',
+    },
+  }[d.kind];
+
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: d.to,
+      replyTo: ADMIN_EMAIL,
+      subject: content.subject,
+      html: emailWrapper(`
+<tr><td style="background:#0A1628;padding:20px 32px;"><span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:0.1em;">AB DRIDI</span></td></tr>
+<tr><td style="padding:28px 32px;">
+  <h1 style="margin:0 0 16px;font-size:22px;color:#111827;">${content.title}</h1>
+  <p style="margin:0 0 8px;font-size:14px;color:#374151;">${prenom},</p>
+  <p style="margin:0 0 24px;font-size:14px;line-height:1.7;color:#374151;">${content.body}</p>
+  <table cellpadding="0" cellspacing="0"><tr><td style="background:#2563EB;border-radius:6px;">
+    <a href="https://portal.abdridi.com/abonnement" style="display:inline-block;padding:12px 28px;color:#fff;text-decoration:none;font-weight:600;font-size:14px;">${content.cta}</a>
+  </td></tr></table>
+</td></tr>
+${abDridiFooter()}`),
+    });
+    return true;
+  } catch (err) {
+    console.error('[Email] Trial email failed:', err);
+    return false;
+  }
+}
+
+/** Récap quotidien pour l'admin : essais qui finissent bientôt = clients à appeler. */
+export async function sendTrialAdminDigest(d: {
+  endingSoon: { name: string; email: string; company: string | null; phone: string | null; endsAt: Date }[];
+  ended: { name: string; email: string; company: string | null; phone: string | null }[];
+}): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) return false;
+  if (d.endingSoon.length === 0 && d.ended.length === 0) return false;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const row = (u: { name: string; email: string; company: string | null; phone: string | null }, extra = '') =>
+    `<tr><td style="padding:6px 8px;border-bottom:1px solid #F3F4F6;font-size:13px;"><strong>${escapeHtml(u.company || u.name)}</strong><br><span style="color:#6B7280;">${escapeHtml(u.name)} · ${escapeHtml(u.email)}${u.phone ? ' · ' + escapeHtml(u.phone) : ''}</span></td><td style="padding:6px 8px;border-bottom:1px solid #F3F4F6;font-size:12px;color:#6B7280;white-space:nowrap;">${extra}</td></tr>`;
+  const soon = d.endingSoon.map(u => row(u, 'fin ' + u.endsAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' }))).join('');
+  const ended = d.ended.map(u => row(u, 'terminé')).join('');
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: ADMIN_EMAIL,
+      subject: `Essais gratuits : ${d.endingSoon.length} à relancer, ${d.ended.length} terminé(s)`,
+      html: emailWrapper(`
+<tr><td style="background:#0A1628;padding:20px 32px;"><span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:0.1em;">AB DRIDI</span></td></tr>
+<tr><td style="padding:24px 32px;">
+  ${soon ? `<h2 style="margin:0 0 8px;font-size:16px;color:#111827;">Essais qui finissent dans 7 jours ou moins</h2><p style="margin:0 0 10px;font-size:13px;color:#6B7280;">Le bon moment pour un appel.</p><table width="100%" cellpadding="0" cellspacing="0">${soon}</table>` : ''}
+  ${ended ? `<h2 style="margin:20px 0 8px;font-size:16px;color:#111827;">Essais terminés aujourd'hui (non abonnés)</h2><table width="100%" cellpadding="0" cellspacing="0">${ended}</table>` : ''}
+  <p style="margin:20px 0 0;"><a href="https://portal.abdridi.com/admin" style="color:#2563EB;font-size:13px;">Ouvrir l'admin</a></p>
+</td></tr>
+${abDridiFooter()}`),
+    });
+    return true;
+  } catch (err) {
+    console.error('[Email] Trial admin digest failed:', err);
+    return false;
+  }
+}
