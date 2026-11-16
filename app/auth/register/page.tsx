@@ -66,9 +66,9 @@ export default function RegisterPage() {
 
           <div className="login-left-stats">
             {[
-              { n: '6 100+', t: 'marchés surveillés' },
-              { n: '25+', t: 'sources officielles' },
-              { n: '7 000+', t: 'contrats attribués' },
+              { n: '35+', t: 'sources officielles' },
+              { n: '3 mois', t: 'offerts, sans carte' },
+              { n: 'Tous', t: 'secteurs d\'activité' },
             ].map((s, i) => (
               <div key={i} className="login-left-stat">
                 <div className="login-left-stat-n">{s.n}</div>
@@ -100,7 +100,7 @@ export default function RegisterPage() {
 
           <h2 className="login-form-title">Créer un compte</h2>
           <div style={{ margin: '-4px 0 18px', padding: '10px 14px', borderRadius: 8, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF', fontSize: 13, lineHeight: 1.5 }}>
-            <strong>5 semaines d&apos;accès complet offertes.</strong> Sans carte bancaire, sans engagement.
+            <strong>3 mois offerts sur la formule Veille.</strong> Sans carte bancaire, sans engagement.
           </div>
 
           <button
@@ -282,7 +282,7 @@ export default function RegisterPage() {
                   Création en cours...
                 </>
               ) : (
-                'Démarrer mes 5 semaines gratuites'
+                'Profiter de mes 3 mois offerts'
               )}
             </button>
           </form>

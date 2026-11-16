@@ -13,18 +13,18 @@ export const PLANS = {
     features: [
       '10 consultations/jour',
       'Recherche basique',
-      '102 sources officielles',
+      '35+ sources officielles',
     ],
   },
   VEILLE: {
-    name: 'Veille & Accompagnement',
+    name: 'Veille',
     price: 150,
     priceId: process.env.STRIPE_PRICE_VEILLE || '',
     features: [
       'Consultations illimit\u00e9es',
       'Alertes email personnalis\u00e9es',
       'Analyse de concurrence',
-      '102 sources officielles',
+      '35+ sources officielles',
       'Export des donn\u00e9es',
       'Prise de rendez-vous accompagnement',
     ],

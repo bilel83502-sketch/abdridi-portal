@@ -1,5 +1,5 @@
 /**
- * Essai gratuit à l'inscription : 5 semaines d'accès complet, sans carte.
+ * Offre de lancement : 3 mois offerts sur la formule Veille à l'inscription, sans carte.
  *
  * Pas de colonne dédiée en base : un compte en essai a
  *   plan = 'ESSAI' et stripeCurrentPeriodEnd = date de fin d'essai.
@@ -7,8 +7,8 @@
  * S'il s'abonne pendant l'essai, le webhook Stripe le passe en VEILLE.
  */
 export const TRIAL_PLAN = 'ESSAI';
-export const TRIAL_DAYS = 35;
-export const TRIAL_LABEL = '5 semaines';
+export const TRIAL_DAYS = 90;
+export const TRIAL_LABEL = '3 mois';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

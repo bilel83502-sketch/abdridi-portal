@@ -132,7 +132,7 @@ export default function AlertesPage() {
           </div>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Alertes email personnalisees</h2>
           <p style={{ fontSize: 14, color: '#94A3B8', marginBottom: 28, lineHeight: 1.6, maxWidth: 420, margin: '0 auto 28px' }}>
-            Les alertes email sont reservees aux abonnes <strong style={{ color: '#F59E0B' }}>Veille &amp; Accompagnement</strong>.
+            Les alertes email sont reservees aux abonnes <strong style={{ color: '#F59E0B' }}>Veille</strong>.
             Recevez chaque matin les nouveaux marches qui correspondent a vos criteres.
           </p>
           <div style={{ display: 'flex', gap: 12, marginBottom: 28, textAlign: 'left' }}>
@@ -149,7 +149,7 @@ export default function AlertesPage() {
             ))}
           </div>
           <Link href="/abonnement" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px', fontSize: 14, fontWeight: 600, background: '#00C2FF', color: '#0A1628', textDecoration: 'none', borderRadius: 8 }}>
-            Decouvrir l&apos;offre Veille &amp; Accompagnement
+            Decouvrir l&apos;offre Veille
           </Link>
         </div>
       )}

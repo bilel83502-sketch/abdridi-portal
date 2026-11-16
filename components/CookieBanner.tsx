@@ -52,7 +52,7 @@ export default function CookieBanner() {
       borderTop: '1px solid rgba(59,130,246,0.2)',
     }}>
       <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', flex: 1, minWidth: 280, margin: 0, lineHeight: 1.5 }}>
-        Nous utilisons des cookies essentiels et, avec votre accord, des cookies d&apos;analyse (Google Analytics) pour ameliorer le site.{' '}
+        Nous utilisons des cookies essentiels et, avec votre accord, des cookies d&apos;analyse (Google Analytics) pour améliorer le site.{' '}
         <a href="/confidentialite" style={{ color: '#60A5FA', textDecoration: 'none' }}>En savoir plus</a>
       </p>
       <div style={{ display: 'flex', gap: 10 }}>

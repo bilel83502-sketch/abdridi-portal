@@ -1,6 +1,6 @@
 # Procédure de Notification de Violation de Données — AB DRIDI
 
-**Responsable** : Bilel DRIDI — contact@abdridi.com — 06 21 35 96 40
+**Responsable** : Bilel DRIDI — contact@abdridi.com — 07 56 89 55 34
 **Date de création** : 13 avril 2026
 **Conformité** : Article 33 et 34 du RGPD
 
@@ -59,7 +59,7 @@ Description : [DESCRIPTION]
 Données concernées : [TYPES]
 Personnes concernées : [NOMBRE ESTIMÉ]
 Mesures prises : [ACTIONS]
-Contact : Bilel DRIDI — contact@abdridi.com — 06 21 35 96 40
+Contact : Bilel DRIDI — contact@abdridi.com — 07 56 89 55 34
 
 Cordialement,
 Bilel DRIDI

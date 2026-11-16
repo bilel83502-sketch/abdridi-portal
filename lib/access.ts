@@ -18,7 +18,7 @@ export function hasFullAccess(user: UserAccess): boolean {
   // L'admin et l'équipe commerciale interne (PROSPECTOR) ont un accès
   // illimité aux outils de veille, sans abonnement.
   if (user.role === 'ADMIN' || user.role === 'PROSPECTOR') return true;
-  // Abonné Veille OU essai gratuit en cours (5 semaines à l'inscription).
+  // Abonné Veille OU offre de lancement en cours (3 mois offerts à l'inscription).
   if ((user.plan === 'VEILLE' || user.plan === TRIAL_PLAN) && user.stripeCurrentPeriodEnd && new Date(user.stripeCurrentPeriodEnd) > new Date()) return true;
   return false;
 }

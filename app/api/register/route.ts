@@ -62,7 +62,7 @@ export async function POST(req: Request) {
         sector: data.sector?.trim() || null,
         passwordHash: hash,
         role: 'USER',
-        // 5 semaines d'accès complet offertes, sans carte bancaire.
+        // Offre de lancement : 3 mois offerts sur la formule Veille, sans carte bancaire.
         plan: TRIAL_PLAN,
         stripeCurrentPeriodEnd: trialEndFrom(now),
         consentDate: now,
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
             <div style="padding:32px 24px">
               <h2 style="font-size:20px;font-weight:700;color:#0F172A;margin:0 0 16px">Bienvenue sur AB DRIDI</h2>
               <p style="font-size:14px;color:#64748B;line-height:1.6;margin:0 0 24px">
-                Votre essai gratuit de <strong style="color:#0F172A">${TRIAL_LABEL}</strong> est activé : appels d'offres illimités, alertes email chaque matin et veille concurrentielle. Aucune carte bancaire demandée.
+                Vos <strong style="color:#0F172A">${TRIAL_LABEL} offerts</strong> sur la formule Veille sont activés : appels d'offres illimités, alertes email chaque matin et veille concurrentielle. Aucune carte bancaire demandée.
               </p>
               <p style="font-size:14px;color:#64748B;line-height:1.6;margin:0 0 24px">
                 Cliquez sur le bouton ci-dessous pour vérifier votre adresse email et commencer :

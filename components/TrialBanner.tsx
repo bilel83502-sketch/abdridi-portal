@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 type TrialStatus = { status: 'ACTIVE' | 'EXPIRED' | 'NONE'; daysLeft?: number; endsAt?: string };
 
 /**
- * Bandeau d'essai gratuit : « Essai gratuit — il vous reste X jours ».
+ * Bandeau de l'offre de lancement : « 3 mois offerts — il vous reste X jours ».
  * Visible uniquement pour les clients en essai (ou dont l'essai vient de finir).
  */
 export default function TrialBanner() {
@@ -44,11 +44,11 @@ export default function TrialBanner() {
       <div className="max-w-[1220px] mx-auto px-4 md:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
         <span style={{ fontSize: 13, color }}>
           {expired ? (
-            <>Votre essai gratuit est terminé. Abonnez-vous pour retrouver les appels d&apos;offres illimités et vos alertes.</>
+            <>Vos 3 mois offerts sont terminés. Abonnez-vous pour retrouver les appels d&apos;offres illimités et vos alertes.</>
           ) : (
             <>
-              <strong>Essai gratuit</strong> — il vous reste <strong>{days} jour{days > 1 ? 's' : ''}</strong>
-              {endLabel ? <> (jusqu&apos;au {endLabel})</> : null} d&apos;accès complet.
+              <strong>3 mois offerts</strong> — il vous reste <strong>{days} jour{days > 1 ? 's' : ''}</strong>
+              {endLabel ? <> (jusqu&apos;au {endLabel})</> : null} d&apos;accès à la formule Veille.
             </>
           )}
         </span>

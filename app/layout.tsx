@@ -4,14 +4,13 @@ import './globals.css';
 import Providers from './providers';
 import CookieBanner from '@/components/CookieBanner';
 import { GoogleAnalytics } from '@/lib/analytics';
-import Script from 'next/script';
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-outfit', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'AB DRIDI — Marchés publics du transport : 5 semaines d\'essai gratuit',
-  description: 'Les appels d\'offres du transport repérés chaque matin sur 35+ sources officielles, et votre dossier de réponse monté à 100 % : mémoire technique, BPU, dépôt. 5 semaines gratuites, sans carte bancaire.',
-  keywords: 'marchés publics transport, appel d\'offres transport, transport sanitaire, transport scolaire, marchés publics, appel d\'offres, BOAMP, dossier de réponse, mémoire technique, BPU, cabinet conseil marchés publics',
+  title: 'AB DRIDI — Veille et montage de dossiers de marchés publics, tous secteurs',
+  description: 'Les appels d\'offres de votre secteur repérés chaque matin sur 35+ sources officielles, et votre dossier de réponse monté à 100 % : mémoire technique, BPU, dépôt. 3 mois offerts sur la veille, sans carte bancaire.',
+  keywords: 'marchés publics, appel d\'offres, veille marchés publics, marchés publics transport, transport sanitaire, transport scolaire, collecte déchets, nettoyage, BTP, BOAMP, dossier de réponse, mémoire technique, BPU, cabinet conseil marchés publics',
   authors: [{ name: 'AB DRIDI' }],
   robots: 'index, follow',
   alternates: {
@@ -24,7 +23,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'AB DRIDI — Votre partenaire marchés publics',
-    description: 'Veille quotidienne sur 35+ sources officielles et montage complet de vos dossiers de réponse. 5 semaines offertes.',
+    description: 'Veille quotidienne sur 35+ sources officielles et montage complet de vos dossiers de réponse, tous secteurs. 3 mois offerts sur la veille.',
     url: 'https://portal.abdridi.com/',
     siteName: 'AB DRIDI',
     locale: 'fr_FR',
@@ -41,7 +40,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'AB DRIDI — Votre partenaire marchés publics',
-    description: 'Veille quotidienne sur 17+ sources officielles et montage complet de vos dossiers de réponse.',
+    description: 'Veille quotidienne sur 35+ sources officielles et montage complet de vos dossiers de réponse, tous secteurs. 3 mois offerts sur la veille.',
     images: ['https://abdridi.com/og-image.png'],
   },
 };
@@ -52,9 +51,13 @@ const jsonLdOrganization = {
   name: 'AB DRIDI',
   url: 'https://abdridi.com',
   logo: 'https://abdridi.com/Logo AB DRIDI.png',
-  description: 'Cabinet conseil spécialisé dans la réponse aux appels d\'offres publics',
+  description: 'Veille des marchés publics et montage de dossiers de réponse aux appels d\'offres, tous secteurs',
+  foundingDate: '2023',
+  telephone: '+33756895534',
+  email: 'contact@abdridi.com',
   contactPoint: {
     '@type': 'ContactPoint',
+    telephone: '+33756895534',
     email: 'contact@abdridi.com',
     contactType: 'Customer Service',
     availableLanguage: 'French',
@@ -74,20 +77,28 @@ const jsonLdService = {
   areaServed: 'France',
 };
 
+const jsonLdVeille = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  provider: { '@type': 'Organization', name: 'AB DRIDI' },
+  name: 'Veille des marchés publics',
+  description: 'Appels d\'offres de votre secteur sur 35+ sources officielles, alertes email quotidiennes et veille concurrentielle.',
+  areaServed: 'France',
+  offers: {
+    '@type': 'Offer',
+    price: '150',
+    priceCurrency: 'EUR',
+    description: '150 € par mois, sans engagement. 3 mois offerts à l\'inscription.',
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={outfit.variable}>
       <head>
-        <Script
-          id="json-ld-organization"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }}
-        />
-        <Script
-          id="json-ld-service"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdService) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdService) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdVeille) }} />
       </head>
       <body style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}>
         <Providers>{children}</Providers>

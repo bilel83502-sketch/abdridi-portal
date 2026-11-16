@@ -78,7 +78,7 @@ export async function GET(req: Request) {
               <thead><tr style="background:#F9FAFB;"><th style="padding:8px 12px;text-align:left;font-size:12px;color:#9CA3AF;">Consultation</th><th style="padding:8px 12px;text-align:left;font-size:12px;color:#9CA3AF;">Acheteur</th></tr></thead>
               <tbody>${marchesHtml}</tbody>
             </table>
-            <p style="font-size:13px;color:#6B7280;">Avec l'offre <strong>Veille & Accompagnement</strong>, accédez à toutes les consultations, recevez des alertes personnalisées et exportez vos données.</p>
+            <p style="font-size:13px;color:#6B7280;">Avec l'offre <strong>Veille</strong>, accédez à toutes les consultations, recevez des alertes personnalisées et exportez vos données.</p>
             <div style="text-align:center;margin:24px 0;">
               <a href="https://portal.abdridi.com/abonnement" style="display:inline-block;padding:12px 32px;background:#3B82F6;color:#fff;text-decoration:none;font-weight:600;font-size:14px;border-radius:6px;">Passer à l'offre Veille — 150€/mois</a>
             </div>

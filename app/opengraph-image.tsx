@@ -58,9 +58,9 @@ export default async function Image() {
             }}
           >
             {[
-              { n: '17+', t: 'sources officielles' },
+              { n: '35+', t: 'sources officielles' },
               { n: '100%', t: 'dossiers montés' },
-              { n: '24/7', t: 'veille automatique' },
+              { n: '3 mois', t: 'offerts' },
             ].map((s) => (
               <div
                 key={s.n}

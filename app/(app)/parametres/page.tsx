@@ -177,9 +177,9 @@ export default function ParametresPage() {
         <div className="p-4 rounded-md bg-gray-50 border border-gray-200 flex justify-between items-center">
           <div>
             <div className="text-[15px] font-bold">
-              <span className="gradient-text">{user?.role === 'PROSPECTOR' ? 'Accès équipe AB DRIDI' : user?.plan === 'VEILLE' ? 'Veille & Accompagnement' : user?.plan === 'ESSAI' ? 'Essai gratuit — accès complet' : 'Découverte'}</span>
+              <span className="gradient-text">{user?.role === 'PROSPECTOR' ? 'Accès équipe AB DRIDI' : user?.plan === 'VEILLE' ? 'Veille' : user?.plan === 'ESSAI' ? 'Veille — 3 mois offerts' : 'Découverte'}</span>
               <span className="font-normal text-gray-500 text-[13px] ml-2">
-                {user?.role === 'PROSPECTOR' ? '— Illimité' : user?.plan === 'VEILLE' ? '— 150€/mois' : user?.plan === 'ESSAI' ? '— 5 semaines offertes' : '— Gratuit'}
+                {user?.role === 'PROSPECTOR' ? '— Illimité' : user?.plan === 'VEILLE' ? '— 150€/mois' : user?.plan === 'ESSAI' ? '— offert, sans carte' : '— Gratuit'}
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-0.5">{user?.role === 'PROSPECTOR' || user?.plan === 'VEILLE' || user?.plan === 'ESSAI' ? 'Recherche illimitée · Alertes quotidiennes · Accès toutes sources' : '3 consultations/jour · Recherche basique · Toutes sources'}</p>

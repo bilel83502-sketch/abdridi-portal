@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Utilisateur introuvable.' }, { status: 404 });
     }
 
-    // Client en essai gratuit : il garde ses jours offerts, le premier
+    // Client dans ses 3 mois offerts : il garde ses jours offerts, le premier
     // prélèvement a lieu à la fin de l'essai (Stripe exige ≥ 48 h).
     let trialEnd: number | undefined;
     if (isTrialActive(dbUser) && dbUser.stripeCurrentPeriodEnd) {

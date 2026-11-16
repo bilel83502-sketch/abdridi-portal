@@ -28,7 +28,7 @@ const plans = [
   },
   {
     id: 'VEILLE',
-    name: 'Veille & Accompagnement',
+    name: 'Veille',
     price: 150,
     period: '/mois',
     icon: Sparkles,
@@ -132,13 +132,13 @@ function AbonnementContent() {
 
       {trialActive && (
         <div style={{ maxWidth: 720, margin: '0 auto 24px', padding: '16px 20px', borderRadius: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF', fontSize: 14, textAlign: 'center', lineHeight: 1.6 }}>
-          <strong>Essai gratuit en cours</strong> — il vous reste <strong>{trial?.daysLeft} jour{(trial?.daysLeft ?? 0) > 1 ? 's' : ''}</strong> d&apos;acc&egrave;s complet (jusqu&apos;au {trialEndLabel}).<br />
-          En vous abonnant maintenant, vous gardez vos jours offerts : le premier pr&eacute;l&egrave;vement n&apos;a lieu qu&apos;&agrave; la fin de l&apos;essai.
+          <strong>Vos 3 mois offerts sont en cours</strong> — il vous reste <strong>{trial?.daysLeft} jour{(trial?.daysLeft ?? 0) > 1 ? 's' : ''}</strong> d&apos;acc&egrave;s complet (jusqu&apos;au {trialEndLabel}).<br />
+          En vous abonnant maintenant, vous gardez vos jours offerts : le premier pr&eacute;l&egrave;vement n&apos;a lieu qu&apos;&agrave; la fin de vos 3 mois offerts.
         </div>
       )}
       {trial?.status === 'EXPIRED' && (
         <div style={{ maxWidth: 720, margin: '0 auto 24px', padding: '16px 20px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', fontSize: 14, textAlign: 'center' }}>
-          Votre essai gratuit est termin&eacute;. Abonnez-vous pour retrouver l&apos;acc&egrave;s complet et vos alertes.
+          Vos 3 mois offerts sont termin&eacute;s. Abonnez-vous pour retrouver l&apos;acc&egrave;s complet et vos alertes.
         </div>
       )}
 

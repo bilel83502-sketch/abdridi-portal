@@ -461,7 +461,7 @@ ${abDridiFooter()}`),
   }
 }
 
-// ─── Essai gratuit : rappels J-7, J-1 et fin d'essai ───
+// ─── Offre de lancement (3 mois offerts) : rappels J-7, J-1 et fin ───
 
 export type TrialEmailKind = 'J7' | 'J1' | 'END';
 
@@ -473,21 +473,21 @@ export async function sendTrialEmail(d: { kind: TrialEmailKind; to: string; name
 
   const content = {
     J7: {
-      subject: 'Plus que 7 jours d\'essai gratuit — AB DRIDI',
-      title: 'Il vous reste 7 jours d\'essai',
-      body: `Votre accès complet au portail AB DRIDI se termine le <strong>${fin}</strong>. Profitez-en pour régler vos alertes et repérer les appels d'offres de votre secteur.<br><br>En vous abonnant dès maintenant, vous <strong>gardez vos jours offerts</strong> : le premier prélèvement n'a lieu qu'à la fin de l'essai.`,
+      subject: 'Vos 3 mois offerts se terminent dans 7 jours — AB DRIDI',
+      title: 'Plus que 7 jours sur vos 3 mois offerts',
+      body: `Votre accès offert à la formule Veille se termine le <strong>${fin}</strong>. Profitez-en pour régler vos alertes et repérer les appels d'offres de votre secteur.<br><br>En vous abonnant dès maintenant, vous <strong>gardez vos jours offerts</strong> : le premier prélèvement n'a lieu qu'à la fin de vos 3 mois offerts.`,
       cta: 'Garder mon accès',
     },
     J1: {
-      subject: 'Votre essai gratuit se termine demain — AB DRIDI',
-      title: 'Dernier jour d\'essai demain',
-      body: `Votre essai gratuit se termine <strong>${fin}</strong>. Après cette date, vos alertes quotidiennes s'arrêteront et vous ne verrez plus que 3 appels d'offres par jour.<br><br>Abonnez-vous en 1 minute pour ne rien manquer. Sans engagement, annulable à tout moment.`,
+      subject: 'Vos 3 mois offerts se terminent demain — AB DRIDI',
+      title: 'Votre accès offert se termine demain',
+      body: `Votre accès offert à la formule Veille se termine <strong>${fin}</strong>. Après cette date, vos alertes quotidiennes s'arrêteront et vous ne verrez plus que 3 appels d'offres par jour.<br><br>Abonnez-vous en 1 minute pour ne rien manquer. Sans engagement, annulable à tout moment.`,
       cta: 'Continuer avec AB DRIDI',
     },
     END: {
-      subject: 'Votre essai gratuit est terminé — AB DRIDI',
-      title: 'Votre essai gratuit est terminé',
-      body: `Merci d'avoir testé AB DRIDI. Votre compte est repassé en offre Découverte : vos alertes email sont en pause et l'accès aux appels d'offres est limité.<br><br>Réactivez l'accès complet à tout moment pour 150 € / mois, sans engagement. Et si vous voulez qu'on monte un dossier de réponse avec vous, répondez simplement à cet email.`,
+      subject: 'Vos 3 mois offerts sont terminés — AB DRIDI',
+      title: 'Vos 3 mois offerts sont terminés',
+      body: `Merci d'avoir utilisé AB DRIDI pendant ces 3 mois. Votre compte est repassé en offre Découverte : vos alertes email sont en pause et l'accès aux appels d'offres est limité.<br><br>Réactivez l'accès complet à tout moment pour 150 € / mois, sans engagement. Et si vous voulez qu'on monte un dossier de réponse avec vous, répondez simplement à cet email.`,
       cta: 'Réactiver mon accès',
     },
   }[d.kind];
@@ -533,12 +533,12 @@ export async function sendTrialAdminDigest(d: {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: ADMIN_EMAIL,
-      subject: `Essais gratuits : ${d.endingSoon.length} à relancer, ${d.ended.length} terminé(s)`,
+      subject: `3 mois offerts : ${d.endingSoon.length} client(s) à relancer, ${d.ended.length} fin(s) d'offre`,
       html: emailWrapper(`
 <tr><td style="background:#0A1628;padding:20px 32px;"><span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:0.1em;">AB DRIDI</span></td></tr>
 <tr><td style="padding:24px 32px;">
-  ${soon ? `<h2 style="margin:0 0 8px;font-size:16px;color:#111827;">Essais qui finissent dans 7 jours ou moins</h2><p style="margin:0 0 10px;font-size:13px;color:#6B7280;">Le bon moment pour un appel.</p><table width="100%" cellpadding="0" cellspacing="0">${soon}</table>` : ''}
-  ${ended ? `<h2 style="margin:20px 0 8px;font-size:16px;color:#111827;">Essais terminés aujourd'hui (non abonnés)</h2><table width="100%" cellpadding="0" cellspacing="0">${ended}</table>` : ''}
+  ${soon ? `<h2 style="margin:0 0 8px;font-size:16px;color:#111827;">Offres qui finissent dans 7 jours ou moins</h2><p style="margin:0 0 10px;font-size:13px;color:#6B7280;">Le bon moment pour un appel.</p><table width="100%" cellpadding="0" cellspacing="0">${soon}</table>` : ''}
+  ${ended ? `<h2 style="margin:20px 0 8px;font-size:16px;color:#111827;">Offres terminées aujourd'hui (non abonnés)</h2><table width="100%" cellpadding="0" cellspacing="0">${ended}</table>` : ''}
   <p style="margin:20px 0 0;"><a href="https://portal.abdridi.com/admin" style="color:#2563EB;font-size:13px;">Ouvrir l'admin</a></p>
 </td></tr>
 ${abDridiFooter()}`),

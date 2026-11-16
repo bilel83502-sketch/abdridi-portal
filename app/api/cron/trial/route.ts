@@ -10,7 +10,7 @@ export const maxDuration = 60;
 const DAY = 24 * 60 * 60 * 1000;
 
 /**
- * Cron quotidien de l'essai gratuit (5 semaines) :
+ * Cron quotidien de l'offre de lancement (3 mois offerts) :
  *  - J-7 et J-1 : email de rappel au client (fenêtres de 24 h → un seul envoi
  *    par client puisque le cron tourne une fois par jour) ;
  *  - fin d'essai : email + passage du compte en DECOUVERTE (idempotent :

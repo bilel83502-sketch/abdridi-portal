@@ -39,7 +39,7 @@ function FilterSection({ label, children, locked }: { label: string; children: R
             boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
           }}>
             <div style={{ marginBottom: 8, fontWeight: 500 }}>
-              Debloquez tous les filtres avec l&apos;offre Veille &amp; Accompagnement
+              Debloquez tous les filtres avec l&apos;offre Veille
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <a href="/abonnement" style={{

@@ -1,5 +1,5 @@
 /**
- * announce-trial — Email d'annonce « 5 semaines offertes » aux inscrits.
+ * announce-trial — Email d'annonce « 3 mois offerts » aux inscrits.
  *
  * Usage (dans le Terminal, depuis le dossier du portail) :
  *   npx tsx scripts/announce-trial.ts            → aperçu : combien de personnes, qui (rien n'est envoyé)
@@ -25,7 +25,7 @@ import { Resend } from 'resend';
 const prisma = new PrismaClient();
 const ADMIN = (process.env.ADMIN_EMAIL || 'bilel83502@gmail.com').toLowerCase();
 const SENT_FILE = path.join(__dirname, '.announce-trial-sent.txt');
-const SUBJECT = 'Nouveau : 5 semaines offertes sur AB DRIDI';
+const SUBJECT = 'Nouveau : 3 mois offerts sur la veille AB DRIDI';
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -40,24 +40,24 @@ function html(name: string, email: string): string {
 <tr><td style="background:#0A1628;padding:20px 32px;"><span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:0.1em;">AB DRIDI</span></td></tr>
 <tr><td style="padding:30px 32px;">
   <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#10B981;text-transform:uppercase;letter-spacing:0.05em;">Nouveau</p>
-  <h1 style="margin:0 0 18px;font-size:23px;line-height:1.3;color:#111827;">5 semaines d'accès complet offertes sur AB DRIDI</h1>
+  <h1 style="margin:0 0 18px;font-size:23px;line-height:1.3;color:#111827;">3 mois offerts sur la veille AB DRIDI</h1>
   <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#374151;">${prenom},</p>
   <p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#374151;">
-    Le portail AB DRIDI évolue. Toute entreprise qui s'inscrit bénéficie désormais de <strong>5 semaines d'accès complet, sans carte bancaire</strong> :
+    Le portail AB DRIDI évolue. Toute entreprise qui s'inscrit bénéficie désormais de <strong>3 mois offerts sur la formule Veille, sans carte bancaire</strong> :
   </p>
   <ul style="margin:0 0 18px;padding-left:20px;font-size:14px;line-height:1.8;color:#374151;">
-    <li>les appels d'offres du transport, sans limite, sur 35+ sources officielles (France, Europe, Suisse) ;</li>
+    <li>les appels d'offres de son secteur, sans limite, sur 35+ sources officielles (France, Europe, Suisse) ;</li>
     <li>une alerte email chaque matin avec les nouveaux marchés de votre secteur ;</li>
     <li>la veille concurrentielle : qui a gagné quels marchés, et à quel prix.</li>
   </ul>
   <p style="margin:0 0 22px;font-size:14px;line-height:1.7;color:#374151;">
-    <strong>Vous connaissez une entreprise de transport</strong> qui pourrait en profiter ? Transférez-lui simplement cet email.
+    <strong>Vous connaissez une entreprise</strong> qui pourrait en profiter ? Transférez-lui simplement cet email.
     Et si vous souhaitez qu'on monte votre prochain dossier de réponse (mémoire technique, BPU, dépôt), répondez à ce message.
   </p>
   <table cellpadding="0" cellspacing="0"><tr><td style="background:#2563EB;border-radius:6px;">
     <a href="https://portal.abdridi.com/" style="display:inline-block;padding:13px 30px;color:#fff;text-decoration:none;font-weight:600;font-size:14px;">Découvrir le portail</a>
   </td></tr></table>
-  <p style="margin:26px 0 0;font-size:14px;color:#374151;">À très vite,<br><strong>Bilel Dridi</strong> — AB DRIDI</p>
+  <p style="margin:26px 0 0;font-size:14px;color:#374151;">À très vite,<br><strong>Bilel Dridi</strong> — AB DRIDI<br><a href="tel:+33756895534" style="color:#2563EB;text-decoration:none;">07 56 89 55 34</a></p>
 </td></tr>
 <tr><td style="padding:18px 32px;background:#F9FAFB;border-top:1px solid #E5E7EB;text-align:center;font-size:11px;color:#9CA3AF;line-height:1.6;">
   AB DRIDI — portail de veille des marchés publics · <a href="https://portal.abdridi.com" style="color:#2563EB;text-decoration:none;">portal.abdridi.com</a><br>

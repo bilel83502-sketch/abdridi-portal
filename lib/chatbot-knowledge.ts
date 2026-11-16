@@ -17,7 +17,7 @@ export const knowledgeBase = {
       avantages: [
         '3 appels d\'offres visibles par jour',
         'Recherche basique',
-        'Acces aux 102 sources officielles',
+        'Acces aux 35+ sources officielles',
         'Prise de rendez-vous accompagnement',
       ],
       limites: [
@@ -28,7 +28,7 @@ export const knowledgeBase = {
       ],
     },
     veille: {
-      nom: 'Veille & Accompagnement',
+      nom: 'Veille',
       prix: '25,90 euros/mois',
       avantages: [
         'Appels d\'offres illimites',
@@ -47,7 +47,7 @@ export const knowledgeBase = {
     concurrence: 'La page Concurrence montre les marches publics deja attribues. Vous pouvez voir quelle entreprise a remporte chaque marche, le montant, et l\'acheteur. Utile pour analyser vos concurrents.',
     alertes: 'La page Alertes vous permet de configurer des notifications email automatiques. Des qu\'un nouveau marche correspondant a vos criteres est publie, vous recevez un email. Disponible avec l\'abonnement Veille.',
     rendezvous: 'La page Rendez-vous liste vos demandes d\'accompagnement. Vous pouvez prendre RDV directement depuis la page d\'un marche qui vous interesse.',
-    abonnement: 'La page Abonnement vous permet de choisir votre formule : Decouverte (gratuit, 3 marches/jour) ou Veille & Accompagnement (25,90 euros/mois, tout illimite).',
+    abonnement: 'La page Abonnement vous permet de choisir votre formule : Decouverte (gratuit, 3 marches/jour) ou Veille (25,90 euros/mois, tout illimite).',
     admin: 'Reservee aux administrateurs, cette page affiche les statistiques du portail et la gestion des utilisateurs.',
   },
   marchesPublics: {
@@ -68,7 +68,7 @@ export const knowledgeBase = {
     ],
   },
   sources: {
-    description: 'AB DRIDI agrege 102 sources officielles dont le BOAMP (Bulletin Officiel des Annonces de Marches Publics), les plateformes de dematerialisation regionales, et le TED (marches europeens).',
+    description: 'AB DRIDI agrege 35+ sources officielles dont le BOAMP (Bulletin Officiel des Annonces de Marches Publics), les plateformes de dematerialisation regionales, et le TED (marches europeens).',
     boamp: 'Le BOAMP est la source officielle francaise pour les avis de marches publics. Tous les marches au-dessus de 40 000 euros HT y sont publies.',
     decp: 'Les DECP (Donnees Essentielles de la Commande Publique) recensent les contrats attribues, permettant de savoir qui a gagne quel marche et a quel prix.',
   },
@@ -123,8 +123,8 @@ const categories: Category[] = [
     ],
     responses: [
       () => `Nous proposons 2 formules :\n\n**${knowledgeBase.abonnements.decouverte.nom} (${knowledgeBase.abonnements.decouverte.prix})** :\n${knowledgeBase.abonnements.decouverte.avantages.map(a => `- ${a}`).join('\n')}\n\n**${knowledgeBase.abonnements.veille.nom} (${knowledgeBase.abonnements.veille.prix})** :\n${knowledgeBase.abonnements.veille.avantages.map(a => `- ${a}`).join('\n')}\n\nRendez-vous sur la page **Abonnement** pour souscrire.`,
-      () => `Voici nos offres :\n\n**Decouverte** — Gratuit : 3 appels d'offres/jour, recherche basique, prise de RDV.\n\n**Veille & Accompagnement** — 25,90 euros/mois : tout illimite, alertes email, concurrence, export, support prioritaire.\n\nVous pouvez souscrire depuis la page Abonnement.`,
-      () => `Le portail AB DRIDI propose 2 plans :\n\n- **Decouverte** : gratuit, 3 marches visibles/jour, resultats floutes au-dela.\n- **Veille & Accompagnement** : 25,90 euros/mois, acces illimite a tout le portail + support prioritaire.\n\nAllez sur la page Abonnement pour en savoir plus.`,
+      () => `Voici nos offres :\n\n**Decouverte** — Gratuit : 3 appels d'offres/jour, recherche basique, prise de RDV.\n\n**Veille** — 25,90 euros/mois : tout illimite, alertes email, concurrence, export, support prioritaire.\n\nVous pouvez souscrire depuis la page Abonnement.`,
+      () => `Le portail AB DRIDI propose 2 plans :\n\n- **Decouverte** : gratuit, 3 marches visibles/jour, resultats floutes au-dela.\n- **Veille** : 25,90 euros/mois, acces illimite a tout le portail + support prioritaire.\n\nAllez sur la page Abonnement pour en savoir plus.`,
     ],
   },
   {
@@ -135,9 +135,9 @@ const categories: Category[] = [
       { word: 'trouver', weight: 2 }, { word: 'mot-cle', weight: 2 }, { word: 'filtre', weight: 1 },
     ],
     responses: [
-      () => `${knowledgeBase.pages.consultations}\n\nLes resultats proviennent de **102 sources officielles** (BOAMP, TED, DECP, e-marchespublics). Pour des recherches illimitees, passez au plan Veille & Accompagnement.`,
+      () => `${knowledgeBase.pages.consultations}\n\nLes resultats proviennent de **35+ sources officielles** (BOAMP, TED, DECP, e-marchespublics). Pour des recherches illimitees, passez au plan Veille.`,
       () => `Pour trouver des marches :\n1. Allez sur la page **Consultations**\n2. Tapez un mot-cle (ex: "nettoyage", "informatique")\n3. Utilisez les filtres (nature, departement, montant)\n\nAvec le plan gratuit, vous voyez 3 resultats/jour. Le plan Veille debloque tout.`,
-      () => `La recherche de marches est simple : utilisez la page **Consultations** pour filtrer par mot-cle, nature (travaux, services, fournitures), departement et montant. Les donnees proviennent de 102 sources officielles francaises et europeennes.`,
+      () => `La recherche de marches est simple : utilisez la page **Consultations** pour filtrer par mot-cle, nature (travaux, services, fournitures), departement et montant. Les donnees proviennent de 35+ sources officielles francaises et europeennes.`,
     ],
   },
   {
@@ -150,7 +150,7 @@ const categories: Category[] = [
     responses: [
       () => `${knowledgeBase.pages.concurrence}\n\nAvec le plan gratuit, vous pouvez voir 3 attributions. Le plan **Veille** (25,90 euros/mois) debloque l'integralite de l'analyse concurrentielle.`,
       () => `L'analyse concurrentielle est disponible sur la page **Concurrence**. Vous y trouverez :\n- Les entreprises qui remportent les marches\n- Les montants attribues\n- Les acheteurs publics\n\nC'est un outil puissant pour positionner votre offre.`,
-      () => `La veille concurrentielle vous permet de savoir qui remporte quoi, a quel prix. Tres utile pour analyser le marche et ajuster votre strategie de reponse. Accessible en version complete avec le plan Veille & Accompagnement.`,
+      () => `La veille concurrentielle vous permet de savoir qui remporte quoi, a quel prix. Tres utile pour analyser le marche et ajuster votre strategie de reponse. Accessible en version complete avec le plan Veille.`,
     ],
   },
   {
@@ -161,7 +161,7 @@ const categories: Category[] = [
     ],
     responses: [
       () => `${knowledgeBase.pages.alertes}\n\nVous ne raterez plus aucune opportunite grace aux alertes automatiques.`,
-      () => `Les **alertes email** vous notifient automatiquement quand un nouvel appel d'offres correspond a vos criteres. Configurez-les depuis la page Alertes.\n\nDisponible avec le plan **Veille & Accompagnement** (25,90 euros/mois).`,
+      () => `Les **alertes email** vous notifient automatiquement quand un nouvel appel d'offres correspond a vos criteres. Configurez-les depuis la page Alertes.\n\nDisponible avec le plan **Veille** (25,90 euros/mois).`,
     ],
   },
   {
@@ -245,7 +245,7 @@ const categories: Category[] = [
     ],
     responses: [
       () => `${knowledgeBase.sources.description}\n\n- **BOAMP** : ${knowledgeBase.sources.boamp}\n- **DECP** : ${knowledgeBase.sources.decp}`,
-      () => `Nos donnees proviennent de **102 sources officielles** :\n\n- **BOAMP** — Bulletin Officiel des Annonces des Marches Publics (source principale francaise)\n- **TED** — Tenders Electronic Daily (marches europeens)\n- **DECP** — Donnees Essentielles de la Commande Publique (marches attribues)\n- **e-marchespublics.com** — Plus gros profil d\'acheteur prive (5500+ collectivites)\n- Plateformes de dematerialisation regionales`,
+      () => `Nos donnees proviennent de **35+ sources officielles** :\n\n- **BOAMP** — Bulletin Officiel des Annonces des Marches Publics (source principale francaise)\n- **TED** — Tenders Electronic Daily (marches europeens)\n- **DECP** — Donnees Essentielles de la Commande Publique (marches attribues)\n- **e-marchespublics.com** — Plus gros profil d\'acheteur prive (5500+ collectivites)\n- Plateformes de dematerialisation regionales`,
     ],
   },
   {

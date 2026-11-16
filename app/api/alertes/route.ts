@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   // Check plan — free users cannot create alerts
   const dbUser = await prisma.user.findUnique({ where: { id: user.id }, select: { role: true, plan: true, stripeCurrentPeriodEnd: true } });
   if (!dbUser || !isPaidUser(dbUser)) {
-    return NextResponse.json({ error: 'Les alertes sont réservées aux abonnés Veille & Accompagnement' }, { status: 403 });
+    return NextResponse.json({ error: 'Les alertes sont réservées aux abonnés Veille' }, { status: 403 });
   }
 
   const body = await req.json();
@@ -160,7 +160,7 @@ export async function PATCH(req: Request) {
   if (allowedUpdates.active === true) {
     const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { role: true, plan: true, stripeCurrentPeriodEnd: true } });
     if (!dbUser || !isPaidUser(dbUser)) {
-      return NextResponse.json({ error: 'Réactivation réservée aux abonnés Veille & Accompagnement' }, { status: 403 });
+      return NextResponse.json({ error: 'Réactivation réservée aux abonnés Veille' }, { status: 403 });
     }
   }
 
