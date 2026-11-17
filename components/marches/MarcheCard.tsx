@@ -28,7 +28,7 @@ function DeadlineCountdown({ days }: { days: number | null }) {
   if (days === null) return null;
   let bg: string, text: string, border: string, label: string;
   if (days <= 0) {
-    bg = 'rgba(239,68,68,0.1)'; text = '#DC2626'; border = 'rgba(239,68,68,0.25)'; label = 'Expire';
+    bg = 'rgba(239,68,68,0.1)'; text = '#DC2626'; border = 'rgba(239,68,68,0.25)'; label = 'Expiré';
   } else if (days <= 7) {
     bg = 'rgba(239,68,68,0.08)'; text = '#DC2626'; border = 'rgba(239,68,68,0.2)'; label = `${days}j restant${days > 1 ? 's' : ''}`;
   } else if (days <= 14) {
@@ -92,13 +92,13 @@ export default function MarcheCard({ marche: m, tags, isFavorite, onToggleFav }:
         }}>
           <Lock size={16} style={{ color: '#6B7280' }} />
           <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>
-            Passez au plan Veille pour voir ce marche
+            Passez au plan Veille pour voir ce marché
           </span>
           <Link href="/abonnement" style={{
             padding: '6px 16px', fontSize: 12, fontWeight: 600,
             background: '#3B82F6', color: '#fff', textDecoration: 'none',
           }}>
-            Debloquer
+            Débloquer
           </Link>
         </div>
       </div>
@@ -114,7 +114,7 @@ export default function MarcheCard({ marche: m, tags, isFavorite, onToggleFav }:
             <Image src={getRegionLogo(m.department)} alt="" width={40} height={40} style={{ objectFit: 'contain' }} />
           </div>
           <span style={{ fontSize: 20, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#fff' }}>
-            {decodeHtml((m.buyer || 'Acheteur non renseigne').replace(/\)\s*$/, ''))}
+            {decodeHtml((m.buyer || 'Acheteur non renseigné').replace(/\)\s*$/, ''))}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -185,7 +185,7 @@ export default function MarcheCard({ marche: m, tags, isFavorite, onToggleFav }:
       <div className="consultation-card-footer">
         <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: '#94A3B8' }}>
           <Calendar size={13} />
-          Publiee le {formatDate(m.publicationDate)}
+          Publiée le {formatDate(m.publicationDate)}
           <span style={{ color: '#CBD5E1', margin: '0 2px' }}>&middot;</span>
           {m.source}
         </span>

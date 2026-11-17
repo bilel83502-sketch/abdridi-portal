@@ -313,7 +313,7 @@ export default function MarcheDetailPage() {
         {/* Left column — Key info */}
         <div className="col-span-2 flex flex-col gap-2">
         <div className="card p-5">
-          <h2 className="text-sm font-bold mb-3">Informations cles</h2>
+          <h2 className="text-sm font-bold mb-3">Informations clés</h2>
           <div className="grid grid-cols-2 gap-x-8 gap-y-4">
             {marche.value && (
               <Detail
@@ -386,7 +386,7 @@ export default function MarcheDetailPage() {
                 </div>
                 <div>
                   <h2 style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>Besoin d&apos;aide sur cet appel d&apos;offres ?</h2>
-                  <p style={{ fontSize: 12, color: '#94A3B8', margin: '2px 0 0' }}>Un expert analyse gratuitement votre eligibilite et monte votre dossier de reponse.</p>
+                  <p style={{ fontSize: 12, color: '#94A3B8', margin: '2px 0 0' }}>Un expert analyse gratuitement votre éligibilité et monte votre dossier de réponse.</p>
                 </div>
               </div>
               {/* Body */}
@@ -394,8 +394,8 @@ export default function MarcheDetailPage() {
                 {rdvSuccess ? (
                   <div style={{ padding: '20px 16px', borderRadius: 8, background: 'rgba(0,194,255,0.05)', border: '1px solid rgba(0,194,255,0.15)', textAlign: 'center' }}>
                     <CheckCircle2 size={28} style={{ color: '#00C2FF', margin: '0 auto 8px' }} />
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#0A1628', marginBottom: 4 }}>Demande envoyee !</p>
-                    <p style={{ fontSize: 12, color: '#94A3B8', margin: '0 0 12px' }}>Notre equipe vous recontactera sous 24h pour confirmer le creneau.</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#0A1628', marginBottom: 4 }}>Demande envoyée !</p>
+                    <p style={{ fontSize: 12, color: '#94A3B8', margin: '0 0 12px' }}>Notre équipe vous recontactera sous 24h pour confirmer le créneau.</p>
                     <button
                       onClick={() => setRdvSuccess(false)}
                       style={{ padding: '7px 16px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', fontSize: 12, fontWeight: 600, color: '#0A1628', cursor: 'pointer', fontFamily: 'inherit' }}
@@ -417,7 +417,7 @@ export default function MarcheDetailPage() {
                       />
                     </div>
                     <div style={{ flex: '1 1 140px', minWidth: 130 }}>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4 }}>Creneau *</label>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4 }}>Créneau *</label>
                       <select
                         value={rdvSlot}
                         onChange={(e) => setRdvSlot(e.target.value)}
@@ -468,7 +468,7 @@ export default function MarcheDetailPage() {
             <div style={{ borderRadius: 10, overflow: 'hidden', position: 'relative', zIndex: 0 }}>
               <div style={{ background: '#0F172A', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <MapPin size={16} style={{ color: '#00C2FF' }} />
-                <h2 style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>Localisation du marche</h2>
+                <h2 style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>Localisation du marché</h2>
                 {marche.departmentName && (
                   <span style={{ fontSize: 12, color: '#94A3B8', marginLeft: 'auto' }}>
                     {marche.departmentName} ({normalizeDept(marche.department || '')})
@@ -493,7 +493,7 @@ export default function MarcheDetailPage() {
                 className="btn-gradient !text-xs !w-full !justify-center !py-2.5 !gap-2 no-underline mb-2.5"
               >
                 <ExternalLink size={14} />
-                {sourceInfo.direct ? 'Acceder a la consultation' : `Voir sur ${marche.source}`} →
+                {sourceInfo.direct ? 'Accéder à la consultation' : `Voir sur ${marche.source}`} →
               </a>
             ) : (
               <div className="text-[11px] text-gray-400 italic text-center mb-2.5 py-2" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '8px 12px', borderRadius: 6 }}>
@@ -507,7 +507,7 @@ export default function MarcheDetailPage() {
               style={isFav ? { background: '#FFFBEB', borderColor: '#F59E0B', color: '#92400E' } : {}}
             >
               <Star size={14} fill={isFav ? '#F59E0B' : 'none'} color={isFav ? '#F59E0B' : 'currentColor'} />
-              {isFav ? 'Consultation sauvegardee' : 'Sauvegarder cette consultation'}
+              {isFav ? 'Consultation sauvegardée' : 'Sauvegarder cette consultation'}
             </button>
             <button
               onClick={() => {
@@ -519,7 +519,7 @@ export default function MarcheDetailPage() {
               className="btn-secondary !text-xs !w-full !justify-center !py-2.5 !gap-2"
             >
               <Bell size={14} />
-              Creer une alerte similaire
+              Créer une alerte similaire
             </button>
           </div>
 
@@ -532,11 +532,11 @@ export default function MarcheDetailPage() {
                 <span className="font-semibold">{marche.source}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400">Reference</span>
+                <span className="text-gray-400">Référence</span>
                 <span className="font-mono text-[11px]">{marche.sourceRef}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400">Indexe le</span>
+                <span className="text-gray-400">Indexé le</span>
                 <span>{formatDate(marche.createdAt)}</span>
               </div>
             </div>

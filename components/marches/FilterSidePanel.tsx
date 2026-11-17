@@ -39,7 +39,7 @@ function FilterSection({ label, children, locked }: { label: string; children: R
             boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
           }}>
             <div style={{ marginBottom: 8, fontWeight: 500 }}>
-              Debloquez tous les filtres avec l&apos;offre Veille
+              Débloquez tous les filtres avec l&apos;offre Veille
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <a href="/abonnement" style={{
@@ -199,7 +199,7 @@ export default function FilterSidePanel(props: FilterSidePanelProps) {
         {/* Panel body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', paddingBottom: 120 }}>
           {/* Mots-cles */}
-          <FilterSection label="Mots-cles">
+          <FilterSection label="Mots-clés">
             <TagInput
               tags={tags}
               onChange={onTagsChange}
@@ -208,7 +208,7 @@ export default function FilterSidePanel(props: FilterSidePanelProps) {
           </FilterSection>
 
           {/* Departement */}
-          <FilterSection label="Localisation / Departement" locked={!isPaid}>
+          <FilterSection label="Localisation / Département" locked={!isPaid}>
             <DepartmentSelect multi value={departments} onChange={onDepartmentsChange} />
           </FilterSection>
 
@@ -273,7 +273,7 @@ export default function FilterSidePanel(props: FilterSidePanelProps) {
           </FilterSection>
 
           {/* Date de cloture */}
-          <FilterSection label="Date limite de reponse">
+          <FilterSection label="Date limite de réponse">
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: 11, color: '#94A3B8', display: 'block', marginBottom: 4 }}>Du</label>
@@ -302,7 +302,7 @@ export default function FilterSidePanel(props: FilterSidePanelProps) {
             fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit',
             color: '#64748B',
           }}>
-            Reinitialiser
+            Réinitialiser
           </button>
           <button onClick={onApply} style={{
             flex: 1, padding: '10px 0', borderRadius: 6,

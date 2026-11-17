@@ -206,7 +206,7 @@ export default function DepartmentMap({ department, departmentName, buyer }: Pro
           <Popup>
             {departmentName
               ? `${departmentName} (${resolvedDept})`
-              : `Departement ${resolvedDept}`}
+              : `Département ${resolvedDept}`}
           </Popup>
         </Marker>
       </MapContainer>

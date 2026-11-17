@@ -55,7 +55,7 @@ export default function AlertesPage() {
       const res = await fetch('/api/alertes', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, active: !active }) });
       if (!res.ok) { const data = await res.json(); alert(data.error || 'Erreur'); return; }
       setAlerts(prev => prev.map(a => a.id === id ? { ...a, active: !active } : a));
-    } catch { alert('Erreur reseau'); }
+    } catch { alert('Erreur réseau'); }
   }
 
   async function deleteAlert(id: string) {
@@ -84,11 +84,11 @@ export default function AlertesPage() {
       if (editingId) { setAlerts(prev => prev.map(a => a.id === editingId ? { ...a, ...payload } : a)); }
       else { setAlerts(prev => [data, ...prev]); }
       resetForm(); setShowForm(false);
-    } catch { setFormError('Erreur reseau'); }
+    } catch { setFormError('Erreur réseau'); }
     setSaving(false);
   }
 
-  const freqLabels: Record<string, string> = { DAILY: 'Quotidien', IMMEDIATE: 'Immediat', WEEKLY: 'Hebdo' };
+  const freqLabels: Record<string, string> = { DAILY: 'Quotidien', IMMEDIATE: 'Immédiat', WEEKLY: 'Hebdo' };
 
   const inputStyle: React.CSSProperties = {
     width: '100%', height: 40, padding: '0 12px', borderRadius: 8,
@@ -109,7 +109,7 @@ export default function AlertesPage() {
               </span>
             )}
           </div>
-          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Recevez les nouvelles consultations selon vos criteres de veille.</p>
+          <p style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Recevez les nouvelles consultations selon vos critères de veille.</p>
         </div>
         {isPaid && (
           <button onClick={() => { resetForm(); setShowForm(true); }} style={{
@@ -117,7 +117,7 @@ export default function AlertesPage() {
             background: '#00C2FF', color: '#0A1628', border: 'none', borderRadius: 8,
             fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            <Plus size={16} strokeWidth={3} /> Creer une alerte
+            <Plus size={16} strokeWidth={3} /> Créer une alerte
           </button>
         )}
       </div>
@@ -130,16 +130,16 @@ export default function AlertesPage() {
           <div style={{ width: 64, height: 64, margin: '0 auto 20px', borderRadius: 16, background: 'rgba(245,158,11,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Lock size={28} style={{ color: '#F59E0B' }} />
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Alertes email personnalisees</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 10 }}>Alertes email personnalisées</h2>
           <p style={{ fontSize: 14, color: '#94A3B8', marginBottom: 28, lineHeight: 1.6, maxWidth: 420, margin: '0 auto 28px' }}>
-            Les alertes email sont reservees aux abonnes <strong style={{ color: '#F59E0B' }}>Veille</strong>.
-            Recevez chaque matin les nouveaux marches qui correspondent a vos criteres.
+            Les alertes email sont réservées aux abonnés <strong style={{ color: '#F59E0B' }}>Veille</strong>.
+            Recevez chaque matin les nouveaux marchés qui correspondent à vos critères.
           </p>
           <div style={{ display: 'flex', gap: 12, marginBottom: 28, textAlign: 'left' }}>
             {[
-              { n: '1', t: 'Criteres sur mesure', d: 'Mots-cles, departements, secteurs' },
-              { n: '2', t: 'Email quotidien', d: 'Nouvelles consultations chaque matin a 8h' },
-              { n: '3', t: 'Multi-alertes', d: 'Jusqu\'a 10 alertes simultanees' },
+              { n: '1', t: 'Critères sur mesure', d: 'Mots-clés, départements, secteurs' },
+              { n: '2', t: 'Email quotidien', d: 'Nouvelles consultations chaque matin à 8h' },
+              { n: '3', t: 'Multi-alertes', d: 'Jusqu\'à 10 alertes simultanées' },
             ].map(s => (
               <div key={s.n} style={{ flex: 1, padding: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid #1E293B', borderRadius: 8 }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#00C2FF', color: '#0A1628', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.n}</div>
@@ -149,7 +149,7 @@ export default function AlertesPage() {
             ))}
           </div>
           <Link href="/abonnement" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 32px', fontSize: 14, fontWeight: 600, background: '#00C2FF', color: '#0A1628', textDecoration: 'none', borderRadius: 8 }}>
-            Decouvrir l&apos;offre Veille
+            Découvrir l&apos;offre Veille
           </Link>
         </div>
       )}
@@ -170,9 +170,9 @@ export default function AlertesPage() {
                 <input id="alert-name" value={formName} onChange={e => setFormName(e.target.value)} placeholder="Ex: Transport IDF" required style={inputStyle} />
               </div>
               <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Mots-cles *</label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Mots-clés *</label>
                 <TagInput tags={formKeywords} onChange={setFormKeywords} placeholder="transport, nettoyage, BTP..." />
-                <p style={{ fontSize: 10, color: '#94A3B8', marginTop: 3 }}>Tapez Entree ou virgule pour ajouter</p>
+                <p style={{ fontSize: 10, color: '#94A3B8', marginTop: 3 }}>Tapez Entrée ou virgule pour ajouter</p>
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Nature des prestations</label>
@@ -188,13 +188,13 @@ export default function AlertesPage() {
                 </div>
               </div>
               <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Departements</label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Départements</label>
                 <DepartmentSelect multi value={formDepartments} onChange={setFormDepartments} />
               </div>
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Frequence d&apos;envoi</label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 5 }}>Fréquence d&apos;envoi</label>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {[{ v: 'DAILY', l: 'Quotidien (8h)' }, { v: 'WEEKLY', l: 'Hebdomadaire' }, { v: 'IMMEDIATE', l: 'Immediat' }].map(f => (
+                  {[{ v: 'DAILY', l: 'Quotidien (8h)' }, { v: 'WEEKLY', l: 'Hebdomadaire' }, { v: 'IMMEDIATE', l: 'Immédiat' }].map(f => (
                     <button key={f.v} type="button" onClick={() => setFormFrequency(f.v)} style={{
                       padding: '6px 14px', fontSize: 12, fontWeight: 500, borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit',
                       border: formFrequency === f.v ? '1px solid rgba(0,194,255,0.4)' : '1px solid #334155',
@@ -216,7 +216,7 @@ export default function AlertesPage() {
                   flex: 1, padding: '10px 0', border: 'none', background: '#00C2FF', borderRadius: 8,
                   fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                   color: '#0A1628', opacity: saving ? 0.6 : 1,
-                }}>{saving ? 'Sauvegarde...' : editingId ? 'Enregistrer' : 'Creer l\'alerte'}</button>
+                }}>{saving ? 'Sauvegarde...' : editingId ? 'Enregistrer' : 'Créer l\'alerte'}</button>
               </div>
             </form>
           </div>
@@ -232,13 +232,13 @@ export default function AlertesPage() {
           <div style={{ width: 72, height: 72, margin: '0 auto 20px', borderRadius: 16, background: 'rgba(0,194,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Bell size={32} style={{ color: '#00C2FF' }} />
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Recevez chaque jour les marches qui vous correspondent</h2>
-          <p style={{ fontSize: 14, color: '#94A3B8', marginBottom: 28, lineHeight: 1.6 }}>Configurez vos criteres de veille et ne ratez plus aucun appel d&apos;offres pertinent.</p>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Recevez chaque jour les marchés qui vous correspondent</h2>
+          <p style={{ fontSize: 14, color: '#94A3B8', marginBottom: 28, lineHeight: 1.6 }}>Configurez vos critères de veille et ne ratez plus aucun appel d&apos;offres pertinent.</p>
           <div style={{ display: 'flex', gap: 12, marginBottom: 28, textAlign: 'left' }}>
             {[
-              { n: '1', t: 'Choisissez vos criteres', d: 'Secteur, departement, type de marche' },
-              { n: '2', t: 'Recevez par email', d: 'Chaque matin a 8h, les nouvelles consultations' },
-              { n: '3', t: 'Ne ratez plus rien', d: 'Repondez avant la cloture' },
+              { n: '1', t: 'Choisissez vos critères', d: 'Secteur, département, type de marché' },
+              { n: '2', t: 'Recevez par email', d: 'Chaque matin à 8h, les nouvelles consultations' },
+              { n: '3', t: 'Ne ratez plus rien', d: 'Répondez avant la clôture' },
             ].map(s => (
               <div key={s.n} style={{ flex: 1, padding: 14, background: 'rgba(255,255,255,0.02)', border: '1px solid #1E293B', borderRadius: 8 }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#00C2FF', color: '#0A1628', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>{s.n}</div>
@@ -252,7 +252,7 @@ export default function AlertesPage() {
             background: '#00C2FF', color: '#0A1628', border: 'none', borderRadius: 8,
             fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            <Plus size={16} strokeWidth={3} /> Creer ma premiere alerte
+            <Plus size={16} strokeWidth={3} /> Créer ma première alerte
           </button>
         </div>
       ) : (
@@ -288,14 +288,14 @@ export default function AlertesPage() {
                       </span>
                     ))}
                     {a.departments?.map((d: string, j: number) => (
-                      <span key={`d${j}`} style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: '#1E293B', color: '#94A3B8', border: '1px solid #334155' }}>Dep. {d}</span>
+                      <span key={`d${j}`} style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontWeight: 600, background: '#1E293B', color: '#94A3B8', border: '1px solid #334155' }}>Dép. {d}</span>
                     ))}
                   </div>
                   {/* Stats */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#94A3B8' }}>
                     <BarChart3 size={12} style={{ color: '#64748B' }} />
                     <span>
-                      {typeof a.lastMatchCount === 'number' ? `${a.lastMatchCount} marche${a.lastMatchCount !== 1 ? 's' : ''} trouve${a.lastMatchCount !== 1 ? 's' : ''}` : '0 marches trouves'}
+                      {typeof a.lastMatchCount === 'number' ? `${a.lastMatchCount} marché${a.lastMatchCount !== 1 ? 's' : ''} trouvé${a.lastMatchCount !== 1 ? 's' : ''}` : '0 marchés trouvés'}
                       <span style={{ color: '#334155', margin: '0 5px' }}>·</span>
                       Dernier envoi : {timeAgo(a.lastSentAt)}
                     </span>
@@ -327,8 +327,8 @@ export default function AlertesPage() {
           }}>
             <Lightbulb size={15} style={{ color: '#00C2FF', flexShrink: 0, marginTop: 1 }} />
             <p style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.5, margin: 0 }}>
-              <strong style={{ color: '#00C2FF' }}>Astuce</strong> — Creez plusieurs alertes avec des mots-cles differents pour couvrir tous vos secteurs d&apos;activite.
-              Vous pouvez avoir jusqu&apos;a 10 alertes actives.
+              <strong style={{ color: '#00C2FF' }}>Astuce</strong> — Créez plusieurs alertes avec des mots-clés différents pour couvrir tous vos secteurs d&apos;activité.
+              Vous pouvez avoir jusqu&apos;à 10 alertes actives.
             </p>
           </div>
         </div>

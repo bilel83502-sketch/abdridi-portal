@@ -168,9 +168,9 @@ export default function DashboardPage() {
         for (let v = 0; v <= max + step; v += step) ticks.push(v);
         const yMax = ticks[ticks.length - 1];
         const chartH = 160;
-        const MONTHS_SHORT = ['jan', 'fev', 'mar', 'avr', 'mai', 'jun', 'jul', 'aou', 'sep', 'oct', 'nov', 'dec'];
+        const MONTHS_SHORT = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aoû', 'sep', 'oct', 'nov', 'déc'];
         const fmtShort = (day: string) => { const d = new Date(day); return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`; };
-        const fmtLong = (day: string) => { const d = new Date(day); return `${d.getDate()} ${['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'][d.getMonth()]}`; };
+        const fmtLong = (day: string) => { const d = new Date(day); return `${d.getDate()} ${['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'][d.getMonth()]}`; };
 
         return (
           <div className="card p-5 mb-5">
@@ -187,7 +187,7 @@ export default function DashboardPage() {
                     color: trendPct >= 0 ? '#059669' : '#DC2626',
                     display: 'flex', alignItems: 'center', gap: 2,
                   }}>
-                    {trendPct >= 0 ? '↑' : '↓'} {trendPct >= 0 ? '+' : ''}{trendPct}% vs mois precedent
+                    {trendPct >= 0 ? '↑' : '↓'} {trendPct >= 0 ? '+' : ''}{trendPct}% vs mois précédent
                   </span>
                 )}
               </div>

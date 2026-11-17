@@ -141,7 +141,7 @@ export default function ConcurrencePage() {
       }}>
         <Info size={18} style={{ color: '#60A5FA', flexShrink: 0, marginTop: 1 }} />
         <p style={{ fontSize: 13, color: '#CBD5E1', lineHeight: 1.6, margin: 0 }}>
-          Analysez les marches deja attribues dans votre secteur. Identifiez vos concurrents, les montants pratiques et les acheteurs publics actifs. Utilisez ces donnees pour mieux positionner vos futures offres.
+          Analysez les marchés déjà attribués dans votre secteur. Identifiez vos concurrents, les montants pratiqués et les acheteurs publics actifs. Utilisez ces données pour mieux positionner vos futures offres.
         </p>
       </div>
 

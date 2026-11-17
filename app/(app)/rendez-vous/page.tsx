@@ -8,17 +8,17 @@ import { Calendar, Clock, CheckCircle2, Hourglass, CircleDot, RefreshCw, Send, X
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string }> = {
   PENDING: { label: 'En attente', bg: 'rgba(0,194,255,0.08)', color: '#00C2FF', border: 'rgba(0,194,255,0.2)' },
-  CONFIRMED: { label: 'Confirme', bg: 'rgba(0,194,255,0.15)', color: '#00C2FF', border: 'rgba(0,194,255,0.3)' },
-  DONE: { label: 'Termine', bg: 'rgba(148,163,184,0.1)', color: '#94A3B8', border: '#334155' },
+  CONFIRMED: { label: 'Confirmé', bg: 'rgba(0,194,255,0.15)', color: '#00C2FF', border: 'rgba(0,194,255,0.3)' },
+  DONE: { label: 'Terminé', bg: 'rgba(148,163,184,0.1)', color: '#94A3B8', border: '#334155' },
 };
 
 const SECTORS = [
-  { value: '', label: 'Selectionnez votre secteur' },
+  { value: '', label: 'Sélectionnez votre secteur' },
   { value: 'Transport', label: 'Transport' },
   { value: 'Logistique', label: 'Logistique' },
-  { value: 'Dechets', label: 'Dechets / Proprete' },
+  { value: 'Dechets', label: 'Déchets / Propreté' },
   { value: 'BTP', label: 'BTP / Construction' },
-  { value: 'Informatique', label: 'Informatique / Numerique' },
+  { value: 'Informatique', label: 'Informatique / Numérique' },
   { value: 'Services', label: 'Services aux entreprises' },
   { value: 'Autre', label: 'Autre' },
 ];
@@ -66,7 +66,6 @@ export default function RendezVousPage() {
   useEffect(() => {
     if (sessionStatus === 'authenticated') {
       fetchAppointments();
-      if (session?.user) { setFormName(session.user.name || ''); setFormEmail(session.user.email || ''); }
     }
   }, [sessionStatus, session]);
 
@@ -85,7 +84,7 @@ export default function RendezVousPage() {
           message: [formPhone ? `Tel: ${formPhone}` : '', formSector ? `Secteur: ${formSector}` : '', formMessage || ''].filter(Boolean).join('\n'),
         }),
       });
-      if (res.ok) { setSubmitted(true); setFormPhone(''); setFormSector(''); setFormDate(''); setFormTimeSlot(''); setFormMessage(''); fetchAppointments(); }
+      if (res.ok) { setSubmitted(true); setFormName(''); setFormEmail(''); setFormPhone(''); setFormSector(''); setFormDate(''); setFormTimeSlot(''); setFormMessage(''); fetchAppointments(); }
     } catch {}
     setSubmitting(false);
   }
@@ -123,18 +122,18 @@ export default function RendezVousPage() {
               </div>
 
               <h1 style={{ fontSize: 28, fontWeight: 800, color: '#fff', lineHeight: 1.2, margin: '0 0 12px' }}>
-                Un expert marches publics vous accompagne
+                Un expert marchés publics vous accompagne
               </h1>
               <p style={{ fontSize: 14, color: '#94A3B8', lineHeight: 1.7, margin: '0 0 28px', maxWidth: 480 }}>
-                Prenez rendez-vous gratuitement pour discuter de vos opportunites dans les marches publics.
-                Nous analysons votre eligibilite et vous proposons les appels d&apos;offres adaptes a votre entreprise.
+                Prenez rendez-vous gratuitement pour discuter de vos opportunités dans les marchés publics.
+                Nous analysons votre éligibilité et vous proposons les appels d&apos;offres adaptés à votre entreprise.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
                   { icon: <CheckCircle2 size={15} />, text: 'Analyse gratuite de votre profil' },
-                  { icon: <CheckCircle2 size={15} />, text: 'Selection d\'appels d\'offres sur-mesure' },
-                  { icon: <CheckCircle2 size={15} />, text: 'Montage complet du dossier de reponse' },
+                  { icon: <CheckCircle2 size={15} />, text: 'Sélection d\'appels d\'offres sur-mesure' },
+                  { icon: <CheckCircle2 size={15} />, text: 'Montage complet du dossier de réponse' },
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ color: '#00C2FF', display: 'flex', flexShrink: 0 }}>{item.icon}</span>
@@ -155,30 +154,30 @@ export default function RendezVousPage() {
                   <div style={{ width: 48, height: 48, borderRadius: 12, margin: '0 auto 14px', background: 'rgba(0,194,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <CheckCircle2 size={24} style={{ color: '#00C2FF' }} />
                   </div>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>Demande envoyee !</h3>
-                  <p style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.5, margin: '0 0 18px' }}>Notre equipe vous contactera sous 24h pour confirmer votre creneau.</p>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>Demande envoyée !</h3>
+                  <p style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.5, margin: '0 0 18px' }}>Notre équipe vous contactera sous 24h pour confirmer votre créneau.</p>
                   <button onClick={() => setSubmitted(false)} style={{ padding: '8px 18px', fontSize: 12, fontWeight: 600, background: 'transparent', color: '#00C2FF', border: '1px solid rgba(0,194,255,0.3)', borderRadius: 6, cursor: 'pointer', fontFamily: 'inherit' }}>
                     Prendre un autre RDV
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit}>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, color: '#fff', margin: '0 0 16px' }}>Demander un creneau</h3>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, color: '#fff', margin: '0 0 16px' }}>Demander un créneau</h3>
 
                   <div style={{ marginBottom: 10 }}>
                     <label htmlFor="rdv-name" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Nom complet *</label>
-                    <input id="rdv-name" value={formName} onChange={e => setFormName(e.target.value)} placeholder="Nom complet" required style={{ ...fieldStyle, color: '#94A3B8' }} readOnly={!!session?.user?.name} />
+                    <input id="rdv-name" value={formName} onChange={e => setFormName(e.target.value)} placeholder="Nom complet" required style={fieldStyle} />
                   </div>
                   <div style={{ marginBottom: 10 }}>
                     <label htmlFor="rdv-email" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Email *</label>
-                    <input id="rdv-email" type="email" value={formEmail} onChange={e => setFormEmail(e.target.value)} placeholder="Email" required style={{ ...fieldStyle, color: '#94A3B8' }} readOnly={!!session?.user?.email} />
+                    <input id="rdv-email" type="email" value={formEmail} onChange={e => setFormEmail(e.target.value)} placeholder="Email" required style={fieldStyle} />
                   </div>
                   <div style={{ marginBottom: 10 }}>
-                    <label htmlFor="rdv-phone" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Telephone</label>
-                    <input id="rdv-phone" type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="Telephone" style={fieldStyle} />
+                    <label htmlFor="rdv-phone" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Téléphone</label>
+                    <input id="rdv-phone" type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="Téléphone" style={fieldStyle} />
                   </div>
                   <div style={{ marginBottom: 10 }}>
-                    <label htmlFor="rdv-sector" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Secteur d&apos;activite</label>
+                    <label htmlFor="rdv-sector" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Secteur d&apos;activité</label>
                     <select id="rdv-sector" value={formSector} onChange={e => setFormSector(e.target.value)} style={{ ...fieldStyle, color: formSector ? '#E2E8F0' : '#64748B' }}>
                       {SECTORS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
@@ -189,16 +188,16 @@ export default function RendezVousPage() {
                       <input id="rdv-date" type="date" value={formDate} onChange={e => setFormDate(e.target.value)} min={getMinDate()} required style={fieldStyle} />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label htmlFor="rdv-time" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Creneau *</label>
+                      <label htmlFor="rdv-time" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Créneau *</label>
                       <select id="rdv-time" value={formTimeSlot} onChange={e => setFormTimeSlot(e.target.value)} required style={{ ...fieldStyle, color: formTimeSlot ? '#E2E8F0' : '#64748B' }}>
-                        <option value="">Choisir un creneau</option>
+                        <option value="">Choisir un créneau</option>
                         {TIME_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                   </div>
                   <div style={{ marginBottom: 14 }}>
                     <label htmlFor="rdv-message" style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Message (optionnel)</label>
-                    <textarea id="rdv-message" value={formMessage} onChange={e => setFormMessage(e.target.value)} placeholder="Decrivez votre besoin..." rows={2} style={{ ...fieldStyle, height: 'auto', resize: 'vertical', padding: '10px 14px' }} />
+                    <textarea id="rdv-message" value={formMessage} onChange={e => setFormMessage(e.target.value)} placeholder="Décrivez votre besoin..." rows={2} style={{ ...fieldStyle, height: 'auto', resize: 'vertical', padding: '10px 14px' }} />
                   </div>
 
                   <button type="submit" disabled={submitting || !formDate || !formTimeSlot} style={{
@@ -212,11 +211,11 @@ export default function RendezVousPage() {
                   </button>
 
                   <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', marginTop: 10, lineHeight: 1.4 }}>
-                    Gratuit et sans engagement. Reponse sous 24h.
+                    Gratuit et sans engagement. Réponse sous 24h.
                   </p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
                     <Shield size={11} style={{ color: '#64748B' }} />
-                    <span style={{ fontSize: 10, color: '#94A3B8' }}>Vos donnees restent confidentielles</span>
+                    <span style={{ fontSize: 10, color: '#94A3B8' }}>Vos données restent confidentielles</span>
                   </div>
                 </form>
               )}
@@ -237,8 +236,8 @@ export default function RendezVousPage() {
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
               {[
                 { label: 'En attente', count: appointments.filter(a => a.status === 'PENDING').length, color: '#00C2FF' },
-                { label: 'Confirmes', count: appointments.filter(a => a.status === 'CONFIRMED').length, color: '#00C2FF' },
-                { label: 'Termines', count: appointments.filter(a => a.status === 'DONE').length, color: '#64748B' },
+                { label: 'Confirmés', count: appointments.filter(a => a.status === 'CONFIRMED').length, color: '#00C2FF' },
+                { label: 'Terminés', count: appointments.filter(a => a.status === 'DONE').length, color: '#64748B' },
               ].map(s => (
                 <div key={s.label} style={{ flex: 1, padding: '10px 14px', background: '#0F172A', border: '1px solid #1E293B', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.count}</span>
@@ -264,7 +263,7 @@ export default function RendezVousPage() {
                           </span>
                           {latestRelance && (
                             <span style={{ padding: '3px 8px', fontSize: 10, fontWeight: 600, borderRadius: 4, background: 'rgba(0,194,255,0.08)', color: '#00C2FF' }}>
-                              Relance le {formatDateFr(latestRelance.date)}
+                              Relancé le {formatDateFr(latestRelance.date)}
                             </span>
                           )}
                         </div>
@@ -273,7 +272,7 @@ export default function RendezVousPage() {
                         <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#94A3B8' }}>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Calendar size={12} style={{ color: '#64748B' }} /> {formatDateFr(apt.requestedDate)}</span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={12} style={{ color: '#64748B' }} /> {apt.timeSlot}</span>
-                          <span style={{ fontSize: 11, color: '#334155' }}>Demande le {formatDateFr(apt.createdAt)}</span>
+                          <span style={{ fontSize: 11, color: '#334155' }}>Demandé le {formatDateFr(apt.createdAt)}</span>
                         </div>
                         {apt.relances && apt.relances.length > 0 && (
                           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #1E293B' }}>
@@ -315,7 +314,7 @@ export default function RendezVousPage() {
               <form onSubmit={handleRelance}>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94A3B8', marginBottom: 6 }}>Note de relance *</label>
-                  <textarea value={relanceNote} onChange={e => setRelanceNote(e.target.value)} placeholder="Precisez le motif de la relance..." rows={3} required style={{ ...fieldStyle, height: 'auto', resize: 'vertical', padding: '10px 14px' }} />
+                  <textarea value={relanceNote} onChange={e => setRelanceNote(e.target.value)} placeholder="Précisez le motif de la relance..." rows={3} required style={{ ...fieldStyle, height: 'auto', resize: 'vertical', padding: '10px 14px' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button type="button" onClick={() => setRelanceAptId(null)} style={{ flex: 1, padding: '10px 0', border: '1px solid #334155', background: 'transparent', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', color: '#94A3B8', borderRadius: 6 }}>Annuler</button>
