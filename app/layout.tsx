@@ -53,11 +53,11 @@ const jsonLdOrganization = {
   logo: 'https://abdridi.com/Logo AB DRIDI.png',
   description: 'Veille des marchés publics et montage de dossiers de réponse aux appels d\'offres, tous secteurs',
   foundingDate: '2023',
-  telephone: '+33756895534',
+  telephone: '+33749845661',
   email: 'contact@abdridi.com',
   contactPoint: {
     '@type': 'ContactPoint',
-    telephone: '+33756895534',
+    telephone: '+33749845661',
     email: 'contact@abdridi.com',
     contactType: 'Customer Service',
     availableLanguage: 'French',

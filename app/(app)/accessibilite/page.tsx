@@ -95,7 +95,7 @@ export default function AccessibilitePage() {
             <a href="mailto:contact@abdridi.com" style={{ color: '#3B82F6', textDecoration: 'none' }}>contact@abdridi.com</a>
           </p>
           <p style={{ fontSize: 13, color: '#94A3B8', margin: '4px 0 0' }}>
-            Bilel DRIDI — AB DRIDI — 07 56 89 55 34
+            Bilel DRIDI — AB DRIDI — 07 49 84 56 61
           </p>
         </div>
       </Section>

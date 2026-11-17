@@ -31,7 +31,7 @@ export default function MentionsLegalesPage() {
               ['Siège social', '108 Rue Louis Martin Bidoure, 83500 La Seyne-sur-Mer, France'],
               ['Directeur de la publication', 'Bilel DRIDI'],
               ['Email', 'contact@abdridi.com'],
-              ['Téléphone', '07 56 89 55 34'],
+              ['Téléphone', '07 49 84 56 61'],
             ].map(([label, value]) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <dt style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>

@@ -123,5 +123,5 @@ Résumé :
 | Rôle | Contact |
 |------|---------|
 | Responsable | Bilel DRIDI — contact@abdridi.com |
-| Téléphone | 07 56 89 55 34 |
+| Téléphone | 07 49 84 56 61 |
 | Support technique | contact@abdridi.com |
