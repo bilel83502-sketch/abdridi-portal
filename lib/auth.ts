@@ -102,10 +102,15 @@ export const authOptions: NextAuthOptions = {
         const email = user.email.toLowerCase();
         const adminMatch = isAdminEmail(email);
 
-        // Upsert user for Google OAuth — auto-verified
-        const existing = await prisma.user.findUnique({ where: { email } });
+        // Upsert user for Google OAuth — auto-verified.
+        // La base (Neon) peut mettre quelques secondes à se réveiller : on
+        // réessaie une fois avant d'abandonner, pour ne pas afficher d'erreur.
+        const retry = async <T>(fn: () => Promise<T>): Promise<T> => {
+          try { return await fn(); } catch { await new Promise(r => setTimeout(r, 1500)); return fn(); }
+        };
+        const existing = await retry(() => prisma.user.findUnique({ where: { email } }));
         if (!existing) {
-          await prisma.user.create({
+          await retry(() => prisma.user.create({
             data: {
               email,
               name: user.name || 'Utilisateur',
@@ -115,7 +120,7 @@ export const authOptions: NextAuthOptions = {
               emailVerified: new Date(),
               lastLoginAt: new Date(),
             },
-          });
+          }));
         } else {
           const updateData: any = { lastLoginAt: new Date() };
           if (adminMatch && existing.role !== 'ADMIN') {
@@ -128,7 +133,12 @@ export const authOptions: NextAuthOptions = {
           if (!existing.emailVerified) {
             updateData.emailVerified = new Date();
           }
-          await prisma.user.update({ where: { id: existing.id }, data: updateData });
+          // Mise à jour non bloquante : si elle échoue, la connexion continue.
+          try {
+            await retry(() => prisma.user.update({ where: { id: existing.id }, data: updateData }));
+          } catch (e) {
+            console.error('[Auth] lastLoginAt update failed (connexion maintenue):', e);
+          }
         }
       }
 
