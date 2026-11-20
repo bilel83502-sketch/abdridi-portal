@@ -13,7 +13,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://cdn.tailwindcss.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https:",
+              "img-src 'self' data: blob: https:",
               "connect-src 'self' https://api.stripe.com https://api.resend.com https://*.sentry.io https://*.ingest.sentry.io",
               "frame-src 'self' https://js.stripe.com https://checkout.stripe.com blob:",
               "font-src 'self' data:",

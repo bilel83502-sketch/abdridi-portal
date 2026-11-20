@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { SiteHeader, SiteFooter, PC as C } from '@/components/public/SiteChrome';
 import { CONTACT_PHONE, CONTACT_PHONE_HREF } from '@/lib/contact';
+import LiquidLogo from '@/components/public/LiquidLogo';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +77,7 @@ export default async function Home() {
 
       {/* Hero : deux parcours */}
       <section style={{ textAlign: 'center', padding: '60px 16px 44px', maxWidth: 800, margin: '0 auto' }}>
+        <LiquidLogo />
         <div style={{ display: 'inline-block', padding: '6px 14px', borderRadius: 999, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#6EE7B7', fontSize: 13, fontWeight: 600, marginBottom: 22 }}>
           Offre de lancement : 3 mois offerts · sans carte bancaire
         </div>
